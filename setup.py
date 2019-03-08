@@ -11,11 +11,16 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ ]
+version = {}
+with open("gms_preprocessing/version.py") as version_file:
+    exec(version_file.read(), version)
 
-setup_requirements = [ ]
+requirements = ['numpy', 'matplotlib', 'pandas', 'dill', 'nested_dict', 'tqdm', 'scipy', 'scikit-learn', 'geoarray',
+                'seaborn']
 
-test_requirements = [ ]
+setup_requirements = []
+
+test_requirements = []
 
 setup(
     author="Daniel Scheffler",
@@ -45,6 +50,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/danschef/spechomo',
-    version='0.1.0',
+    version=version['__version__'],
     zip_safe=False,
 )
