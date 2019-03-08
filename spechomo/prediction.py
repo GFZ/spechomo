@@ -18,18 +18,9 @@ import time
 
 from geoarray import GeoArray  # noqa F401  # flake8 issue
 
-# from ..options.config import GMS_config as CFG
-# from ..io.input_reader import SRF  # noqa F401  # flake8 issue
-# from ..misc.logging import GMS_logger
-# from ..misc.definition_dicts import datasetid_to_sat_sen, sat_sen_to_datasetid
 from .exceptions import ClassifierNotAvailableError
-# from ..misc.logging import close_logger
-# from ..model.gms_object import GMS_object
-# from ..model.metadata import get_LayerBandsAssignment, get_center_wavelengths_by_LBA
-# from .L2A_P import L2A_object
-# from ..model.gms_object import GMS_identifier
-# from .classification import classify_image
 from .classifier_creation import get_machine_learner, get_filename_classifier_collection
+from .logging import SpecHomo_Logger
 
 __author__ = 'Daniel Scheffler'
 
@@ -43,18 +34,7 @@ class SpectralHomogenizer(object):
         :param logger:              instance of logging.Logger
         """
         self.classifier_rootDir = classifier_rootDir or CFG.path_spechomo_classif
-        self.logger = logger or logging.getLogger(self.__class__.__name__)  # FIXME own logger logs nothing
-
-    def __getstate__(self):
-        """Defines how the attributes of SpectralHomogenizer instances are pickled."""
-        close_logger(self.logger)
-        self.logger = None
-
-        return self.__dict__
-
-    def __del__(self):
-        close_logger(self.logger)
-        self.logger = None
+        self.logger = logger or SpecHomo_Logger(__name__)
 
     def interpolate_cube(self, arrcube, source_CWLs, target_CWLs, kind='linear'):
         # type: (Union[np.ndarray, GeoArray], list, list, str) -> np.ndarray
@@ -258,7 +238,7 @@ class RSImage_ClusterPredictor(object):
         self.classif_map = None
         self.CPUs = CPUs
         self.classif_alg = classif_alg
-        self.logger = logger or GMS_logger(__name__)  # must be pickable
+        self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
         self.kw_clf_init = kw_clf_init
 
         # validate
@@ -269,17 +249,6 @@ class RSImage_ClusterPredictor(object):
 
         if self.classif_alg == 'kNN' and 'n_neighbors' in kw_clf_init and self.n_clusters < kw_clf_init['n_neighbors']:
             self.kw_clf_init['n_neighbors'] = self.n_clusters
-
-    def __getstate__(self):
-        """Defines how the attributes of ReferenceCube_Generator instances are pickled."""
-        close_logger(self.logger)
-        self.logger = None
-
-        return self.__dict__
-
-    def __del__(self):
-        close_logger(self.logger)
-        self.logger = None
 
     def get_classifier(self, src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA):
         # type: (str, str, list, str, str, list) -> Cluster_Learner

@@ -9,6 +9,8 @@ from geoarray import GeoArray
 from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 
+from .logging import SpecHomo_Logger
+
 
 class SpectralResampler(object):
     """Class for spectral resampling of a single spectral signature (1D-array) or an image (3D-array)."""
@@ -30,18 +32,7 @@ class SpectralResampler(object):
 
         self.wvl_src_nm = wvl_src if max(wvl_src) > 100 else wvl_src * 1000
         self.srf_tgt = srf_tgt
-        self.logger = logger or GMS_logger(__name__)  # must be pickable
-
-    def __getstate__(self):
-        """Defines how the attributes of SpectralResampler instances are pickled."""
-        close_logger(self.logger)
-        self.logger = None
-
-        return self.__dict__
-
-    def __del__(self):
-        close_logger(self.logger)
-        self.logger = None
+        self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
 
     @property
     def wvl_1nm(self):

@@ -21,8 +21,9 @@ from geoarray import GeoArray
 
 from .clustering import KMeansRSImage
 from .prediction import im2spectra
-from spechomo.resampling import SpectralResampler
+from .resampling import SpectralResampler
 from .training_data import RefCube
+from .logging import SpecHomo_Logger
 
 
 class ReferenceCube_Generator(object):
@@ -62,7 +63,7 @@ class ReferenceCube_Generator(object):
         self.n_clusters = n_clusters
         self.tgt_n_samples = tgt_n_samples
         self.v = v
-        self.logger = logger or GMS_logger(__name__)  # must be pickable
+        self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
         self.CPUs = CPUs or cpu_count()
 
         # privates
@@ -74,17 +75,6 @@ class ReferenceCube_Generator(object):
         # validation
         if dir_refcubes and not os.path.isdir(self.dir_refcubes):
             raise ValueError("%s is not a directory." % self.dir_refcubes)
-
-    def __getstate__(self):
-        """Defines how the attributes of ReferenceCube_Generator instances are pickled."""
-        close_logger(self.logger)
-        self.logger = None
-
-        return self.__dict__
-
-    def __del__(self):
-        close_logger(self.logger)
-        self.logger = None
 
     @property
     def refcubes(self):
@@ -305,18 +295,7 @@ class ClusterClassifier_Generator(object):
         :param logger:          instance of logging.Logger()
         """
         self.refcubes = [RefCube(inRC) if isinstance(inRC, str) else inRC for inRC in list_refcubes]
-        self.logger = logger or GMS_logger(__name__)  # must be pickable
-
-    def __getstate__(self):
-        """Defines how the attributes of ReferenceCube_Generator instances are pickled."""
-        close_logger(self.logger)
-        self.logger = None
-
-        return self.__dict__
-
-    def __del__(self):
-        close_logger(self.logger)
-        self.logger = None
+        self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
 
     @staticmethod
     def _get_derived_LayerBandsAssignments(satellite, sensor):
