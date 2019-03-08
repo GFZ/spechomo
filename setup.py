@@ -12,7 +12,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 version = {}
-with open("gms_preprocessing/version.py") as version_file:
+with open("spechomo/version.py") as version_file:
     exec(version_file.read(), version)
 
 requirements = ['numpy', 'matplotlib', 'pandas', 'dill', 'nested_dict', 'tqdm', 'scipy', 'scikit-learn', 'geoarray',
@@ -20,7 +20,7 @@ requirements = ['numpy', 'matplotlib', 'pandas', 'dill', 'nested_dict', 'tqdm', 
 
 setup_requirements = []
 
-test_requirements = []
+test_requirements = ['coverage', 'nose', 'nose-htmloutput', 'rednose']
 
 setup(
     author="Daniel Scheffler",
