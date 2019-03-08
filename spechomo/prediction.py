@@ -4,8 +4,7 @@
 
 import os
 import numpy as np
-import logging
-from scipy.interpolate import interp1d
+import logging  # noqa F401  # flake8 issue
 from typing import Union, List, Tuple  # noqa F401  # flake8 issue
 from multiprocessing import cpu_count
 from collections import OrderedDict
@@ -15,17 +14,22 @@ import traceback
 import zipfile
 import tempfile
 import time
-
+from scipy.interpolate import interp1d
 from geoarray import GeoArray  # noqa F401  # flake8 issue
 
+from .utils import im2spectra, spectra2im
 from .exceptions import ClassifierNotAvailableError
 from .classifier_creation import get_machine_learner, get_filename_classifier_collection
 from .logging import SpecHomo_Logger
-from . import __path__ as spechomo_rootdir
+from . import __path__
+
+# dependencies to get rid of
+from gms_preprocessing.algorithms.classification import classify_image
+from gms_preprocessing.model.gms_object import GMS_object
 
 __author__ = 'Daniel Scheffler'
 
-classifier_rootdir = os.path.join(spechomo_rootdir, 'resources', 'classifiers')
+classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
 
 
 class SpectralHomogenizer(object):
@@ -169,24 +173,6 @@ class SpectralHomogenizer(object):
             raise exc
 
         return im_homo, errors
-
-
-def im2spectra(geoArr):
-    # type: (Union[GeoArray, np.ndarray]) -> np.ndarray
-    """Convert 3D images to array of spectra samples (rows: samples;  cols: spectral information)."""
-    return geoArr.reshape((geoArr.shape[0] * geoArr.shape[1], geoArr.shape[2]))
-
-
-def spectra2im(spectra, tgt_rows, tgt_cols):
-    # type: (Union[GeoArray, np.ndarray], int, int) -> np.ndarray
-    """Convert array of spectra samples (rows: samples;  cols: spectral information) to a 3D image.
-
-    :param spectra:     2D array with rows: spectral samples / columns: spectral information (bands)
-    :param tgt_rows:    number of target image rows
-    :param tgt_cols:    number of target image rows
-    :return:            3D array (rows x columns x spectral bands)
-    """
-    return spectra.reshape(tgt_rows, tgt_cols, spectra.shape[1])
 
 
 class ClassifierCollection(object):

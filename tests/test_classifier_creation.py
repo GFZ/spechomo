@@ -15,14 +15,14 @@ import numpy as np
 import dill
 from geoarray import GeoArray
 
-from spechomo import __path__ as spechomo_rootdir
+from spechomo import __path__
 from spechomo.classifier_creation import ReferenceCube_Generator, RefCube, ClusterClassifier_Generator
 
-# from gms_preprocessing.model.gms_object import GMS_identifier  # FIXME
+from gms_preprocessing.model.gms_object import GMS_identifier  # FIXME
 
-hyspec_data = os.path.join(spechomo_rootdir, '../tests/data/Bavaria_farmland_LMU_Hyspex_subset.bsq')
-refcube_l8 = os.path.join(spechomo_rootdir, '../tests/data/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp100.bsq')
-refcube_l5 = os.path.join(spechomo_rootdir, '../tests/data/refcube__Landsat-5__TM__nclust50__nsamp100.bsq')
+hyspec_data = os.path.join(__path__[0], '../tests/data/Bavaria_farmland_LMU_Hyspex_subset.bsq')
+refcube_l8 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp100.bsq')
+refcube_l5 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-5__TM__nclust50__nsamp100.bsq')
 
 
 class Test_ReferenceCube_Generator(unittest.TestCase):
@@ -161,9 +161,9 @@ class Test_ClusterClassifier_Generator(unittest.TestCase):
         CCG = ClusterClassifier_Generator([refcube_l8, refcube_l5])
         CCG.create_classifiers(outDir=self.tmpOutdir.name, method='RFR', n_clusters=1,
                                **dict(n_jobs=-1, n_estimators=20, max_depth=10))
-        # TODO
+
         outpath_cls = os.path.join(self.tmpOutdir.name,
-                                   'RFR_trees%d_clust1__Landsat-8__OLI_TIRS.dill' % self.config.spechomo_rfr_n_trees)
+                                   'RFR_trees%d_clust1__Landsat-8__OLI_TIRS.dill' % 20)
         self.assertTrue(os.path.exists(outpath_cls))
 
         with open(outpath_cls, 'rb') as inF:

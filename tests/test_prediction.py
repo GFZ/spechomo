@@ -15,9 +15,9 @@ import numpy as np
 from geoarray import GeoArray
 
 from spechomo.prediction import SpectralHomogenizer
-from spechomo import __path__ as spechomo_rootdir
+from spechomo import __path__
 
-classifier_rootdir = os.path.join(spechomo_rootdir, 'resources', 'classifiers')
+classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
 
 
 class Test_SpectralHomogenizer(unittest.TestCase):

@@ -16,7 +16,7 @@ with open("gms_preprocessing/version.py") as version_file:
     exec(version_file.read(), version)
 
 requirements = ['numpy', 'matplotlib', 'pandas', 'dill', 'nested_dict', 'tqdm', 'scipy', 'scikit-learn', 'geoarray',
-                'seaborn', 'pyyaml']
+                'seaborn', 'pyyaml', 'gms_preprocessing']
 
 setup_requirements = []
 

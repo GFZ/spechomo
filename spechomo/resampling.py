@@ -11,6 +11,9 @@ from scipy.interpolate import interp1d
 
 from .logging import SpecHomo_Logger
 
+# dependencies to get rid of
+from gms_preprocessing.io.input_reader import SRF  # noqa F401  # flake8 issue
+
 
 class SpectralResampler(object):
     """Class for spectral resampling of a single spectral signature (1D-array) or an image (3D-array)."""

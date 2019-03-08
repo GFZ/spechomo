@@ -20,11 +20,16 @@ from tqdm import tqdm
 from geoarray import GeoArray
 
 from .clustering import KMeansRSImage
-from .prediction import im2spectra
+from .utils import im2spectra
 from .resampling import SpectralResampler
 from .training_data import RefCube
 from .logging import SpecHomo_Logger
 from .options import options
+
+# dependencies to get rid of
+from gms_preprocessing.model.gms_object import GMS_identifier
+from gms_preprocessing.model.metadata import get_LayerBandsAssignment, get_center_wavelengths_by_LBA
+from gms_preprocessing.io.input_reader import SRF
 
 
 class ReferenceCube_Generator(object):

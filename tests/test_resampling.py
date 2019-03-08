@@ -14,13 +14,13 @@ import os
 
 from geoarray import GeoArray
 
-from spechomo import __path__ as spechomo_rootdir
-# from gms_preprocessing.io.input_reader import SRF  # FIXME
+from spechomo import __path__
+from gms_preprocessing.io.input_reader import SRF  # FIXME
 from spechomo.resampling import SpectralResampler as SR
-# from gms_preprocessing.model.gms_object import GMS_identifier  # FIXME
+from gms_preprocessing.model.gms_object import GMS_identifier  # FIXME
 
 
-testdata = os.path.join(spechomo_rootdir, '../tests/data/Bavaria_farmland_LMU_Hyspex_subset.bsq')
+testdata = os.path.join(__path__[0], '../tests/data/Bavaria_farmland_LMU_Hyspex_subset.bsq')
 
 
 class Test_SpectralResampler(unittest.TestCase):

@@ -13,7 +13,10 @@ from pandas import DataFrame
 from pandas.plotting import scatter_matrix
 from sklearn.model_selection import train_test_split
 
-from .prediction import im2spectra
+from .utils import im2spectra
+
+# dependencies to get rid of
+from gms_preprocessing.model.metadata import get_center_wavelengths_by_LBA
 
 
 class TrainingData(object):
