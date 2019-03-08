@@ -26,7 +26,6 @@ dependencies:
   - shapely
 
   # gms_preprocessing  # FIXME remove as soon as gms_preprocessing is not a dependency anymore
-  - scikit-image
   - lxml
   - pyhdf
   - python-fmask
