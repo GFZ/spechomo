@@ -21,8 +21,11 @@ from geoarray import GeoArray  # noqa F401  # flake8 issue
 from .exceptions import ClassifierNotAvailableError
 from .classifier_creation import get_machine_learner, get_filename_classifier_collection
 from .logging import SpecHomo_Logger
+from . import __path__ as spechomo_rootdir
 
 __author__ = 'Daniel Scheffler'
+
+classifier_rootdir = os.path.join(spechomo_rootdir, 'resources', 'classifiers')
 
 
 class SpectralHomogenizer(object):
@@ -33,7 +36,7 @@ class SpectralHomogenizer(object):
         :param classifier_rootDir:  root directory where machine learning classifiers are stored.
         :param logger:              instance of logging.Logger
         """
-        self.classifier_rootDir = classifier_rootDir or CFG.path_spechomo_classif
+        self.classifier_rootDir = classifier_rootDir or classifier_rootdir
         self.logger = logger or SpecHomo_Logger(__name__)
 
     def interpolate_cube(self, arrcube, source_CWLs, target_CWLs, kind='linear'):

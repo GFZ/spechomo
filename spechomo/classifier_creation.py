@@ -24,6 +24,7 @@ from .prediction import im2spectra
 from .resampling import SpectralResampler
 from .training_data import RefCube
 from .logging import SpecHomo_Logger
+from .options import options
 
 
 class ReferenceCube_Generator(object):
@@ -428,7 +429,7 @@ class ClusterClassifier_Generator(object):
                             'LR':   Linear Regression
                             'RR':   Ridge Regression
                             'QR':   Quadratic Regression
-                            'RFR':  Random Forest Regression (50 trees)
+                            'RFR':  Random Forest Regression (50 trees with maximum depth of 3 by default)
         :param n_clusters:  number of clusters to be used for KMeans clustering
         :param CPUs:        number of CPUs to be used for KMeans clustering
         :param kwargs:      keyword arguments to be passed to machine learner
@@ -443,15 +444,15 @@ class ClusterClassifier_Generator(object):
             if 'n_jobs' not in kwargs:
                 kwargs.update(dict(n_jobs=CPUs))
             if 'n_estimators' not in kwargs:
-                kwargs.update(dict(n_estimators=CFG.spechomo_rfr_n_trees))  # we statically use 50 trees for RFR
+                kwargs.update(dict(n_estimators=options['classifiers']['RFR']['n_trees']))
             if 'max_depth' not in kwargs:
-                kwargs.update(dict(max_depth=CFG.spechomo_rfr_tree_depth))  # we statically use a maximum depth of 10
+                kwargs.update(dict(max_depth=options['classifiers']['RFR']['max_depth']))
 
         # build the classifier collections with separate classifiers for each cluster
         for src_cube in self.refcubes:  # type: RefCube
             cls_collection = nested_dict()
             fName_cls = get_filename_classifier_collection(method, src_cube.satellite, src_cube.sensor,
-                                                           n_clusters=n_clusters)
+                                                           n_clusters=n_clusters, **kwargs)
 
             # get cluster labels for each source cube separately
             self.logger.info('Clustering %s %s reference cube (%s clusters)...'
@@ -563,11 +564,12 @@ def get_machine_learner(method='LR', **init_params):
         raise ValueError("Unknown machine learner method code '%s'." % method)
 
 
-def get_filename_classifier_collection(method, src_satellite, src_sensor, n_clusters=1):
+def get_filename_classifier_collection(method, src_satellite, src_sensor, n_clusters=1, **cls_kwinit):
     if method == 'RR':
         method += '_alpha1.0'  # TODO add to config
     elif method == 'RFR':
-        method += '_trees%s' % CFG.spechomo_rfr_n_trees  # we statically use 50 trees for Random Forest Regression
+        assert 'n_estimators' in cls_kwinit
+        method += '_trees%s' % cls_kwinit['n_estimators']  # we statically use 50 trees for Random Forest Regression
 
     return '__'.join(['%s_clust%s' % (method, n_clusters), src_satellite, src_sensor]) + '.dill'
 
