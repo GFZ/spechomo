@@ -1,0 +1,62 @@
+name: spechomo
+
+channels: &id1
+  - http://conda.anaconda.org/conda-forge
+
+dependencies:
+  - python=3.*.*
+  - matplotlib
+  - numpy
+  - pandas
+  - scikit-learn
+
+  # geoarray / py_tools_ds
+  - basemap
+  - bokeh
+  - gdal
+    # - geos>3.7.0   # pinning should not be needed anymore - https://github.com/conda-forge/basemap-feedstock/issues/43
+  - geopandas
+  - holoviews
+  - ipython
+  - conda-forge::libgdal  # force to use conda-forge for libgdal to avoid package version incompatiblies due to mixed channels
+  - pyproj
+  - pyqt
+  - rasterio
+  - scikit-image
+  - shapely
+
+  # gms_preprocessing  # FIXME remove as soon as gms_preprocessing is not a dependency anymore
+  - scikit-image
+  - lxml
+  - pyhdf
+  - python-fmask
+
+  # sicor
+  - glymur
+  - pygrib
+  - cachetools
+  - h5py
+  - pytables
+
+  - pip:
+    - dill
+    - geoarray>=0.8.9
+    - gms_preprocessing>0.16.5
+    - nested_dict
+    - pyyaml
+    - scipy
+    - seaborn
+    - tqdm
+
+    # test and doc dependencies
+    - coverage
+    - flake8
+    - nose
+    - nose2
+    - nose-htmloutput
+    - pycodestyle
+    - pylint
+    - pydocstyle
+    - rednose
+    - sphinx-argparse
+
