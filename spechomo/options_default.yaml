@@ -1,0 +1,4 @@
+classifiers:
+    RFR:  # Random Forest
+        n_trees: 50
+        max_depth: 3

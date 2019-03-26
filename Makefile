@@ -45,13 +45,18 @@ clean-pyc: ## remove Python file artifacts
 	find . -name '__pycache__' -exec rm -fr {} +
 
 clean-test: ## remove test and coverage artifacts
+	## don't include coverage lib here because clean-test is also executed during package setup and coverage is only a
+	## test requirement
 	rm -fr .tox/
 	rm -f .coverage
 	rm -fr htmlcov/
-	rm -fr .pytest_cache
+	rm -fr nosetests.html
+	rm -fr nosetests.xml
 
 lint: ## check style with flake8
-	flake8 spechomo tests
+	flake8 --max-line-length=120 spechomo tests > ./tests/linting/flake8.log
+	pycodestyle spechomo --exclude="*.ipynb,*.ipynb*" --max-line-length=120 > ./tests/linting/pycodestyle.log
+	-pydocstyle spechomo > ./tests/linting/pydocstyle.log
 
 test: ## run tests quickly with the default Python
 	python setup.py test
@@ -60,10 +65,19 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	coverage run --source spechomo setup.py test
+	coverage erase
+	coverage run --source spechomo --source bin setup.py test
+	coverage combine 	# must be called in order to make coverage work in multiprocessing
 	coverage report -m
 	coverage html
-	$(BROWSER) htmlcov/index.html
+	# $(BROWSER) htmlcov/index.html
+
+nosetests: clean-test ## Runs nosetests with coverage, xUnit and nose-html-output
+	## - puts the coverage results in the folder 'htmlcov'
+	## - generates 'nosetests.html' (--with-html)
+	## - generates 'nosetests.xml' (--with-xunit) which is currently not visualizable by GitLab
+	nosetests -vv --with-coverage --cover-package=spechomo --cover-erase --cover-html --cover-html-dir=htmlcov \
+		--with-html --with-xunit --rednose --force-color
 
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/spechomo.rst
@@ -71,7 +85,9 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	sphinx-apidoc -o docs/ spechomo
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
-	$(BROWSER) docs/_build/html/index.html
+	#$(MAKE) -C docs latex
+	#$(MAKE) -C docs latexpdf
+	#$(BROWSER) docs/_build/html/index.html
 
 servedocs: docs ## compile the docs watching for changes
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
@@ -85,4 +101,8 @@ dist: clean ## builds source and wheel package
 	ls -l dist
 
 install: clean ## install the package to the active Python's site-packages
+	pip install -r requirements.txt
 	python setup.py install
+
+gitlab_CI_docker:  ## Build a docker image for CI use within gitlab
+	cd ./tests/gitlab_CI_docker/; bash ./build_spechomo_testsuite_image.sh

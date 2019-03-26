@@ -1,0 +1,114 @@
+before_script:
+  - git lfs pull
+
+
+stages:
+    - test
+    - deploy
+
+
+test_spechomo:
+  stage: test
+  script:
+    - source /root/miniconda3/bin/activate spechomo
+    - export GDAL_DATA=/root/miniconda3/envs/spechomo/share/gdal
+    - export PYTHONPATH=$PYTHONPATH:/root  # /root <- here are the sicor tables
+
+    # run nosetests
+    - make nosetests  # test are called here
+    # create the docs
+    - make docs
+  artifacts:
+    paths:
+    - htmlcov/
+    - docs/_build/html/
+    - nosetests.html
+    - nosetests.xml
+    - tests/linting
+  when: always
+
+
+test_styles:
+  stage: test
+  script:
+    - source /root/miniconda3/bin/activate spechomo
+    - export GDAL_DATA=/root/miniconda3/envs/spechomo/share/gdal
+    - export PYTHONPATH=$PYTHONPATH:/root  # /root <- directory needed later
+    - make lint
+  artifacts:
+    paths:
+    # - tests/data/test_outputs/*.log  # log files are deleted by test teardown method
+    - tests/linting/flake8.log
+    - tests/linting/pycodestyle.log
+    - tests/linting/pydocstyle.log
+    when: always
+
+
+test_spechomo_install:
+  stage: test
+  script:
+    - source /root/miniconda3/bin/activate
+    - conda create -y -q --name spechomo_test python=3
+    - source activate spechomo_test
+
+    # install some dependencies that cause trouble when installed via pip
+    - conda install -y -c conda-forge matplotlib numpy pandas scikit-learn
+
+    # install not pip-installable deps of geoarray /py_tools_ds
+    - conda install -y -c conda-forge basemap gdal geopandas pyproj pyqt rasterio scikit-image shapely
+
+    # install not pip-installable deps of gms_preprocessing  # FIXME
+    - conda install -y -c conda-forge lxml pyhdf python-fmask
+    - rm -rf context/gms_preprocessing
+    - git clone https://gitext.gfz-potsdam.de/geomultisens/gms_preprocessing.git ./context/gms_preprocessing
+    - cd ./context/gms_preprocessing
+    - pip install -e .
+    - cd ../../
+
+    # install sicor  # FIXME
+    - conda install -y -q -c conda-forge glymur pygrib cachetools h5py pytables
+    - rm -rf context/sicor
+    - git clone https://gitext.gfz-potsdam.de/EnMAP/sicor.git ./context/sicor
+    - cd ./context/sicor
+    - make install
+    - cd ../../
+
+    # install spechomo
+    - make install
+    - cd ..
+    - pwd
+    - ls
+
+    # test importability
+    - python -c "import spechomo; print(spechomo)"
+    - python -c "from spechomo import SpectralHomogenizer"
+
+
+pages:
+  stage: deploy
+  dependencies:
+    - test_spechomo
+  script:
+    # Create the public directory
+    - rm -rf public
+    - mkdir public
+    - mkdir -p public/doc
+    - mkdir -p public/coverage
+    - mkdir -p public/nosetests_reports
+    # Copy over the docs
+    - cp -r docs/_build/html/* public/doc/
+    # Copy over the coverage reports
+    - cp -r htmlcov/* public/coverage/
+    # Copy over the nosetests reports
+    - cp nosetests.* public/nosetests_reports/
+    # Check if everything is working great
+    - ls -al public
+    - ls -al public/doc
+    - ls -al public/coverage
+    - ls -al public/nosetests_reports
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  only:
+    - master
