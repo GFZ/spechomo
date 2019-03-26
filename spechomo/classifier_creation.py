@@ -549,7 +549,7 @@ class ClusterClassifier_Generator(object):
 
             # dump to disk
             with open(os.path.join(outDir, fName_cls), 'wb') as outF:
-                dill.dump(cls_collection.to_dict(), outF)
+                dill.dump(cls_collection.to_dict(), outF, protocol=dill.HIGHEST_PROTOCOL)
 
 
 def get_machine_learner(method='LR', **init_params):
