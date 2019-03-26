@@ -537,7 +537,7 @@ class ClusterClassifier_Generator(object):
                             ML.n_clusters = n_clusters
                             ML.clusterlabel = clusterlabel
                             ML.cluster_center = cluster_center
-                            ML.cluster_sample_spectra = sample_spectra
+                            ML.cluster_sample_spectra = sample_spectra.astype(np.int16)  # scaled between 0 and 10000
 
                             assert len(ML.src_LBA) == len(ML.src_wavelengths)
                             assert len(ML.tgt_LBA) == len(ML.tgt_wavelengths)
