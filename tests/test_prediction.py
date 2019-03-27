@@ -69,6 +69,27 @@ class Test_SpectralHomogenizer(unittest.TestCase):
         self.assertEqual(errors.shape, (50, 50, 13))
         self.assertEqual(errors.dtype, np.int16)
 
+    def test_predict_by_machine_learner__LR_RF_L8_S2(self):
+        """Test linear regression from Landsat-8 to Sentinel-2A."""
+        predarr, errors = self.SpH.predict_by_machine_learner(
+            self.testArr_L8,
+            method='LR', n_clusters=5,
+            classif_alg='RF',
+            src_satellite='Landsat-8', src_sensor='OLI_TIRS',
+            src_LBA=['1', '2', '3', '4', '5', '6', '7'],
+            tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            compute_errors=True
+        )
+
+        self.assertIsInstance(predarr, GeoArray)
+        self.assertEqual(predarr.shape, (50, 50, 13))
+        self.assertEqual(predarr.dtype, np.int16)
+
+        self.assertIsInstance(errors, np.ndarray)
+        self.assertEqual(errors.shape, (50, 50, 13))
+        self.assertEqual(errors.dtype, np.int16)
+
     def test_predict_by_machine_learner__RR_L8_S2(self):
         """Test ridge regression from Landsat-8 to Sentinel-2A."""
         predarr, errors = self.SpH.predict_by_machine_learner(
