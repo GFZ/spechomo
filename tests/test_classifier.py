@@ -36,3 +36,6 @@ class Test_ClusterClassifier(TestCase):
 
     def test_plot_sample_spectra__all_clusters(self):
         self.clf.plot_sample_spectra(cluster_label='all')
+
+    def test_collect_stats(self):
+        self.clf._collect_stats(cluster_label=1)

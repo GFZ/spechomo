@@ -10,6 +10,7 @@ from tqdm import tqdm
 import dill
 import numpy as np
 from matplotlib import pyplot as plt
+from pandas import DataFrame
 
 from .classifier_creation import get_filename_classifier_collection, get_machine_learner
 from .exceptions import ClassifierNotAvailableError
@@ -202,6 +203,28 @@ class Cluster_Learner(object):
         plt.show()
 
         return fig, axes
+
+    def _collect_stats(self, cluster_label):
+        df = DataFrame(columns=['band', 'wavelength', 'RMSE', 'MAE', 'MAPE'])
+        df.band = self.tgt_LBA
+        df.wavelength = np.round(self.tgt_wavelengths, 1)
+        df.RMSE = np.round(self.MLdict[cluster_label].rmse_per_band, 1)
+        df.MAE = np.round(self.MLdict[cluster_label].mae_per_band, 1)
+        df.MAPE = np.round(self.MLdict[cluster_label].mape_per_band, 1)
+
+        overall_stats = dict(scores=self.MLdict[cluster_label].scores)
+
+        return df, overall_stats
+
+    def print_stats(self):
+        from tabulate import tabulate
+
+        for lbl in range(self.n_clusters):
+            print('Cluster #%s:' % lbl)
+            band_stats, overall_stats = self._collect_stats(lbl)
+            print(overall_stats)
+            print(tabulate(band_stats, headers=band_stats.columns))
+            print()
 
 
 class ClassifierCollection(object):
