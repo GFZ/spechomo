@@ -3,6 +3,7 @@
 from multiprocessing import cpu_count
 from typing import Union  # noqa F401  # flake8 issue
 
+import dill
 import numpy as np
 from geoarray import GeoArray
 from matplotlib import pyplot as plt
@@ -30,6 +31,23 @@ class KMeansRSImage(object):
         self.goodSpecMask = None
         self.v = v
 
+    @classmethod
+    def from_serialized_classifier(cls, path_clf, im):
+        """Get an instance of KMeansRSImage from a previously saved classifier.
+
+        :param path_clf:    path of serialzed classifier (dill file)
+        :param im:          path of the image cube belonging to that classifier
+        :return: KMeansRSImage
+        """
+        with open(path_clf, 'rb') as inF:
+            clf = dill.load(inF)  # type: KMeans
+
+        KM = KMeansRSImage(im, clf.n_clusters, clf.n_jobs, clf.verbose)
+        KM.goodSpecMask = KM._get_goodSpecMask(KM._im2spectra(im))
+        KM._clusters = clf
+
+        return KM
+
     @property
     def clusters(self):
         # type: () -> KMeans
@@ -48,19 +66,24 @@ class KMeansRSImage(object):
 
         return self._im_clust
 
+    def _get_goodSpecMask(self, spectra):
+        if self.im.nodata is not None:
+            mask_nodata = spectra == self.im.nodata
+            goodSpecMask = np.all(~mask_nodata, axis=1)
+
+            if True not in goodSpecMask:
+                raise RuntimeError('All spectra contain no data values in one or multiple bands and are therefore not '
+                                   'usable for clustering. Clustering failed.')
+
+            return goodSpecMask
+
     def compute_clusters(self):
         spectra = self._im2spectra(self.im)
 
         # filter spectra containing no data values
         # to prevent pixels containing no data values from beeing included in the clustering
-        if self.im.nodata is not None:
-            mask_nodata = spectra == self.im.nodata
-            self.goodSpecMask = np.all(~mask_nodata, axis=1)
-
-            if True not in self.goodSpecMask:
-                raise RuntimeError('All spectra contain no data values in one or multiple bands and are therefore not '
-                                   'usable for clustering. Clustering failed.')
-
+        self.goodSpecMask = self._get_goodSpecMask(spectra)
+        if self.goodSpecMask is not None:
             spectra = spectra[self.goodSpecMask, :]
 
         kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
@@ -84,6 +107,10 @@ class KMeansRSImage(object):
     @staticmethod
     def _im2spectra(geoArr):
         return geoArr.reshape((geoArr.rows * geoArr.cols, geoArr.bands))
+
+    def dump_classifier(self, path_out):
+        with open(path_out, 'wb') as outF:
+            dill.dump(self.clusters, outF)
 
     def plot_cluster_centers(self, figsize=(15, 5)):
         # type: (tuple) -> None
