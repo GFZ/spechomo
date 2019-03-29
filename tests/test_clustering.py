@@ -26,8 +26,10 @@ class Test_KMeansRSImage(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.geoArr = GeoArray(testdata)
+        cls.geoArr = GeoArray(testdata, nodata=-9999)
         cls.geoArr.to_mem()
+        cls.geoArr[:10, :10, :10] = -9999  # simulate some pixels that have nodata in some bands (unusable for KMeans)
+
         cls.kmeans = KMeansRSImage(cls.geoArr, n_clusters=10)
 
         os.environ['MPLBACKEND'] = 'Template'  # disables matplotlib figure popups # NOTE: import geoarray sets 'Agg'
@@ -43,6 +45,17 @@ class Test_KMeansRSImage(unittest.TestCase):
 
     def test_get_random_spectra_from_each_cluster(self):
         random_samples = self.kmeans.get_random_spectra_from_each_cluster()
+        self.assertIsInstance(random_samples, dict)
+        for cluster_label in range(self.kmeans.n_clusters):
+            self.assertIn(cluster_label, random_samples)
+
+        random_samples = self.kmeans.get_random_spectra_from_each_cluster(exclude_worst_percent=50)
+        self.assertIsInstance(random_samples, dict)
+        for cluster_label in range(self.kmeans.n_clusters):
+            self.assertIn(cluster_label, random_samples)
+
+    def test_get_purest_spectra_from_each_cluster(self):
+        random_samples = self.kmeans.get_purest_spectra_from_each_cluster()
         self.assertIsInstance(random_samples, dict)
         for cluster_label in range(self.kmeans.n_clusters):
             self.assertIn(cluster_label, random_samples)
