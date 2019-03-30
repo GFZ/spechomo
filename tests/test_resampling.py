@@ -44,6 +44,16 @@ class Test_SpectralResampler(unittest.TestCase):
         sig_rsp = sr.resample_signature(spectrum)
         self.assertTrue(np.any(sig_rsp), msg='Output signature is empty.')
 
+    def test_resample_signature_with_nodata(self):
+        # Get a hyperspectral spectrum.
+        spectrum_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=np.float).flatten()
+        spectrum = self.geoArr[0, 0, :].flatten()
+        spectrum[130: 140] = -9999
+
+        sr = SR(spectrum_wvl, self.srf_l8)
+        sig_rsp = sr.resample_signature(spectrum, nodataVal=-9999)
+        self.assertTrue(np.any(sig_rsp), msg='Output signature is empty.')
+
     def test_resample_image(self):
         # Get a hyperspectral spectrum.
         image_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=np.float).flatten()

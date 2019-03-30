@@ -58,12 +58,13 @@ class SpectralResampler(object):
 
         return self._srf_1nm
 
-    def resample_signature(self, spectrum, scale_factor=10000, v=False):
-        # type: (np.ndarray, int, bool) -> np.ndarray
+    def resample_signature(self, spectrum, scale_factor=10000, nodataVal=None, v=False):
+        # type: (np.ndarray, int, Union[int, float], bool) -> np.ndarray
         """Resample the given spectrum according to the spectral response functions of the target instument.
 
         :param spectrum:        spectral signature data
         :param scale_factor:    the scale factor to apply to the given spectrum when it is plotted (default: 10000)
+        :param nodataVal:       no data value to be respected during resampling
         :param v:               enable verbose mode (shows a plot of the resampled spectrum) (default: False)
         :return:    resampled spectral signature
         """
@@ -74,6 +75,10 @@ class SpectralResampler(object):
         assert spectrum.size == self.wvl_src_nm.size
 
         # resample input spectrum and wavelength to 1nm
+        if nodataVal is not None:
+            spectrum = spectrum.astype(np.float)
+            spectrum[spectrum == nodataVal] = np.nan
+
         spectrum_1nm = interp1d(self.wvl_src_nm, spectrum,
                                 bounds_error=False, fill_value=0, kind='linear')(self.wvl_1nm)
 
@@ -81,11 +86,20 @@ class SpectralResampler(object):
             plt.figure()
             plt.plot(self.wvl_1nm, spectrum_1nm/scale_factor, '.')
 
+        if nodataVal is not None:
+            spectrum_1nm = np.ma.masked_invalid(spectrum_1nm, nodataVal)
+
         spectrum_rsp = []
 
         for band, wvl_center in zip(self.srf_tgt.bands, self.srf_tgt.wvl):
             # compute the resampled spectral value (np.average computes the weighted mean value)
-            specval_rsp = np.average(spectrum_1nm, weights=self.srf_1nm[band])
+            if nodataVal is not None:
+                specval_rsp = np.ma.average(spectrum_1nm, weights=self.srf_1nm[band])
+                if not specval_rsp and specval_rsp != 0:
+                    specval_rsp = nodataVal
+
+            else:
+                specval_rsp = np.ma.average(spectrum_1nm, weights=self.srf_1nm[band])
 
             if v:
                 plt.plot(self.wvl_1nm, self.srf_1nm[band]/max(self.srf_1nm[band]))
@@ -93,6 +107,7 @@ class SpectralResampler(object):
 
             spectrum_rsp.append(specval_rsp)
 
+        # FIXME spectrum_rsp still contains NaNs if nodataVal is given
         return np.array(spectrum_rsp)
 
     def resample_spectra(self, spectra, chunksize=200, CPUs=None):
