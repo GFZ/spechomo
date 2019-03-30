@@ -114,7 +114,8 @@ class KMeansRSImage(object):
             kmeans.labels_ = labels
 
         else:
-            print('default mode')
+            if self.v:
+                print('Fitting KMeans...')
             kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
             kmeans.fit(spectra)
 

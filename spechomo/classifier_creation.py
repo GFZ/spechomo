@@ -193,8 +193,8 @@ class ReferenceCube_Generator(object):
 
         return self.refcubes
 
-    def cluster_image_and_get_uniform_spectra(self, im, downsamp_sat='Sentinel-2A', downsamp_sen='MSI', progress=False,
-                                              basename_clf_dump=''):
+    def cluster_image_and_get_uniform_spectra(self, im, downsamp_sat=None, downsamp_sen=None, basename_clf_dump='',
+                                              progress=False):
         # type: (Union[str, GeoArray, np.ndarray], str, str, bool, str) -> np.ndarray
         """Compute KMeans clusters for the given image and return the an array of uniform random samples.
 
@@ -202,9 +202,9 @@ class ReferenceCube_Generator(object):
         :param downsamp_sat:    satellite code used for intermediate image dimensionality reduction (input image is
                                 spectrally resampled to this satellite before it is clustered). requires downsamp_sen.
                                 If it is None, no intermediate downsampling is performed.
-        :param downsamp_sen:    sensor code used for intermediate image dimensionality reduction (required downsamp_sat)
-        :param progress:        whether to show progress bars or not
+        :param downsamp_sen:    sensor code used for intermediate image dimensionality reduction (requires downsamp_sat)
         :param basename_clf_dump:   basename of serialized KMeans classifier
+        :param progress:        whether to show progress bars or not
         :return:    2D array (rows: tgt_n_samples, columns: spectral information / bands
         """
         # input validation
@@ -221,6 +221,7 @@ class ReferenceCube_Generator(object):
             im2clust = self.resample_image_spectrally(im2clust, tgt_srf, progress=progress)  # output = int16
 
         # compute KMeans clusters for the spectrally resampled image
+        # NOTE: Nodata values are ignored during KMeans clustering.
         self.logger.info('Computing %s KMeans clusters from the input image %s...'
                          % (self.n_clusters, im2clust.basename))
         kmeans = KMeansRSImage(im2clust, n_clusters=self.n_clusters, CPUs=self.CPUs, v=self.v)
@@ -237,6 +238,7 @@ class ReferenceCube_Generator(object):
                                                      % (basename_clf_dump, kmeans.n_clusters)))
 
         # randomly grab the given number of spectra from each cluster, restricted to the 30 % purest spectra
+        #   -> no spectra containing nodata values are returned
         self.logger.info('Getting %s random spectra from each cluster...' % (self.tgt_n_samples // self.n_clusters))
         random_samples = kmeans.get_random_spectra_from_each_cluster(src_im=GeoArray(im),
                                                                      samplesize=self.tgt_n_samples // self.n_clusters,
