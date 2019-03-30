@@ -77,7 +77,12 @@ class KMeansRSImage(object):
 
             return goodSpecMask
 
-    def compute_clusters(self):
+    def compute_clusters(self, nmax_spectra=1000000):
+        """Compute the cluster means and labels.
+
+        :param nmax_spectra:    maximum number of spectra to be included (pseudo-randomly selected (reproducable))
+        :return:
+        """
         spectra = self._im2spectra(self.im)
 
         # filter spectra containing no data values
@@ -86,8 +91,34 @@ class KMeansRSImage(object):
         if self.goodSpecMask is not None:
             spectra = spectra[self.goodSpecMask, :]
 
-        kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
-        self.clusters = kmeans.fit(spectra)
+        # data reduction in case we have too many spectra
+        if spectra.shape[0] > 1e6:
+            if self.v:
+                print('Reducing data...')
+            idxs_specIncl = np.random.RandomState(seed=0).choice(range(spectra.shape[0]), nmax_spectra)
+            idxs_specNotIncl = np.array(range(spectra.shape[0]))[~np.in1d(range(spectra.shape[0]), idxs_specIncl)]
+            spectra_incl = spectra[idxs_specIncl, :]
+            spectra_notIncl = spectra[idxs_specNotIncl, :]
+
+            if self.v:
+                print('Fitting KMeans...')
+            kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
+            kmeans.fit(spectra_incl)
+
+            if self.v:
+                print('Computing full resolution labels...')
+            labels = np.zeros((spectra.shape[0]), dtype=kmeans.labels_.dtype)
+            labels[idxs_specIncl] = kmeans.labels_
+            labels[idxs_specNotIncl] = kmeans.predict(spectra_notIncl)
+
+            kmeans.labels_ = labels
+
+        else:
+            print('default mode')
+            kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
+            kmeans.fit(spectra)
+
+        self.clusters = kmeans
 
         return self.clusters
 
@@ -111,6 +142,9 @@ class KMeansRSImage(object):
     def dump_classifier(self, path_out):
         with open(path_out, 'wb') as outF:
             dill.dump(self.clusters, outF)
+
+    def save_clustered_image(self, path_out, **kw_save):
+        GeoArray(self.im_clust, geotransform=self.im.gt, projection=self.im.prj, nodata=-9999).save(path_out, **kw_save)
 
     def plot_cluster_centers(self, figsize=(15, 5)):
         # type: (tuple) -> None

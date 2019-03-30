@@ -36,8 +36,8 @@ class ReferenceCube_Generator(object):
     """Class for creating reference cube that are later used as training data for SpecHomo_Classifier."""
 
     def __init__(self, filelist_refs, tgt_sat_sen_list=None, dir_refcubes='', n_clusters=10, tgt_n_samples=1000,
-                 v=False, logger=None, CPUs=None):
-        # type: (List[str], List[Tuple[str, str]], str, int, int, bool, logging.Logger, Union[None, int]) -> None
+                 v=False, logger=None, CPUs=None, dir_clf_dump=''):
+        # type: (List[str], List[Tuple[str, str]], str, int, int, bool, logging.Logger, Union[None, int], str) -> None
         """Initialize ReferenceCube_Generator.
 
         :param filelist_refs:   list of (hyperspectral) reference images,
@@ -50,6 +50,7 @@ class ReferenceCube_Generator(object):
         :param v:               verbose mode
         :param logger:          instance of logging.Logger()
         :param CPUs:            number CPUs to use for computation
+        :param dir_clf_dump:    directory where to store the serialized KMeans classifier
         """
         # args + kwargs
         self.ims_ref = [filelist_refs, ] if isinstance(filelist_refs, str) else filelist_refs
@@ -71,6 +72,7 @@ class ReferenceCube_Generator(object):
         self.v = v
         self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
         self.CPUs = CPUs or cpu_count()
+        self.dir_clf_dump = dir_clf_dump
 
         # privates
         self._refcubes = \
@@ -159,12 +161,15 @@ class ReferenceCube_Generator(object):
         :param progress:        show progress bar (default: True)
         :return:                np.array: [tgt_n_samples x images x spectral bands of the target sensor]
         """
-        for im in self.ims_ref:
+        for im in self.ims_ref:  # type: Union[str, GeoArray]
             # TODO implement check if current image is already included in the refcube -> skip in that case
             src_im = GeoArray(im)
 
             # get random spectra of the original (hyperspectral) image, equally distributed over all computed clusters
-            unif_random_spectra = self.cluster_image_and_get_uniform_spectra(src_im, progress=progress).astype(np.int16)
+            baseN = os.path.splitext(os.path.basename(im))[0] if isinstance(im, str) else im.basename
+            unif_random_spectra = self.cluster_image_and_get_uniform_spectra(src_im,
+                                                                             progress=progress,
+                                                                             basename_clf_dump=baseN).astype(np.int16)
 
             # resample the set of random spectra to match the spectral characteristics of all target sensors
             for tgt_sat, tgt_sen in self.tgt_sat_sen_list:
@@ -188,8 +193,9 @@ class ReferenceCube_Generator(object):
 
         return self.refcubes
 
-    def cluster_image_and_get_uniform_spectra(self, im, downsamp_sat='Sentinel-2A', downsamp_sen='MSI', progress=False):
-        # type: (Union[str, GeoArray, np.ndarray], str, str, bool) -> np.ndarray
+    def cluster_image_and_get_uniform_spectra(self, im, downsamp_sat='Sentinel-2A', downsamp_sen='MSI', progress=False,
+                                              basename_clf_dump=''):
+        # type: (Union[str, GeoArray, np.ndarray], str, str, bool, str) -> np.ndarray
         """Compute KMeans clusters for the given image and return the an array of uniform random samples.
 
         :param im:              image to be clustered
@@ -198,6 +204,7 @@ class ReferenceCube_Generator(object):
                                 If it is None, no intermediate downsampling is performed.
         :param downsamp_sen:    sensor code used for intermediate image dimensionality reduction (required downsamp_sat)
         :param progress:        whether to show progress bars or not
+        :param basename_clf_dump:   basename of serialized KMeans classifier
         :return:    2D array (rows: tgt_n_samples, columns: spectral information / bands
         """
         # input validation
@@ -223,10 +230,20 @@ class ReferenceCube_Generator(object):
             kmeans.plot_cluster_centers()
             kmeans.plot_cluster_histogram()
 
-        # randomly grab the given number of spectra from each cluster
+        if self.dir_clf_dump and basename_clf_dump:
+            kmeans.dump_classifier(os.path.join(self.dir_clf_dump, '%s__KMeansClf.dill' % basename_clf_dump))
+            kmeans.save_clustered_image(os.path.join(self.dir_clf_dump,
+                                                     '%s__KMeansClusterMap_nclust%d.bsq'
+                                                     % (basename_clf_dump, kmeans.n_clusters)))
+
+        # randomly grab the given number of spectra from each cluster, restricted to the 30 % purest spectra
         self.logger.info('Getting %s random spectra from each cluster...' % (self.tgt_n_samples // self.n_clusters))
         random_samples = kmeans.get_random_spectra_from_each_cluster(src_im=GeoArray(im),
-                                                                     samplesize=self.tgt_n_samples // self.n_clusters)
+                                                                     samplesize=self.tgt_n_samples // self.n_clusters,
+                                                                     exclude_worst_percent=70)
+        # random_samples = kmeans\
+        #     .get_purest_spectra_from_each_cluster(src_im=GeoArray(im),
+        #                                           samplesize=self.tgt_n_samples // self.n_clusters)
 
         # combine the spectra (2D arrays) of all clusters to a single 2D array
         self.logger.info('Combining random samples from all clusters.')
@@ -499,6 +516,9 @@ class ClusterClassifier_Generator(object):
                         src_df.insert(0, 'cluster_label', labels1D)
                         tgt_df = DataFrame(tgt_spectra, columns=['B%s' % band for band in tgt_LBA])
                         tgt_df.insert(0, 'cluster_label', labels1D)
+
+                        # TODO: exclude the noisy spectra with the largest spectral distances to their cluster centers
+                        #       here
 
                         for clusterlabel in range(n_clusters):
                             self.logger.debug('Creating %s classifier for cluster %s...' % (method, clusterlabel))

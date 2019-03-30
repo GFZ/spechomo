@@ -48,7 +48,10 @@ class Test_ReferenceCube_Generator(unittest.TestCase):
         cls.tgt_n_samples = 500
         cls.SHC = ReferenceCube_Generator(cls.testIms, dir_refcubes=cls.tmpOutdir.name,
                                           tgt_sat_sen_list=cls.tgt_sat_sen_list,
-                                          n_clusters=cls.n_clusters, tgt_n_samples=cls.tgt_n_samples, v=False)
+                                          n_clusters=cls.n_clusters,
+                                          tgt_n_samples=cls.tgt_n_samples,
+                                          dir_clf_dump=cls.tmpOutdir.name,
+                                          v=False)
 
     @classmethod
     def tearDownClass(cls):
@@ -56,7 +59,8 @@ class Test_ReferenceCube_Generator(unittest.TestCase):
 
     def test_cluster_image_and_get_uniform_samples(self):
         src_im = self.SHC.ims_ref[0]
-        unif_random_spectra = self.SHC.cluster_image_and_get_uniform_spectra(src_im)
+        baseN = os.path.splitext(os.path.basename(src_im))[0]
+        unif_random_spectra = self.SHC.cluster_image_and_get_uniform_spectra(src_im, basename_clf_dump=baseN)
         self.assertIsInstance(unif_random_spectra, np.ndarray)
         self.assertEqual(unif_random_spectra.shape, (self.tgt_n_samples, GeoArray(src_im).bands))
 
