@@ -284,7 +284,7 @@ class KMeansRSImage(object):
             else:
                 cluster_subset = df[df.cluster_label == label].loc[:, 'spectral_distance':]
                 cluster_subset.sort_values(by=['spectral_distance'], ascending=True)
-                min_th = np.percentile(cluster_subset.spectral_distance, exclude_worst_percent)
+                min_th = np.percentile(cluster_subset.spectral_distance, 100 - exclude_worst_percent)
                 cluster_subset = cluster_subset[cluster_subset.spectral_distance < min_th].loc[:, 'B1':]
 
             # get random sample while filling it with duplicates of the same sample when cluster has not enough spectra

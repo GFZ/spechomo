@@ -537,11 +537,11 @@ class ClusterClassifier_Generator(object):
 
                             # get 100 sample source spectra (only from those spectra used for model training)
                             # NOTE: We exclude the noisy spectra with the largest spectral distances to their cluster
-                            #       center here (random spectra from within the upper 50 %)
+                            #       center here (random spectra from within the upper 40 %)
                             src_df_lbl_train = DataFrame(train_X, columns=['spectral_distance'] +
                                                                           ['B%s' % band for band in src_LBA])
                             src_df_lbl_train.sort_values(by=['spectral_distance'], ascending=True)
-                            min_th = np.percentile(src_df_lbl_train.spectral_distance, 50)
+                            min_th = np.percentile(src_df_lbl_train.spectral_distance, 40)
                             src_df_lbl_train_best = src_df_lbl_train[src_df_lbl_train.spectral_distance < min_th]
                             sample_spectra = \
                                 np.array(src_df_lbl_train_best.sample(100, replace=True, random_state=20))[:, 1:]
