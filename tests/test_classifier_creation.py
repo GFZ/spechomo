@@ -82,7 +82,7 @@ class Test_ReferenceCube_Generator(unittest.TestCase):
         refcubes = self.SHC.generate_reference_cubes()
         self.assertIsInstance(refcubes, dict)
         self.assertIsInstance(refcubes[('Landsat-8', 'OLI_TIRS')], RefCube)
-        self.assertEqual(refcubes[('Landsat-8', 'OLI_TIRS')].data.shape, (self.tgt_n_samples, len(self.testIms), 9))
+        self.assertEqual(refcubes[('Landsat-8', 'OLI_TIRS')].data.shape, (self.tgt_n_samples, len(self.testIms), 7))
         self.assertNotEqual(len(os.listdir(self.tmpOutdir.name)), 0)
 
     # @unittest.SkipTest
