@@ -548,6 +548,7 @@ class ClusterClassifier_Generator(object):
 
                             # compute cluster center for source spectra (only on those spectra used for model training)
                             cluster_center = np.mean(train_X[:, 1:], axis=0).astype(src_data.dtype)
+                            cluster_median = np.median(train_X[:, 1:], axis=0).astype(src_data.dtype)
 
                             # train the learner
                             # NOTE: the first column contains spectral distances and is therefore excluded here
@@ -568,6 +569,7 @@ class ClusterClassifier_Generator(object):
                             ML.n_clusters = n_clusters
                             ML.clusterlabel = clusterlabel
                             ML.cluster_center = cluster_center
+                            ML.cluster_median = cluster_median
                             ML.cluster_sample_spectra = sample_spectra.astype(np.int16)  # scaled between 0 and 10000
 
                             assert len(ML.src_LBA) == len(ML.src_wavelengths)
