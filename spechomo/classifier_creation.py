@@ -247,6 +247,7 @@ class ReferenceCube_Generator(object):
                              % (self.n_clusters, im2clust.basename))
             kmeans = KMeansRSImage(im2clust, n_clusters=self.n_clusters, CPUs=self.CPUs, v=self.v)
             kmeans.compute_clusters()
+            kmeans.compute_spectral_distances()
 
             if self.dir_clf_dump and basename_clf_dump:
                 kmeans.save_clustermap(path_clustermap)

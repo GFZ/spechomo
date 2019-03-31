@@ -147,6 +147,10 @@ class KMeansRSImage(object):
         labels = self.clusters.predict(im2spectra(GeoArray(image)))
         return labels
 
+    def compute_spectral_distances(self):
+        self._spectral_distances = np.min(self.clusters.fit_transform(self.spectra), axis=1)
+        return self.spectral_distances
+
     @property
     def labels(self):
         """Get labels for all clustered spectra (excluding spectra that contain nodata values)."""
@@ -170,7 +174,7 @@ class KMeansRSImage(object):
         """Get spectral distances for all pixels that don't contain nodata values."""
         # TODO compute that in multiprocessing
         if self._spectral_distances is None:
-            self._spectral_distances = np.min(self.clusters.fit_transform(self.spectra), axis=1)
+            self._spectral_distances = self.compute_spectral_distances()
 
         return self._spectral_distances
 
