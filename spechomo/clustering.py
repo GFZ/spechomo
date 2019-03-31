@@ -33,6 +33,7 @@ class KMeansRSImage(object):
 
     @classmethod
     def from_serialized_classifier(cls, path_clf, im):
+        # type: (str, GeoArray) -> KMeansRSImage
         """Get an instance of KMeansRSImage from a previously saved classifier.
 
         :param path_clf:    path of serialzed classifier (dill file)
@@ -136,6 +137,9 @@ class KMeansRSImage(object):
         labels = self.clusters.predict(self._im2spectra(GeoArray(image)))
         return labels
 
+    def compute_spectral_distances(self, src_spectra):
+        return np.min(self.clusters.fit_transform(src_spectra), axis=1)
+
     @staticmethod
     def _im2spectra(geoArr):
         return geoArr.reshape((geoArr.rows * geoArr.cols, geoArr.bands))
@@ -232,7 +236,7 @@ class KMeansRSImage(object):
         if exclude_worst_percent is not None:
             if not 0 < exclude_worst_percent < 100:
                 raise ValueError(exclude_worst_percent)
-            df.insert(1, 'spectral_distance', np.min(self.clusters.fit_transform(src_spectra), axis=1))
+            df.insert(1, 'spectral_distance', self.compute_spectral_distances(src_spectra))
 
         # get random sample from each cluster and generate a dict like {cluster_label: random_sample}
         # NOTE: nodata label is skipped
@@ -273,7 +277,7 @@ class KMeansRSImage(object):
             src_spectra = self._im2spectra(src_im)[self.goodSpecMask, :]
         df = DataFrame(src_spectra, columns=['B%s' % band for band in range(1, src_im.bands + 1)], )
         df.insert(0, 'cluster_label', self.clusters.labels_)
-        df.insert(1, 'spectral_distance', np.min(self.clusters.fit_transform(src_spectra), axis=1))
+        df.insert(1, 'spectral_distance', self.compute_spectral_distances(src_spectra))
 
         # get random sample from each cluster and generate a dict like {cluster_label: random_sample}
         random_samples = dict()

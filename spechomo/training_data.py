@@ -322,11 +322,9 @@ class RefCube(object):
         :param fmt:         output format as GDAL format code
         :return:
         """
+        self.filepath = self.filepath or path_out
         self.data.save(out_path=path_out, fmt=fmt)
 
         # save metadata as JSON file
-        meta2write = self.metadata.copy()
-        meta2write['filepath'] = self.filepath or path_out
-
         with open(os.path.splitext(path_out)[0] + '.meta', 'w') as metaF:
-            json.dump(meta2write, metaF, separators=(',', ': '), indent=4)
+            json.dump(self.metadata.copy(), metaF, separators=(',', ': '), indent=4)

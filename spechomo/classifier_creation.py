@@ -113,14 +113,17 @@ class ReferenceCube_Generator(object):
 
     def _get_tgt_GMS_identifier(self, tgt_sat, tgt_sen):
         # type: (str, str) -> GMS_identifier
-        """Get a GMS identifier for the specified target sensor such that all possible bands are included (L1A)
+        """Get a GMS identifier for the specified target sensor such that all possible bands are included (L1C)
+
+        NOTE: We don't use L1A here because the signal of the additional bands at L1A is not predictable by spectral
+              harmonization as these bands are not driven by surface albedo but by atmospheric conditions (945, 1373nm).
 
         :param tgt_sat:     target satellite
         :param tgt_sen:     target sensor
         :return:
         """
         return GMS_identifier(satellite=tgt_sat, sensor=tgt_sen, subsystem=None, image_type='RSD', dataset_ID=-9999,
-                              proc_level='L1A', logger=self.logger)  # use L1A to have all bands available
+                              proc_level='L1C', logger=self.logger)  # use L1A to have all bands available
 
     def _get_tgt_LayerBandsAssignment(self, tgt_sat, tgt_sen):
         # type: (str, str) -> list
@@ -133,7 +136,7 @@ class ReferenceCube_Generator(object):
         :param tgt_sen:     target sensor
         :return:
         """
-        return get_LayerBandsAssignment(self._get_tgt_GMS_identifier(tgt_sat, tgt_sen), no_pan=False)
+        return get_LayerBandsAssignment(self._get_tgt_GMS_identifier(tgt_sat, tgt_sen), no_pan=False, sort_by_cwl=True)
 
     def _get_tgt_SRF_object(self, tgt_sat, tgt_sen):
         # type: (str, str) -> SRF
@@ -145,8 +148,8 @@ class ReferenceCube_Generator(object):
         """
         return SRF(self._get_tgt_GMS_identifier(tgt_sat, tgt_sen), no_pan=False)
 
-    def generate_reference_cubes(self, fmt_out='ENVI', progress=True):
-        # type: (str, bool) -> ReferenceCube_Generator.refcubes
+    def generate_reference_cubes(self, fmt_out='ENVI', try_read_dumped_clf=True, progress=True):
+        # type: (str, bool, bool) -> ReferenceCube_Generator.refcubes
         """Generate reference spectra from all hyperspectral input images.
 
         Workflow:
@@ -157,9 +160,11 @@ class ReferenceCube_Generator(object):
         2. Spectral resampling of the selected hyperspectral signatures (for each input image)
         3. Add resampled spectra to reference cubes for each target sensor and write cubes to disk
 
-        :param fmt_out:         output format (GDAL driver code)
-        :param progress:        show progress bar (default: True)
-        :return:                np.array: [tgt_n_samples x images x spectral bands of the target sensor]
+        :param fmt_out:             output format (GDAL driver code)
+        :param try_read_dumped_clf: try to read a prediciouly serialized KMeans classifier from disk
+                                    (massively speeds up the RefCube generation)
+        :param progress:            show progress bar (default: True)
+        :return:                    np.array: [tgt_n_samples x images x spectral bands of the target sensor]
         """
         for im in self.ims_ref:  # type: Union[str, GeoArray]
             # TODO implement check if current image is already included in the refcube -> skip in that case
@@ -168,6 +173,7 @@ class ReferenceCube_Generator(object):
             # get random spectra of the original (hyperspectral) image, equally distributed over all computed clusters
             baseN = os.path.splitext(os.path.basename(im))[0] if isinstance(im, str) else im.basename
             unif_random_spectra = self.cluster_image_and_get_uniform_spectra(src_im,
+                                                                             try_read_dumped_clf=try_read_dumped_clf,
                                                                              progress=progress,
                                                                              basename_clf_dump=baseN).astype(np.int16)
 
@@ -194,8 +200,8 @@ class ReferenceCube_Generator(object):
         return self.refcubes
 
     def cluster_image_and_get_uniform_spectra(self, im, downsamp_sat=None, downsamp_sen=None, basename_clf_dump='',
-                                              progress=False):
-        # type: (Union[str, GeoArray, np.ndarray], str, str, bool, str) -> np.ndarray
+                                              try_read_dumped_clf=True, progress=False):
+        # type: (Union[str, GeoArray, np.ndarray], str, str, str, bool, bool) -> np.ndarray
         """Compute KMeans clusters for the given image and return the an array of uniform random samples.
 
         :param im:              image to be clustered
@@ -204,6 +210,8 @@ class ReferenceCube_Generator(object):
                                 If it is None, no intermediate downsampling is performed.
         :param downsamp_sen:    sensor code used for intermediate image dimensionality reduction (requires downsamp_sat)
         :param basename_clf_dump:   basename of serialized KMeans classifier
+        :param try_read_dumped_clf: try to read a prediciouly serialized KMeans classifier from disk
+                                    (massively speeds up the RefCube generation)
         :param progress:        whether to show progress bars or not
         :return:    2D array (rows: tgt_n_samples, columns: spectral information / bands
         """
@@ -214,28 +222,39 @@ class ReferenceCube_Generator(object):
 
         im2clust = GeoArray(im)
 
-        # first, perform spectral resampling to Sentinel-2 to reduce dimensionality (speedup)
-        if downsamp_sat and downsamp_sen:
-            tgt_srf = SRF(GMS_identifier(satellite=downsamp_sat, sensor=downsamp_sen, subsystem=None, image_type='RSD',
-                                         dataset_ID=-9999, proc_level='L1A', logger=self.logger))
-            im2clust = self.resample_image_spectrally(im2clust, tgt_srf, progress=progress)  # output = int16
+        # get a KMeans classifier for the hyperspectral image
+        path_clf = os.path.join(self.dir_clf_dump, '%s__KMeansClf.dill' % basename_clf_dump)
+        path_clustermap = os.path.join(self.dir_clf_dump,
+                                       '%s__KMeansClusterMap_nclust%d.bsq' % (basename_clf_dump, self.n_clusters))
 
-        # compute KMeans clusters for the spectrally resampled image
-        # NOTE: Nodata values are ignored during KMeans clustering.
-        self.logger.info('Computing %s KMeans clusters from the input image %s...'
-                         % (self.n_clusters, im2clust.basename))
-        kmeans = KMeansRSImage(im2clust, n_clusters=self.n_clusters, CPUs=self.CPUs, v=self.v)
-        kmeans.compute_clusters()
+        if try_read_dumped_clf and os.path.isfile(path_clf):
+            # read the previously dumped classifier from disk
+            self.logger.info('Reading previously serialized KMeans classifier from %s...' % path_clf)
+            kmeans = KMeansRSImage.from_serialized_classifier(path_clf=path_clf, im=im2clust)
+
+        else:
+            # create KMeans classifier
+            # first, perform spectral resampling to Sentinel-2 to reduce dimensionality (speedup)
+            if downsamp_sat and downsamp_sen:
+                # NOTE: The KMeansRSImage class already reduces the input data to 1 million spectra by default
+                tgt_srf = SRF(GMS_identifier(satellite=downsamp_sat, sensor=downsamp_sen, subsystem=None,
+                                             image_type='RSD', dataset_ID=-9999, proc_level='L1A', logger=self.logger))
+                im2clust = self.resample_image_spectrally(im2clust, tgt_srf, progress=progress)  # output = int16
+
+            # compute KMeans clusters for the spectrally resampled image
+            # NOTE: Nodata values are ignored during KMeans clustering.
+            self.logger.info('Computing %s KMeans clusters from the input image %s...'
+                             % (self.n_clusters, im2clust.basename))
+            kmeans = KMeansRSImage(im2clust, n_clusters=self.n_clusters, CPUs=self.CPUs, v=self.v)
+            kmeans.compute_clusters()
+
+            if self.dir_clf_dump and basename_clf_dump:
+                kmeans.save_clustered_image(path_clustermap)
+                kmeans.dump_classifier(path_clf)
 
         if self.v:
             kmeans.plot_cluster_centers()
             kmeans.plot_cluster_histogram()
-
-        if self.dir_clf_dump and basename_clf_dump:
-            kmeans.dump_classifier(os.path.join(self.dir_clf_dump, '%s__KMeansClf.dill' % basename_clf_dump))
-            kmeans.save_clustered_image(os.path.join(self.dir_clf_dump,
-                                                     '%s__KMeansClusterMap_nclust%d.bsq'
-                                                     % (basename_clf_dump, kmeans.n_clusters)))
 
         # randomly grab the given number of spectra from each cluster, restricted to the 30 % purest spectra
         #   -> no spectra containing nodata values are returned
@@ -334,20 +353,17 @@ class ClusterClassifier_Generator(object):
                              ['1', '2', '3', '4', '5', '6', '7'],
                              ['1', '2', '3', '4', '5', '6', '7'], ...]
         """
-        L1A_GMSid = GMS_identifier(satellite=satellite, sensor=sensor, subsystem=None, image_type='RSD',
-                                   dataset_ID=-9999, proc_level='L1A', logger=None)
-        # different numbers of bands after AC
+        # get L1C bands (after AC)
+        # NOTE: - signal of additional bands at L1A is not predictable by spectral harmonization because these bands
+        #         are not driven by surface albedo but by atmospheric conditions (945, 1373 nm)
+        #       - Landsat-8 band 9 (PAN) is currently not supported by AC => L1C_withPan does not exist  # FIXME
         L1C_GMSid = GMS_identifier(satellite=satellite, sensor=sensor, subsystem=None, image_type='RSD',
                                    dataset_ID=-9999, proc_level='L1C', logger=None)
 
         LBAs = []
-        for lba in [get_LayerBandsAssignment(L1A_GMSid, no_pan=False, sort_by_cwl=True),  # L1A_withPan_cwlSorted
-                    get_LayerBandsAssignment(L1C_GMSid, no_pan=False, sort_by_cwl=True),  # L1C_withPan_cwlSorted
-                    get_LayerBandsAssignment(L1A_GMSid, no_pan=True, sort_by_cwl=True),  # L1A_noPan_cwlSorted
-                    get_LayerBandsAssignment(L1C_GMSid, no_pan=True, sort_by_cwl=True),  # L1A_noPan_cwlSorted
-                    get_LayerBandsAssignment(L1A_GMSid, no_pan=False, sort_by_cwl=False),  # L1A_withPan_alphabetical
+        for lba in [get_LayerBandsAssignment(L1C_GMSid, no_pan=False, sort_by_cwl=True),  # L1C_withPan_cwlSorted
+                    get_LayerBandsAssignment(L1C_GMSid, no_pan=True, sort_by_cwl=True),  # L1C_noPan_cwlSorted
                     get_LayerBandsAssignment(L1C_GMSid, no_pan=False, sort_by_cwl=False),  # L1C_withPan_alphabetical
-                    get_LayerBandsAssignment(L1A_GMSid, no_pan=True, sort_by_cwl=False),  # L1A_noPan_alphabetical
                     get_LayerBandsAssignment(L1C_GMSid, no_pan=True, sort_by_cwl=False),  # L1C_noPan_alphabetical
                     ]:
             if lba not in LBAs:
@@ -441,6 +457,7 @@ class ClusterClassifier_Generator(object):
         km = KMeansRSImage(cube2cluster.data, n_clusters=n_clusters, CPUs=CPUs)
         km.compute_clusters()
         labels1D = km.clusters.labels_
+        # TODO compute spectral distances
 
         return labels1D
 
@@ -481,6 +498,7 @@ class ClusterClassifier_Generator(object):
             # get cluster labels for each source cube separately
             self.logger.info('Clustering %s %s reference cube (%s clusters)...'
                              % (src_cube.satellite, src_cube.sensor, n_clusters))
+            # TODO: in case of S2A and L8, exclude 945 /1374 nm/ PAN from clustering! -> remove L1A-LBAs?
             labels1D = self.cluster_refcube_spectra(src_cube, n_clusters=n_clusters, CPUs=CPUs)
 
             for tgt_cube in self.refcubes:
