@@ -117,10 +117,6 @@ class Test_ClusterClassifier_Generator(unittest.TestCase):
         CCG = ClusterClassifier_Generator([RC, RC])
         self.assertIsInstance(CCG, ClusterClassifier_Generator)
 
-    def test_cluster_refcube_spectra(self):
-        CCG = ClusterClassifier_Generator([refcube_l8, refcube_l5])
-        CCG.cluster_refcube_spectra(cube2cluster=refcube_l8, n_clusters=5)
-
     def test_create_classifiers_LR(self):
         """Test creation of linear regression classifiers."""
         CCG = ClusterClassifier_Generator([refcube_l8, refcube_l5])

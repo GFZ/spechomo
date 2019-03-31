@@ -67,4 +67,4 @@ class Test_KMeansRSImage(unittest.TestCase):
         self.kmeans.plot_cluster_histogram()
 
     def test_plot_clustered_image(self):
-        self.kmeans.plot_clustered_image()
+        self.kmeans.plot_clustermap()

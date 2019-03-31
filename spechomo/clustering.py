@@ -10,6 +10,8 @@ from matplotlib import pyplot as plt
 from pandas import DataFrame
 from sklearn.cluster import KMeans
 
+from .utils import im2spectra
+
 
 class KMeansRSImage(object):
     """Class for clustering a given input image by using K-Means algorithm.
@@ -22,17 +24,20 @@ class KMeansRSImage(object):
 
         # privates
         self._clusters = None
-        self._im_clust = None
+        self._clustermap = None
+        self._goodSpecMask = None
         self._spectra = None
+        self._labels_with_nodata = None
+        self._spectral_distances = None
+        self._spectral_distances_with_nodata = None
 
         self.im = im
         self.n_clusters = n_clusters
         self.CPUs = CPUs or cpu_count()
-        self.goodSpecMask = None
         self.v = v
 
     @classmethod
-    def from_serialized_classifier(cls, path_clf, im):
+    def from_disk(cls, path_clf, im):
         # type: (str, GeoArray) -> KMeansRSImage
         """Get an instance of KMeansRSImage from a previously saved classifier.
 
@@ -41,13 +46,46 @@ class KMeansRSImage(object):
         :return: KMeansRSImage
         """
         with open(path_clf, 'rb') as inF:
-            clf = dill.load(inF)  # type: KMeans
+            undilled = dill.load(inF)  # type: dict
 
-        KM = KMeansRSImage(im, clf.n_clusters, clf.n_jobs, clf.verbose)
-        KM.goodSpecMask = KM._get_goodSpecMask(KM._im2spectra(im))
-        KM._clusters = clf
+        KM = KMeansRSImage(im,
+                           undilled['clusters'].n_clusters,
+                           undilled['clusters'].n_jobs,
+                           undilled['clusters'].verbose)
+        KM._clusters = undilled['clusters']
+        KM._goodSpecMask = undilled['_goodSpecMask']
+        KM._spectral_distances = undilled['_spectral_distances']
 
         return KM
+
+    @property
+    def goodSpecMask(self):
+        if self._goodSpecMask is None:
+            if self.im.nodata is not None:
+                mask_nodata = im2spectra(self.im) == self.im.nodata
+                goodSpecMask = np.all(~mask_nodata, axis=1)
+
+                if True not in goodSpecMask:
+                    raise RuntimeError('All spectra contain no data values in one or multiple bands and are therefore '
+                                       'not usable for clustering. Clustering failed.')
+
+                self._goodSpecMask = goodSpecMask
+            else:
+                self._goodSpecMask = np.ones((self.im.rows * self.im.cols), dtype=np.bool)
+
+        return self._goodSpecMask
+
+    @property
+    def spectra(self):
+        """Get spectra used for clustering (excluding spectra containing nodata values that would affect clustering)."""
+        if self._spectra is None:
+            self._spectra = im2spectra(self.im)[self.goodSpecMask, :]
+        return self._spectra
+
+    @property
+    def n_spectra(self):
+        """Get number of spectra used for clustering (excluding spectra containing nodata values)."""
+        return int(np.sum(self.goodSpecMask))
 
     @property
     def clusters(self):
@@ -61,22 +99,11 @@ class KMeansRSImage(object):
         self._clusters = clusters
 
     @property
-    def im_clust(self):
-        if self._im_clust is None:
-            self._im_clust = self.get_labels_with_nodata().reshape((self.im.rows, self.im.cols))
+    def clustermap(self):
+        if self._clustermap is None:
+            self._clustermap = self.labels_with_nodata.reshape((self.im.rows, self.im.cols))
 
-        return self._im_clust
-
-    def _get_goodSpecMask(self, spectra):
-        if self.im.nodata is not None:
-            mask_nodata = spectra == self.im.nodata
-            goodSpecMask = np.all(~mask_nodata, axis=1)
-
-            if True not in goodSpecMask:
-                raise RuntimeError('All spectra contain no data values in one or multiple bands and are therefore not '
-                                   'usable for clustering. Clustering failed.')
-
-            return goodSpecMask
+        return self._clustermap
 
     def compute_clusters(self, nmax_spectra=1000000):
         """Compute the cluster means and labels.
@@ -84,22 +111,14 @@ class KMeansRSImage(object):
         :param nmax_spectra:    maximum number of spectra to be included (pseudo-randomly selected (reproducable))
         :return:
         """
-        spectra = self._im2spectra(self.im)
-
-        # filter spectra containing no data values
-        # to prevent pixels containing no data values from beeing included in the clustering
-        self.goodSpecMask = self._get_goodSpecMask(spectra)
-        if self.goodSpecMask is not None:
-            spectra = spectra[self.goodSpecMask, :]
-
         # data reduction in case we have too many spectra
-        if spectra.shape[0] > 1e6:
+        if self.spectra.shape[0] > 1e6:
             if self.v:
                 print('Reducing data...')
-            idxs_specIncl = np.random.RandomState(seed=0).choice(range(spectra.shape[0]), nmax_spectra)
-            idxs_specNotIncl = np.array(range(spectra.shape[0]))[~np.in1d(range(spectra.shape[0]), idxs_specIncl)]
-            spectra_incl = spectra[idxs_specIncl, :]
-            spectra_notIncl = spectra[idxs_specNotIncl, :]
+            idxs_specIncl = np.random.RandomState(seed=0).choice(range(self.n_spectra), nmax_spectra)
+            idxs_specNotIncl = np.array(range(self.n_spectra))[~np.in1d(range(self.n_spectra), idxs_specIncl)]
+            spectra_incl = self.spectra[idxs_specIncl, :]
+            spectra_notIncl = self.spectra[idxs_specNotIncl, :]
 
             if self.v:
                 print('Fitting KMeans...')
@@ -108,7 +127,7 @@ class KMeansRSImage(object):
 
             if self.v:
                 print('Computing full resolution labels...')
-            labels = np.zeros((spectra.shape[0]), dtype=kmeans.labels_.dtype)
+            labels = np.zeros((self.n_spectra,), dtype=kmeans.labels_.dtype)
             labels[idxs_specIncl] = kmeans.labels_
             labels[idxs_specNotIncl] = kmeans.predict(spectra_notIncl)
 
@@ -118,38 +137,66 @@ class KMeansRSImage(object):
             if self.v:
                 print('Fitting KMeans...')
             kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
-            kmeans.fit(spectra)
+            kmeans.fit(self.spectra)
 
         self.clusters = kmeans
 
         return self.clusters
 
-    def get_labels_with_nodata(self):
-        """Get the labels with respect to nodata values."""
-        if self.goodSpecMask is None:
-            return self.clusters.labels_
-        else:
-            labels = np.full_like(self.goodSpecMask, -9999, dtype=self.clusters.labels_.dtype)
-            labels[self.goodSpecMask] = self.clusters.labels_
-            return labels
-
     def apply_clusters(self, image):
-        labels = self.clusters.predict(self._im2spectra(GeoArray(image)))
+        labels = self.clusters.predict(im2spectra(GeoArray(image)))
         return labels
 
-    def compute_spectral_distances(self, src_spectra):
-        return np.min(self.clusters.fit_transform(src_spectra), axis=1)
+    @property
+    def labels(self):
+        """Get labels for all clustered spectra (excluding spectra that contain nodata values)."""
+        return self.clusters.labels_
 
-    @staticmethod
-    def _im2spectra(geoArr):
-        return geoArr.reshape((geoArr.rows * geoArr.cols, geoArr.bands))
+    @property
+    def labels_with_nodata(self):
+        """Get the labels for all pixels (including those containing nodata values)."""
+        if self._labels_with_nodata is None:
+            if self.n_spectra == (self.im.rows * self.im.cols):
+                self._labels_with_nodata = self.clusters.labels_
+            else:
+                labels = np.full_like(self.goodSpecMask, -9999, dtype=self.clusters.labels_.dtype)
+                labels[self.goodSpecMask] = self.clusters.labels_
+                self._labels_with_nodata = labels
 
-    def dump_classifier(self, path_out):
+        return self._labels_with_nodata
+
+    @property
+    def spectral_distances(self):
+        """Get spectral distances for all pixels that don't contain nodata values."""
+        # TODO compute that in multiprocessing
+        if self._spectral_distances is None:
+            self._spectral_distances = np.min(self.clusters.fit_transform(self.spectra), axis=1)
+
+        return self._spectral_distances
+
+    @property
+    def spectral_distances_with_nodata(self):
+        if self._spectral_distances_with_nodata is None:
+            if self.n_spectra == (self.im.rows * self.im.cols):
+                self._spectral_distances_with_nodata = self.spectral_distances
+            else:
+                dists = np.full_like(self.goodSpecMask, np.nan, dtype=np.float)
+                dists[self.goodSpecMask] = self.spectral_distances
+                self._spectral_distances_with_nodata = dists
+
+        return self._spectral_distances_with_nodata
+
+    def dump(self, path_out):
         with open(path_out, 'wb') as outF:
-            dill.dump(self.clusters, outF)
+            dill.dump(dict(
+                clusters=self.clusters,
+                _goodSpecMask=self._goodSpecMask,
+                _spectral_distances=self._spectral_distances),
+                outF)
 
-    def save_clustered_image(self, path_out, **kw_save):
-        GeoArray(self.im_clust, geotransform=self.im.gt, projection=self.im.prj, nodata=-9999).save(path_out, **kw_save)
+    def save_clustermap(self, path_out, **kw_save):
+        GeoArray(self.clustermap, geotransform=self.im.gt, projection=self.im.prj, nodata=-9999)\
+            .save(path_out, **kw_save)
 
     def plot_cluster_centers(self, figsize=(15, 5)):
         # type: (tuple) -> None
@@ -194,49 +241,39 @@ class KMeansRSImage(object):
 
         plt.show()
 
-    def plot_clustered_image(self, figsize=None):
+    def plot_clustermap(self, figsize=None):
         # type: (tuple) -> None
         """Show a the clustered image.
 
         :param figsize:     figure size (inches)
         """
         plt.figure(figsize=figsize)
-        rows, cols = self.im_clust.shape[:2]
+        rows, cols = self.clustermap.shape[:2]
 
-        image2plot = self.im_clust if self.im.nodata is None else np.ma.masked_equal(self.im_clust, self.im.nodata)
+        image2plot = self.clustermap if self.im.nodata is None else np.ma.masked_equal(self.clustermap, self.im.nodata)
 
         plt.imshow(image2plot, plt.get_cmap('prism'), interpolation='none', extent=(0, cols, rows, 0))
         plt.show()
 
-    def get_random_spectra_from_each_cluster(self, samplesize=50, src_im=None, exclude_worst_percent=None):
-        # type: (int, GeoArray, int) -> dict
+    def get_random_spectra_from_each_cluster(self, samplesize=50, exclude_worst_percent=None):
+        # type: (int, int) -> dict
         """Returns a given number of spectra randomly selected within each cluster.
 
         E.g., 50 spectra belonging to cluster 1, 50 spectra belonging to cluster 2 and so on.
 
         :param samplesize:  number of spectra to be randomly selected from each cluster
-        :param src_im:      image to get random samples from (default: self.im)
         :param exclude_worst_percent:   percentage of spectra with the largest spectral distances to be excluded
                                         from random sampling
         :return:
         """
-        src_im = src_im if src_im is not None else self.im
-
-        if not self._clusters:
-            self.compute_clusters()
-
         # get DataFrame with columns [cluster_label, B1, B2, B3, ...]
-        if self.goodSpecMask is None:
-            src_spectra = self._im2spectra(src_im)
-        else:
-            src_spectra = self._im2spectra(src_im)[self.goodSpecMask, :]
-        df = DataFrame(src_spectra, columns=['B%s' % band for band in range(1, src_im.bands + 1)], )
+        df = DataFrame(self.spectra, columns=['B%s' % band for band in range(1, self.im.bands + 1)], )
         df.insert(0, 'cluster_label', self.clusters.labels_)
 
         if exclude_worst_percent is not None:
             if not 0 < exclude_worst_percent < 100:
                 raise ValueError(exclude_worst_percent)
-            df.insert(1, 'spectral_distance', self.compute_spectral_distances(src_spectra))
+            df.insert(1, 'spectral_distance', self.spectral_distances)
 
         # get random sample from each cluster and generate a dict like {cluster_label: random_sample}
         # NOTE: nodata label is skipped
@@ -255,29 +292,19 @@ class KMeansRSImage(object):
 
         return random_samples
 
-    def get_purest_spectra_from_each_cluster(self, samplesize=50, src_im=None):
-        # type: (int, GeoArray) -> dict
+    def get_purest_spectra_from_each_cluster(self, samplesize=50):
+        # type: (int) -> dict
         """Returns a given number of spectra directly surrounding the center of each cluster.
 
         E.g., 50 spectra belonging to cluster 1, 50 spectra belonging to cluster 2 and so on.
 
         :param samplesize:  number of spectra to be selected from each cluster
-        :param src_im:      image to get samples from (default: self.im)
         :return:
         """
-        src_im = src_im if src_im is not None else self.im
-
-        if not self._clusters:
-            self.compute_clusters()
-
         # get DataFrame with columns [cluster_label, B1, B2, B3, ...]
-        if self.goodSpecMask is None:
-            src_spectra = self._im2spectra(src_im)
-        else:
-            src_spectra = self._im2spectra(src_im)[self.goodSpecMask, :]
-        df = DataFrame(src_spectra, columns=['B%s' % band for band in range(1, src_im.bands + 1)], )
+        df = DataFrame(self.spectra, columns=['B%s' % band for band in range(1, self.im.bands + 1)], )
         df.insert(0, 'cluster_label', self.clusters.labels_)
-        df.insert(1, 'spectral_distance', self.compute_spectral_distances(src_spectra))
+        df.insert(1, 'spectral_distance', self.spectral_distances)
 
         # get random sample from each cluster and generate a dict like {cluster_label: random_sample}
         random_samples = dict()
