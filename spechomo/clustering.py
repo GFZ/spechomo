@@ -259,8 +259,8 @@ class KMeansRSImage(object):
         plt.imshow(image2plot, plt.get_cmap('prism'), interpolation='none', extent=(0, cols, rows, 0))
         plt.show()
 
-    def get_random_spectra_from_each_cluster(self, samplesize=50, exclude_worst_percent=None):
-        # type: (int, int) -> dict
+    def get_random_spectra_from_each_cluster(self, samplesize=50, exclude_worst_percent=None, nmin_unique_spectra=300):
+        # type: (int, int, int) -> dict
         """Returns a given number of spectra randomly selected within each cluster.
 
         E.g., 50 spectra belonging to cluster 1, 50 spectra belonging to cluster 2 and so on.
@@ -268,6 +268,8 @@ class KMeansRSImage(object):
         :param samplesize:  number of spectra to be randomly selected from each cluster
         :param exclude_worst_percent:   percentage of spectra with the largest spectral distances to be excluded
                                         from random sampling
+        :param nmin_unique_spectra:   in case a cluster has less than the given number, do not use its spectra
+                                      (return missing values)
         :return:
         """
         # get DataFrame with columns [cluster_label, B1, B2, B3, ...]
@@ -287,9 +289,15 @@ class KMeansRSImage(object):
                 cluster_subset = df[df.cluster_label == label].loc[:, 'B1':]
             else:
                 cluster_subset = df[df.cluster_label == label].loc[:, 'spectral_distance':]
-                cluster_subset.sort_values(by=['spectral_distance'], ascending=True)
-                min_th = np.percentile(cluster_subset.spectral_distance, 100 - exclude_worst_percent)
-                cluster_subset = cluster_subset[cluster_subset.spectral_distance < min_th].loc[:, 'B1':]
+
+                if len(cluster_subset.index) >= nmin_unique_spectra:
+                    cluster_subset.sort_values(by=['spectral_distance'], ascending=True)
+                    min_th = np.percentile(cluster_subset.spectral_distance, 100 - exclude_worst_percent)
+                    cluster_subset = cluster_subset[cluster_subset.spectral_distance < min_th].loc[:, 'B1':]
+                else:
+                    # don use the cluster if there are less than nmin_unique_spectra in there (return nodata)
+                    cluster_subset = cluster_subset.loc[:, 'B1':]
+                    cluster_subset[:] = -9999
 
             # get random sample while filling it with duplicates of the same sample when cluster has not enough spectra
             random_samples[label] = np.array(cluster_subset.sample(samplesize, replace=True, random_state=20))

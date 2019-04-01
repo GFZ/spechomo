@@ -261,7 +261,8 @@ class ReferenceCube_Generator(object):
         #   -> no spectra containing nodata values are returned
         self.logger.info('Getting %s random spectra from each cluster...' % (self.tgt_n_samples // self.n_clusters))
         random_samples = kmeans.get_random_spectra_from_each_cluster(samplesize=self.tgt_n_samples // self.n_clusters,
-                                                                     exclude_worst_percent=70)
+                                                                     exclude_worst_percent=50,
+                                                                     nmin_unique_spectra=50)
         # random_samples = kmeans\
         #     .get_purest_spectra_from_each_cluster(src_im=GeoArray(im),
         #                                           samplesize=self.tgt_n_samples // self.n_clusters)

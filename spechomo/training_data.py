@@ -144,7 +144,8 @@ class RefCube(object):
         self._wavelenths = []
 
         # defaults
-        self.data = GeoArray(np.empty((0, 0, len(LayerBandsAssignment) if LayerBandsAssignment else 0)))
+        self.data = GeoArray(np.empty((0, 0, len(LayerBandsAssignment) if LayerBandsAssignment else 0)),
+                             nodata=-9999)
         self.srcImNames = []
 
         # args/ kwargs
@@ -229,9 +230,9 @@ class RefCube(object):
 
         if self.data.size:
             new_cube = np.hstack([self.data, refcube_array])
-            self.data = GeoArray(new_cube)
+            self.data = GeoArray(new_cube, nodata=self.data.nodata)
         else:
-            self.data = GeoArray(refcube_array)
+            self.data = GeoArray(refcube_array, nodata=self.data.nodata)
 
         self.srcImNames.extend(src_imnames)
 
@@ -261,10 +262,10 @@ class RefCube(object):
 
             # append spectra to existing reference cube
             new_cube = np.hstack([self.data, im_col])
-            self.data = GeoArray(new_cube)
+            self.data = GeoArray(new_cube, nodata=self.data.nodata)
 
         else:
-            self.data = GeoArray(im_col)
+            self.data = GeoArray(im_col, nodata=self.data.nodata)
 
         # copy previous metadata to the new GeoArray instance
         self.data.metadata = meta
@@ -290,7 +291,7 @@ class RefCube(object):
             cur_LBA_dict = dict(zip(self.LayerBandsAssignment, range(len(self.LayerBandsAssignment))))
             tgt_bIdxList = [cur_LBA_dict[lr] for lr in tgt_LBA]
 
-            return GeoArray(np.take(self.data, tgt_bIdxList, axis=2))
+            return GeoArray(np.take(self.data, tgt_bIdxList, axis=2), nodata=self.data.nodata)
         else:
             return self.data
 
