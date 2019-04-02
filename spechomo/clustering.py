@@ -259,7 +259,7 @@ class KMeansRSImage(object):
         plt.imshow(image2plot, plt.get_cmap('prism'), interpolation='none', extent=(0, cols, rows, 0))
         plt.show()
 
-    def get_random_spectra_from_each_cluster(self, samplesize=50, exclude_worst_percent=None, nmin_unique_spectra=300):
+    def get_random_spectra_from_each_cluster(self, samplesize=50, exclude_worst_percent=None, nmin_unique_spectra=50):
         # type: (int, int, int) -> dict
         """Returns a given number of spectra randomly selected within each cluster.
 
@@ -295,7 +295,7 @@ class KMeansRSImage(object):
                     min_th = np.percentile(cluster_subset.spectral_distance, 100 - exclude_worst_percent)
                     cluster_subset = cluster_subset[cluster_subset.spectral_distance < min_th].loc[:, 'B1':]
                 else:
-                    # don use the cluster if there are less than nmin_unique_spectra in there (return nodata)
+                    # don't use the cluster if there are less than nmin_unique_spectra in there (return nodata)
                     cluster_subset = cluster_subset.loc[:, 'B1':]
                     cluster_subset[:] = -9999
 

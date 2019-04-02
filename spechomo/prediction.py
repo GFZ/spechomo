@@ -28,7 +28,7 @@ classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
 
 class SpectralHomogenizer(object):
     """Class for applying spectral homogenization by applying an interpolation or machine learning approach."""
-    def __init__(self, classifier_rootDir='', logger=None):
+    def __init__(self, classifier_rootDir='', logger=None, CPUs=None):
         """Get instance of SpectralHomogenizer.
 
         :param classifier_rootDir:  root directory where machine learning classifiers are stored.
@@ -36,6 +36,7 @@ class SpectralHomogenizer(object):
         """
         self.classifier_rootDir = classifier_rootDir or classifier_rootdir
         self.logger = logger or SpecHomo_Logger(__name__)
+        self.CPUs = CPUs or cpu_count()
 
     def interpolate_cube(self, arrcube, source_CWLs, target_CWLs, kind='linear'):
         # type: (Union[np.ndarray, GeoArray], list, list, str) -> np.ndarray
@@ -109,7 +110,8 @@ class SpectralHomogenizer(object):
         kw = dict(method=method,
                   classifier_rootDir=self.classifier_rootDir,
                   n_clusters=n_clusters,
-                  classif_alg=classif_alg)
+                  classif_alg=classif_alg,
+                  CPUs=self.CPUs)
 
         if classif_alg == 'kNN':
             kw['n_neighbors'] = kNN_n_neighbors
@@ -194,7 +196,7 @@ class RSImage_ClusterPredictor(object):
                                     'SAM': spectral angle mapping
                                     'SID': spectral information divergence
         :param classifier_rootDir:  root directory where machine learning classifiers are stored.
-        :param CPUs:                number of CPUs to use
+        :param CPUs:                number of CPUs to use (default: 1)
         :param logger:              instance of logging.Logger()
         :param kw_clf_init          keyword arguments to be passed to classifier init functions if possible
         """
@@ -232,8 +234,8 @@ class RSImage_ClusterPredictor(object):
         return Cluster_Learner.from_disk(self.classifier_rootDir, self.method, self.n_clusters,
                                          src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
 
-    def predict(self, image, classifier, in_nodataVal=None, out_nodataVal=None, cmap_nodataVal=None, CPUs=1):
-        # type: (Union[np.ndarray, GeoArray], Cluster_Learner, float, float, float, int) -> GeoArray
+    def predict(self, image, classifier, in_nodataVal=None, out_nodataVal=None, cmap_nodataVal=None):
+        # type: (Union[np.ndarray, GeoArray], Cluster_Learner, float, float, float) -> GeoArray
         """Apply the prediction function of the given specifier to the given remote sensing image.
 
         # NOTE: The 'nodataVal' is written
@@ -246,7 +248,6 @@ class RSImage_ClusterPredictor(object):
                                 (copied from the input image if not given)
         :param cmap_nodataVal:  no data value for the classification map
                                 in case more than one sub-classes are used for prediction
-        :param CPUs:            CPUs to use (default: 1)
         :return:                3D array representing the predicted spectral image cube
         """
         image = image if isinstance(image, GeoArray) else GeoArray(image, nodata=in_nodataVal)
@@ -281,9 +282,9 @@ class RSImage_ClusterPredictor(object):
                 self.classif_map = np.full((image.rows, image.cols), classifier.cluster_pixVals[0], np.int8)
 
         # adjust classifier
-        if CPUs is None or CPUs > 1:
+        if self.CPUs is None or self.CPUs > 1:
             # FIXME does not work -> parallelize with https://github.com/ajtulloch/sklearn-compiledtrees?
-            classifier.n_jobs = cpu_count() if CPUs is None else CPUs
+            classifier.n_jobs = cpu_count() if self.CPUs is None else self.CPUs
 
         # apply prediction
         # NOTE: prediction is applied in 1000 x 1000 tiles to save memory (because classifier.predict returns float32)
