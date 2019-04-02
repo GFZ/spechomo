@@ -319,7 +319,10 @@ class ReferenceCube_Generator(object):
                          % (tgt_srf.satellite, tgt_srf.sensor))
         SR = SpectralResampler(im_gA.cwl, tgt_srf)
 
-        tgt_im = GeoArray(np.zeros((*im_gA.shape[:2], len(tgt_srf.bands)), dtype=np.int16), im_gA.gt, im_gA.prj)
+        tgt_im = GeoArray(np.zeros((*im_gA.shape[:2], len(tgt_srf.bands)), dtype=np.int16),
+                          geotransform=im_gA.gt,
+                          projection=im_gA.prj,
+                          nodata=im_gA.nodata)
         tgt_im.meta.band_meta['wavelength'] = list(tgt_srf.wvl)
         tgt_im.bandnames = ['B%s' % i if len(i) == 2 else 'B0%s' % i for i in tgt_srf.LayerBandsAssignment]
 
