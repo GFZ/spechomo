@@ -204,7 +204,7 @@ class RSImage_ClusterPredictor(object):
         self.n_clusters = n_clusters
         self.classifier_rootDir = os.path.abspath(classifier_rootDir)
         self.classif_map = None
-        self.CPUs = CPUs
+        self.CPUs = CPUs or cpu_count()
         self.classif_alg = classif_alg
         self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
         self.kw_clf_init = kw_clf_init
