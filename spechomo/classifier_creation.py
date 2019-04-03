@@ -261,7 +261,7 @@ class ReferenceCube_Generator(object):
         #   -> no spectra containing nodata values are returned
         self.logger.info('Getting %s random spectra from each cluster...' % (self.tgt_n_samples // self.n_clusters))
         random_samples = kmeans.get_random_spectra_from_each_cluster(samplesize=self.tgt_n_samples // self.n_clusters,
-                                                                     exclude_worst_percent=50,
+                                                                     exclude_worst_percent=20,
                                                                      nmin_unique_spectra=50)
         # random_samples = kmeans\
         #     .get_purest_spectra_from_each_cluster(src_im=GeoArray(im),
@@ -546,7 +546,7 @@ class ClusterClassifier_Generator(object):
                             src_df_lbl_train = DataFrame(train_X, columns=['spectral_distance'] +
                                                                           ['B%s' % band for band in src_LBA])
                             src_df_lbl_train.sort_values(by=['spectral_distance'], ascending=True)
-                            min_th = np.percentile(src_df_lbl_train.spectral_distance, 40)
+                            min_th = np.percentile(src_df_lbl_train.spectral_distance, 80)
                             src_df_lbl_train_best = src_df_lbl_train[src_df_lbl_train.spectral_distance < min_th]
                             sample_spectra = \
                                 np.array(src_df_lbl_train_best.sample(100, replace=True, random_state=20))[:, 1:]

@@ -57,7 +57,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             src_satellite='Landsat-8', src_sensor='OLI_TIRS',
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
-            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True
         )
 
@@ -78,7 +78,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             src_satellite='Landsat-8', src_sensor='OLI_TIRS',
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
-            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True
         )
 
@@ -98,7 +98,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             src_satellite='Landsat-8', src_sensor='OLI_TIRS',
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
-            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True)
 
         self.assertIsInstance(predarr, GeoArray)
@@ -117,7 +117,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             src_satellite='Landsat-8', src_sensor='OLI_TIRS',
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
-            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True)
 
         self.assertIsInstance(predarr, GeoArray)
@@ -138,7 +138,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             # src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
-            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True,
             # compute_errors=False,
             nodataVal=-9999)
@@ -162,7 +162,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             # src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
-            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True,
             # compute_errors=False,
             nodataVal=-9999)
