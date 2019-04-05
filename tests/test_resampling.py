@@ -55,10 +55,33 @@ class Test_SpectralResampler(unittest.TestCase):
         self.assertTrue(np.any(sig_rsp), msg='Output signature is empty.')
 
     def test_resample_image(self):
-        # Get a hyperspectral spectrum.
+        # Get a hyperspectral image.
         image_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=np.float).flatten()
         image = self.geoArr[:]
 
         sr = SR(image_wvl, self.srf_l8)
         im_rsp = sr.resample_image(image)
         self.assertTrue(np.any(im_rsp), msg='Output image is empty.')
+
+    def test__resample_tile_with_nodata(self):
+        # Get a hyperspectral image tile.
+        image_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=np.float).flatten()
+        tile = self.geoArr[:10, :5, :]
+        tile[0, 0, 1] = -9999  # pixel with one band nodata
+        tile[0, 1, 2] = -9999  # pixel with one band nodata
+        tile[0, 2, 3] = -9999  # pixel with one band nodata
+        tile[0, 3, :4] = -9999  # pixel with one band nodata
+        tile[0, 4, 7] = -9999  # pixel with one band nodata
+        tile[1:3, 1:3, :] = -9999  # pixels with all bands nodata
+
+        sr = SR(image_wvl, self.srf_l8)
+        tilebounds, tile_rsp = sr._resample_tile(((0, 9), (0, 4)), tile,
+                                                 nodataVal=-9999, alg_nodata='radical')
+        self.assertTrue(np.any(tile_rsp), msg='Output image is empty.')
+        self.assertTrue(np.all(tile_rsp[0, :4, :2] == -9999))
+        self.assertTrue(tile_rsp[0, 4, 1] == -9999)
+
+        tilebounds, tile_rsp = sr._resample_tile(((0, 9), (0, 4)), tile,
+                                                 nodataVal=-9999, alg_nodata='conservative')
+        self.assertTrue(np.any(tile_rsp), msg='Output image is empty.')
+        self.assertTrue(np.all(tile_rsp[0, 3, 0] == -9999))

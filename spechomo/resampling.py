@@ -86,20 +86,25 @@ class SpectralResampler(object):
             plt.figure()
             plt.plot(self.wvl_1nm, spectrum_1nm/scale_factor, '.')
 
-        if nodataVal is not None:
-            spectrum_1nm = np.ma.masked_invalid(spectrum_1nm, nodataVal)
-
         spectrum_rsp = []
+        isnan = None
+        nan_in_spec = False
+        if nodataVal is not None:
+            isnan = np.isnan(spectrum_1nm)
+            nan_in_spec = np.any(isnan)
 
         for band, wvl_center in zip(self.srf_tgt.bands, self.srf_tgt.wvl):
             # compute the resampled spectral value (np.average computes the weighted mean value)
-            if nodataVal is not None:
-                specval_rsp = np.ma.average(spectrum_1nm, weights=self.srf_1nm[band])
-                if not specval_rsp and specval_rsp != 0:
-                    specval_rsp = nodataVal
+            weights = self.srf_1nm[band]
 
+            if nan_in_spec:
+                weights = weights[~isnan]
+                if weights.sum():
+                    specval_rsp = np.average(spectrum_1nm[~isnan], weights=weights)
+                else:
+                    specval_rsp = nodataVal if nodataVal is not None else np.nan
             else:
-                specval_rsp = np.ma.average(spectrum_1nm, weights=self.srf_1nm[band])
+                specval_rsp = np.average(spectrum_1nm, weights=weights)
 
             if v:
                 plt.plot(self.wvl_1nm, self.srf_1nm[band]/max(self.srf_1nm[band]))
@@ -107,8 +112,48 @@ class SpectralResampler(object):
 
             spectrum_rsp.append(specval_rsp)
 
-        # FIXME spectrum_rsp still contains NaNs if nodataVal is given
         return np.array(spectrum_rsp)
+
+    def resample_signature(self, spectrum, scale_factor=10000, nodataVal=None, alg_nodata='radical', v=False):
+        # type: (np.ndarray, int, Union[int, float], str, bool) -> np.ndarray
+        """Resample the given spectrum according to the spectral response functions of the target instument.
+
+        :param spectrum:        spectral signature data
+        :param scale_factor:    the scale factor to apply to the given spectrum when it is plotted (default: 10000)
+        :param nodataVal:       no data value to be respected during resampling
+        :param alg_nodata:      algorithm how to deal with pixels where the spectral bands of the source image
+                                contain nodata within the spectral response of a target band
+                                'radical':      set output band to nodata
+                                'conservative': use existing spectral information and ignore nodata
+                                                (might alter the outpur spectral information,
+                                                 e.g., at spectral absorption bands)
+        :param v:               enable verbose mode (shows a plot of the resampled spectrum) (default: False)
+        :return:    resampled spectral signature
+        """
+        if not spectrum.ndim == 1:
+            raise ValueError("The array of the given spectral signature must be 1-dimensional. "
+                             "Received a %s-dimensional array." % spectrum.ndim)
+        spectrum = np.array(spectrum, dtype=np.float).flatten()
+        assert spectrum.size == self.wvl_src_nm.size
+
+        # convert spectrum to one multispectral image pixel and resample it
+        spectrum_rsp = \
+            self.resample_image(spectrum.reshape(1, 1, spectrum.size),
+                                tiledims=(1, 1),
+                                nodataVal=nodataVal,
+                                alg_nodata=alg_nodata,
+                                CPUs=1)\
+            .ravel()
+
+        if v:
+            plt.figure()
+            for band in self.srf_tgt.bands:
+                plt.plot(self.wvl_1nm, self.srf_1nm[band] / max(self.srf_1nm[band]))
+            plt.plot(self.wvl_src_nm, spectrum / scale_factor, '.')
+            plt.plot(self.srf_tgt.wvl, spectrum_rsp / scale_factor, 'x', color='r')
+            plt.show()
+
+        return spectrum_rsp
 
     def resample_spectra(self, spectra, chunksize=200, CPUs=None):
         # type: (Union[GeoArray, np.ndarray], int, Union[None, int]) -> np.ndarray
@@ -133,12 +178,19 @@ class SpectralResampler(object):
 
         return spectra_rsp
 
-    def resample_image(self, image_cube, tiledims=(20, 20), CPUs=None):
-        # type: (Union[GeoArray, np.ndarray], tuple, Union[None, int]) -> np.ndarray
+    def resample_image(self, image_cube, tiledims=(20, 20), nodataVal=None, alg_nodata='radical', CPUs=None):
+        # type: (Union[GeoArray, np.ndarray], tuple, Union[int, float], str, Union[None, int]) -> np.ndarray
         """Resample the given spectral image cube according to the spectral response functions of the target instrument.
 
         :param image_cube:      image (3D array) containing the spectral information in the third dimension
         :param tiledims:        dimension of tiles to be used during computation (rows, columns)
+        :param nodataVal:       nodata value of the input image
+        :param alg_nodata:      algorithm how to deal with pixels where the spectral bands of the source image
+                                contain nodata within the spectral response of a target band
+                                'radical':      set output band to nodata
+                                'conservative': use existing spectral information and ignore nodata
+                                                (might alter the outpur spectral information,
+                                                 e.g., at spectral absorption bands)
         :param CPUs:            CPUs to use for processing
         :return:    resampled spectral image cube
         """
@@ -155,26 +207,88 @@ class SpectralResampler(object):
 
         if CPUs is None or CPUs > 1:
             with Pool(CPUs) as pool:
-                tiles_rsp = pool.starmap(self._specresample, image_cube.tiles(tiledims))
+                tiles_rsp = pool.starmap(self._resample_tile,
+                                         [(bounds, tiledata, nodataVal, alg_nodata)
+                                          for bounds, tiledata in image_cube.tiles(tiledims)])
 
         else:
-            tiles_rsp = [self._specresample(bounds, tiledata) for bounds, tiledata in image_cube.tiles(tiledims)]
+            tiles_rsp = [self._resample_tile(bounds, tiledata, nodataVal, alg_nodata)
+                         for bounds, tiledata in image_cube.tiles(tiledims)]
 
         for ((rS, rE), (cS, cE)), tile_rsp in tiles_rsp:
             image_rsp[rS: rE + 1, cS: cE + 1, :] = tile_rsp
 
         return image_rsp
 
-    def _specresample(self, tilebounds, tiledata):
-        # spectral resampling of input image to 1 nm resolution
-        tile_1nm = interp1d(self.wvl_src_nm, tiledata,
-                            axis=2, bounds_error=False, fill_value=0, kind='linear')(self.wvl_1nm)
+    def _resample_tile(self, tilebounds, tiledata, nodataVal=None, alg_nodata='radical'):
+        if alg_nodata not in ['radical', 'conservative']:
+            raise ValueError(alg_nodata)
 
-        tile_rsp = np.zeros((*tile_1nm.shape[:2], len(self.srf_tgt.bands)), dtype=tiledata.dtype)
-        for band_idx, band in enumerate(self.srf_tgt.bands):
-            # compute the resampled image cube (np.average computes the weighted mean value)
-            res = np.average(tile_1nm, weights=self.srf_1nm[band], axis=2)
-            # NOTE: rounding here is important to prevent -9999. converted to -9998
-            tile_rsp[:, :, band_idx] = res if np.issubdtype(tile_rsp.dtype, np.floating) else np.around(res)
+        tile_rsp = np.zeros((*tiledata.shape[:2], len(self.srf_tgt.bands)), dtype=tiledata.dtype)
+
+        if nodataVal is not None:
+            if np.isfinite(nodataVal):
+                _mask_bool3d = tiledata == nodataVal
+                mask_anynodata = np.any(_mask_bool3d, axis=2)
+                mask_allnodata = np.all(_mask_bool3d, axis=2)
+            else:
+                raise NotImplementedError(nodataVal)
+
+            tiledata = tiledata.astype(np.float)
+            tiledata[_mask_bool3d] = np.nan
+
+            # fill pixels with all bands nodata
+            tile_rsp[mask_allnodata] = nodataVal
+
+            # upsample spectra containing data to 1nm and get nan-mask
+            tilespectra_1nm = interp1d(self.wvl_src_nm, tiledata[~mask_allnodata],
+                                       axis=1, bounds_error=False, fill_value=0, kind='linear')(self.wvl_1nm)
+            isnan = np.isnan(tilespectra_1nm)
+            nan_in_spec = np.any(isnan, axis=1)
+
+            # compute resampled values for pixels without nodata
+            tilespectra_1nm_nonan = tilespectra_1nm[~nan_in_spec, :]
+            for band_idx, band in enumerate(self.srf_tgt.bands):
+                # compute the resampled image cube (np.average computes the weighted mean value)
+                res = np.average(tilespectra_1nm_nonan, weights=self.srf_1nm[band], axis=1)
+                # NOTE: rounding here is important to prevent -9999. converted to -9998
+                if not np.issubdtype(tile_rsp.dtype, np.floating):
+                    res = np.around(res)
+
+                tile_rsp[~mask_anynodata, band_idx] = res
+
+            # compute resampled values for pixels with nodata
+            tilespectra_1nm_withnan = tilespectra_1nm[nan_in_spec, :]
+            tilespectra_1nm_withnan_ma = np.ma.masked_invalid(tilespectra_1nm_withnan)
+            mask_withnan = mask_anynodata & ~mask_allnodata
+            isnan_sub = isnan[nan_in_spec, :]
+
+            for band_idx, band in enumerate(self.srf_tgt.bands):
+                res_ma = np.ma.average(tilespectra_1nm_withnan_ma, axis=1, weights=self.srf_1nm[band])
+
+                # in case all 1nm bands for the current band are NaN, the resulting average will also be NaN => fill
+                res = np.ma.filled(res_ma, nodataVal)
+
+                if alg_nodata == 'radical':
+                    # set those output values to nodata where the input bands within the target SRF contains any nodata
+                    weights = np.tile(self.srf_1nm[band], (nan_in_spec.sum(), 1))
+                    badspec = np.any(isnan_sub & (weights > 0), axis=1)
+                    res[badspec] = nodataVal
+
+                if not np.issubdtype(tile_rsp.dtype, np.floating):
+                    res = np.around(res)
+
+                tile_rsp[mask_withnan, band_idx] = res
+
+        else:
+            # spectral resampling of input image to 1 nm resolution
+            tile_1nm = interp1d(self.wvl_src_nm, tiledata,
+                                axis=2, bounds_error=False, fill_value=0, kind='linear')(self.wvl_1nm)
+
+            for band_idx, band in enumerate(self.srf_tgt.bands):
+                # compute the resampled image cube (np.average computes the weighted mean value)
+                res = np.average(tile_1nm, weights=self.srf_1nm[band], axis=2)
+                # NOTE: rounding here is important to prevent -9999. converted to -9998
+                tile_rsp[:, :, band_idx] = res if np.issubdtype(tile_rsp.dtype, np.floating) else np.around(res)
 
         return tilebounds, tile_rsp
