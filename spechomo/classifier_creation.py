@@ -289,23 +289,28 @@ class ReferenceCube_Generator(object):
                          % (tgt_srf.satellite, tgt_srf.sensor))
 
         SR = SpectralResampler(src_cwl, tgt_srf)
-        spectra_rsp = SR.resample_spectra(spectra, chunksize=200, CPUs=self.CPUs)
+        spectra_rsp = SR.resample_spectra(spectra,
+                                          chunksize=200,
+                                          # nodataVal=im_gA.nodata,  # TODO
+                                          alg_nodata='radical',
+                                          CPUs=self.CPUs)
 
         return spectra_rsp
 
-    def resample_image_spectrally(self, src_im, tgt_srf, progress=False):
-        # type: (Union[str, GeoArray], SRF, bool) -> Union[GeoArray, None]
+    def resample_image_spectrally(self, src_im, tgt_srf, src_nodata=None, progress=False):
+        # type: (Union[str, GeoArray], SRF, Union[float, int], bool) -> Union[GeoArray, None]
         """Perform spectral resampling of the given image to match the given spectral response functions.
 
         :param src_im:      source image to be resampled
         :param tgt_srf:     target spectral response functions to be used for spectral resampling
+        :param src_nodata:  source image nodata value
         :param progress:    show progress bar (default: false)
         :return:
         """
         # handle src_im provided as file path or GeoArray instance
         if isinstance(src_im, str):
             im_name = os.path.basename(src_im)
-            im_gA = GeoArray(src_im)
+            im_gA = GeoArray(src_im, nodata=src_nodata)
         else:
             im_name = src_im.basename
             im_gA = src_im
@@ -328,7 +333,10 @@ class ReferenceCube_Generator(object):
 
         tiles = im_gA.tiles((1000, 1000))  # use tiles to save memory
         for ((rS, rE), (cS, cE)), tiledata in (tqdm(tiles) if progress else tiles):
-            tgt_im[rS: rE + 1, cS: cE + 1, :] = SR.resample_image(tiledata.astype(np.int16), CPUs=self.CPUs)
+            tgt_im[rS: rE + 1, cS: cE + 1, :] = SR.resample_image(tiledata.astype(np.int16),
+                                                                  nodataVal=im_gA.nodata,
+                                                                  alg_nodata='radical',
+                                                                  CPUs=self.CPUs)
 
         return tgt_im
 
