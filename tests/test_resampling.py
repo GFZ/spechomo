@@ -17,6 +17,8 @@ from geoarray import GeoArray
 from spechomo import __path__
 from gms_preprocessing.io.input_reader import SRF  # FIXME
 from spechomo.resampling import SpectralResampler as SR
+# noinspection PyProtectedMember
+from spechomo.resampling import _resample_tile_mp, _initializer_mp
 from gms_preprocessing.model.gms_object import GMS_identifier  # FIXME
 
 
@@ -75,13 +77,14 @@ class Test_SpectralResampler(unittest.TestCase):
         tile[1:3, 1:3, :] = -9999  # pixels with all bands nodata
 
         sr = SR(image_wvl, self.srf_l8)
-        tilebounds, tile_rsp = sr._resample_tile(((0, 9), (0, 4)), tile,
+        _initializer_mp(tile, sr.srf_tgt, sr.srf_1nm, sr.wvl_src_nm, sr.wvl_1nm)
+        tilebounds, tile_rsp = _resample_tile_mp(((0, 9), (0, 4)),
                                                  nodataVal=-9999, alg_nodata='radical')
         self.assertTrue(np.any(tile_rsp), msg='Output image is empty.')
         self.assertTrue(np.all(tile_rsp[0, :4, :2] == -9999))
         self.assertTrue(tile_rsp[0, 4, 1] == -9999)
 
-        tilebounds, tile_rsp = sr._resample_tile(((0, 9), (0, 4)), tile,
+        tilebounds, tile_rsp = _resample_tile_mp(((0, 9), (0, 4)),
                                                  nodataVal=-9999, alg_nodata='conservative')
         self.assertTrue(np.any(tile_rsp), msg='Output image is empty.')
         self.assertTrue(np.all(tile_rsp[0, 3, 0] == -9999))
