@@ -99,13 +99,20 @@ class SpectralResampler(object):
 
         return spectrum_rsp
 
-    def resample_spectra(self, spectra, chunksize=200, CPUs=None):
-        # type: (Union[GeoArray, np.ndarray], int, Union[None, int]) -> np.ndarray
+    def resample_spectra(self, spectra, chunksize=200, nodataVal=None, alg_nodata='radical', CPUs=None):
+        # type: (Union[GeoArray, np.ndarray], int, Union[int, float], str, Union[None, int]) -> np.ndarray
         """Resample the given spectral signatures according to the spectral response functions of the target instrument.
 
         :param spectra:     spectral signatures, provided as 2D array
                             (rows: spectral samples, columns: spectral information / bands)
         :param chunksize:   defines how many spectral signatures are resampled per CPU
+        :param nodataVal:   no data value to be respected during resampling
+        :param alg_nodata:  algorithm how to deal with pixels where the spectral bands of the source image
+                            contain nodata within the spectral response of a target band
+                            'radical':      set output band to nodata
+                            'conservative': use existing spectral information and ignore nodata
+                                                (might alter the outpur spectral information,
+                                                 e.g., at spectral absorption bands)
         :param CPUs:        CPUs to use for processing
         """
         # input validation
@@ -117,7 +124,11 @@ class SpectralResampler(object):
         # convert spectra to one multispectral image column
         im_col = spectra.reshape(spectra.shape[0], 1, spectra.shape[1])
 
-        im_col_rsp = self.resample_image(im_col, tiledims=(1, chunksize), CPUs=CPUs)
+        im_col_rsp = self.resample_image(im_col,
+                                         tiledims=(1, chunksize),
+                                         nodataVal=nodataVal,
+                                         alg_nodata=alg_nodata,
+                                         CPUs=CPUs)
         spectra_rsp = im_col_rsp.reshape(im_col_rsp.shape[0], im_col_rsp.shape[2])
 
         return spectra_rsp
