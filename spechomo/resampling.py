@@ -58,62 +58,6 @@ class SpectralResampler(object):
 
         return self._srf_1nm
 
-    def resample_signature(self, spectrum, scale_factor=10000, nodataVal=None, v=False):
-        # type: (np.ndarray, int, Union[int, float], bool) -> np.ndarray
-        """Resample the given spectrum according to the spectral response functions of the target instument.
-
-        :param spectrum:        spectral signature data
-        :param scale_factor:    the scale factor to apply to the given spectrum when it is plotted (default: 10000)
-        :param nodataVal:       no data value to be respected during resampling
-        :param v:               enable verbose mode (shows a plot of the resampled spectrum) (default: False)
-        :return:    resampled spectral signature
-        """
-        if not spectrum.ndim == 1:
-            raise ValueError("The array of the given spectral signature must be 1-dimensional. "
-                             "Received a %s-dimensional array." % spectrum.ndim)
-        spectrum = np.array(spectrum, dtype=np.float).flatten()
-        assert spectrum.size == self.wvl_src_nm.size
-
-        # resample input spectrum and wavelength to 1nm
-        if nodataVal is not None:
-            spectrum = spectrum.astype(np.float)
-            spectrum[spectrum == nodataVal] = np.nan
-
-        spectrum_1nm = interp1d(self.wvl_src_nm, spectrum,
-                                bounds_error=False, fill_value=0, kind='linear')(self.wvl_1nm)
-
-        if v:
-            plt.figure()
-            plt.plot(self.wvl_1nm, spectrum_1nm/scale_factor, '.')
-
-        spectrum_rsp = []
-        isnan = None
-        nan_in_spec = False
-        if nodataVal is not None:
-            isnan = np.isnan(spectrum_1nm)
-            nan_in_spec = np.any(isnan)
-
-        for band, wvl_center in zip(self.srf_tgt.bands, self.srf_tgt.wvl):
-            # compute the resampled spectral value (np.average computes the weighted mean value)
-            weights = self.srf_1nm[band]
-
-            if nan_in_spec:
-                weights = weights[~isnan]
-                if weights.sum():
-                    specval_rsp = np.average(spectrum_1nm[~isnan], weights=weights)
-                else:
-                    specval_rsp = nodataVal if nodataVal is not None else np.nan
-            else:
-                specval_rsp = np.average(spectrum_1nm, weights=weights)
-
-            if v:
-                plt.plot(self.wvl_1nm, self.srf_1nm[band]/max(self.srf_1nm[band]))
-                plt.plot(wvl_center, specval_rsp/scale_factor, 'x', color='r')
-
-            spectrum_rsp.append(specval_rsp)
-
-        return np.array(spectrum_rsp)
-
     def resample_signature(self, spectrum, scale_factor=10000, nodataVal=None, alg_nodata='radical', v=False):
         # type: (np.ndarray, int, Union[int, float], str, bool) -> np.ndarray
         """Resample the given spectrum according to the spectral response functions of the target instument.
