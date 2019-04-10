@@ -295,7 +295,8 @@ class RSImage_ClusterPredictor(object):
                                  % time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)))
 
             else:
-                self.classif_map = np.full((image.rows, image.cols), classifier.cluster_pixVals[0], np.int16)
+                self.classif_map = GeoArray(np.full((image.rows, image.cols), classifier.cluster_pixVals[0], np.int16),
+                                            nodata=cmap_nodataVal)
 
                 # overwrite all pixels where the input image contains nodata in ANY band
                 # (would lead to faulty predictions due to multivariate prediction algorithms)
