@@ -294,7 +294,12 @@ class RSImage_ClusterPredictor(object):
                                  % time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)))
 
             else:
-                self.classif_map = np.full((image.rows, image.cols), classifier.cluster_pixVals[0], np.int8)
+                self.classif_map = np.full((image.rows, image.cols), classifier.cluster_pixVals[0], np.int16)
+
+                # overwrite all pixels where the input image contains nodata in ANY band
+                # (would lead to faulty predictions due to multivariate prediction algorithms)
+                if cmap_nodataVal is not None:
+                    self.classif_map[np.any(image[:] == image.nodata, axis=2)] = cmap_nodataVal
 
         # adjust classifier
         if self.CPUs is None or self.CPUs > 1:
