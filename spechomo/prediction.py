@@ -303,6 +303,7 @@ class RSImage_ClusterPredictor(object):
 
         # apply prediction
         # NOTE: prediction is applied in 1000 x 1000 tiles to save memory (because classifier.predict returns float32)
+        t0 = time.time()
         out_nodataVal = out_nodataVal if out_nodataVal is not None else image.nodata
         image_predicted = GeoArray(np.empty((image.rows, image.cols, classifier.tgt_n_bands), dtype=image.dtype),
                                    geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
