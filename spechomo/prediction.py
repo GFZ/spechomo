@@ -325,7 +325,6 @@ class RSImage_ClusterPredictor(object):
         self.logger.info('Total prediction time: %s' % time.strftime("%H:%M:%S", time.gmtime(time.time()-t0)))
 
         # re-apply nodata values to predicted result
-        # FIXME nodata area may now be changed if unclassified areas are set to nodata
         if image.nodata is not None:
             image_predicted[image.mask_nodata[:] == 0] = out_nodataVal
 
