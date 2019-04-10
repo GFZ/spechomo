@@ -204,6 +204,7 @@ class RSImage_ClusterPredictor(object):
         self.n_clusters = n_clusters
         self.classifier_rootDir = os.path.abspath(classifier_rootDir)
         self.classif_map = None
+        self.distance_metrics = None
         self.CPUs = CPUs or cpu_count()
         self.classif_alg = classif_alg
         self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
@@ -288,7 +289,7 @@ class RSImage_ClusterPredictor(object):
                     train_spectra = classifier.cluster_centers
                     train_labels = classifier.cluster_pixVals
 
-                self.classif_map, distance = classify_image(image, train_spectra, train_labels, **kw_clf)
+                self.classif_map, self.distance_metrics = classify_image(image, train_spectra, train_labels, **kw_clf)
 
                 self.logger.info('Total classification time: %s'
                                  % time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)))
@@ -300,6 +301,8 @@ class RSImage_ClusterPredictor(object):
                 # (would lead to faulty predictions due to multivariate prediction algorithms)
                 if cmap_nodataVal is not None:
                     self.classif_map[np.any(image[:] == image.nodata, axis=2)] = cmap_nodataVal
+
+                self.distance_metrics = np.zeros_like(self.classif_map, np.float32)
 
         # adjust classifier
         if self.CPUs is None or self.CPUs > 1:
