@@ -96,7 +96,7 @@ class Cluster_Learner(object):
         for cluster in self.cluster_pixVals:
             yield self.MLdict[cluster]
 
-    def predict(self, im_src, cmap, nodataVal=None, cmap_nodataVal=None):
+    def predict(self, im_src, cmap, nodataVal=None, cmap_nodataVal=None, cmap_unclassifiedVal=-1):
         """
 
         :param im_src:
@@ -104,6 +104,7 @@ class Cluster_Learner(object):
                                 -> must be a 1D np.ndarray with the same Y-dimension like src_spectra
         :param nodataVal:       nodata value to be used to fill into the predicted image
         :param cmap_nodataVal:  nodata class value of the nodata class of the classification map
+        :param cmap_unclassifiedVal:    'unclassified' class value of the nodata class of the classification map
         :return:
         """
         cluster_labels = sorted(list(np.unique(cmap)))
@@ -119,10 +120,12 @@ class Cluster_Learner(object):
             for pixVal in cluster_labels:
                 if pixVal == cmap_nodataVal:
                     continue
-
-                classifier = self.MLdict[pixVal]
-                mask_pixVal = cmap == pixVal
-                im_pred[mask_pixVal] = classifier.predict(im_src[mask_pixVal]).astype(im_src.dtype)
+                elif pixVal == cmap_unclassifiedVal:
+                    continue
+                else:
+                    classifier = self.MLdict[pixVal]
+                    mask_pixVal = cmap == pixVal
+                    im_pred[mask_pixVal] = classifier.predict(im_src[mask_pixVal]).astype(im_src.dtype)
 
         else:
             # predict target spectra directly (much faster than the above algorithm)

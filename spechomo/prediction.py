@@ -234,8 +234,9 @@ class RSImage_ClusterPredictor(object):
         return Cluster_Learner.from_disk(self.classifier_rootDir, self.method, self.n_clusters,
                                          src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
 
-    def predict(self, image, classifier, in_nodataVal=None, out_nodataVal=None, cmap_nodataVal=None):
-        # type: (Union[np.ndarray, GeoArray], Cluster_Learner, float, float, float) -> GeoArray
+    def predict(self, image, classifier, in_nodataVal=None, out_nodataVal=None, cmap_nodataVal=None,
+                unclassified_threshold=None, unclassified_pixVal=-1):
+        # type: (Union[np.ndarray, GeoArray], Cluster_Learner, float, float, float, Union[str, int, float], int) -> GeoArray  # noqa
         """Apply the prediction function of the given specifier to the given remote sensing image.
 
         # NOTE: The 'nodataVal' is written
@@ -248,6 +249,15 @@ class RSImage_ClusterPredictor(object):
                                 (copied from the input image if not given)
         :param cmap_nodataVal:  no data value for the classification map
                                 in case more than one sub-classes are used for prediction
+        :param unclassified_threshold:  if given, all pixels where the computed distance metric exceeds the given
+                                        threshold are labelled as unclassified
+                                        (only usable for 'MinDist', 'SAM' and 'SID')
+                                        - may be given as float, integer or string to label a certain distance
+                                          percentile
+                                        - if given as string, it must match the format, e.g., '10%' for labelling the
+                                          worst 10 % of the distances as unclassified
+        :param unclassified_pixVal:     pixel value to be used in the classification map for unclassified pixels
+                                        (default: -1)
         :return:                3D array representing the predicted spectral image cube
         """
         image = image if isinstance(image, GeoArray) else GeoArray(image, nodata=in_nodataVal)
@@ -256,14 +266,19 @@ class RSImage_ClusterPredictor(object):
         image.nodata = in_nodataVal if in_nodataVal is not None else image.nodata  # might be auto-computed here
 
         # assign each input pixel to a cluster (compute classification with cluster centers as endmembers)
-        if not self.classif_map:
+        if self.classif_map is None:
             if self.n_clusters > 1:
                 t0 = time.time()
                 kw_clf = dict(classif_alg=self.classif_alg,
                               in_nodataVal=image.nodata,
                               cmap_nodataVal=cmap_nodataVal,  # written into classif_map at nodata
                               CPUs=self.CPUs,
+                              return_distance=True,
                               **self.kw_clf_init)
+
+                if self.classif_alg in ['MinDist', 'SAM', 'SID']:
+                    kw_clf.update(dict(unclassified_threshold=unclassified_threshold,
+                                       unclassified_pixVal=unclassified_pixVal))
 
                 if self.classif_alg == 'RF':
                     train_spectra = np.vstack([classifier.MLdict[clust].cluster_sample_spectra
@@ -273,7 +288,7 @@ class RSImage_ClusterPredictor(object):
                     train_spectra = classifier.cluster_centers
                     train_labels = classifier.cluster_pixVals
 
-                self.classif_map = classify_image(image, train_spectra, train_labels, **kw_clf)
+                self.classif_map, distance = classify_image(image, train_spectra, train_labels, **kw_clf)
 
                 self.logger.info('Total classification time: %s'
                                  % time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)))
@@ -293,7 +308,6 @@ class RSImage_ClusterPredictor(object):
                                    geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
                                    bandnames=GMS_object.LBA2bandnames(classifier.tgt_LBA))
 
-        t0 = time.time()
         for ((rS, rE), (cS, cE)), im_tile in image.tiles(tilesize=(1000, 1000)):
             self.logger.info('Predicting tile ((%s, %s), (%s, %s))...' % (rS, rE, cS, cE))
 
@@ -302,12 +316,16 @@ class RSImage_ClusterPredictor(object):
             # predict!
             im_tile_pred = \
                 classifier.predict(im_tile, classif_map_tile,
-                                   nodataVal=out_nodataVal, cmap_nodataVal=cmap_nodataVal).astype(image.dtype)
+                                   nodataVal=out_nodataVal,
+                                   cmap_nodataVal=cmap_nodataVal,
+                                   cmap_unclassifiedVal=unclassified_pixVal,
+                                   ).astype(image.dtype)
             image_predicted[rS:rE + 1, cS:cE + 1] = im_tile_pred
 
         self.logger.info('Total prediction time: %s' % time.strftime("%H:%M:%S", time.gmtime(time.time()-t0)))
 
         # re-apply nodata values to predicted result
+        # FIXME nodata area may now be changed if unclassified areas are set to nodata
         if image.nodata is not None:
             image_predicted[image.mask_nodata[:] == 0] = out_nodataVal
 
