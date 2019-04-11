@@ -15,8 +15,8 @@ from sklearn.model_selection import train_test_split
 
 from .utils import im2spectra
 
-# dependencies to get rid of
-from gms_preprocessing.model.metadata import get_center_wavelengths_by_LBA
+# TODO dependencies to get rid of
+# from gms_preprocessing.model.metadata import get_center_wavelengths_by_LBA
 
 
 class TrainingData(object):
@@ -204,6 +204,7 @@ class RefCube(object):
     @property
     def wavelengths(self):
         if not self._wavelenths and self.satellite and self.sensor and self.LayerBandsAssignment:
+            from gms_preprocessing.model.metadata import get_center_wavelengths_by_LBA  # TODO get rid of this
             self._wavelenths = get_center_wavelengths_by_LBA(satellite=self.satellite,
                                                              sensor=self.sensor,
                                                              LBA=self.LayerBandsAssignment)
