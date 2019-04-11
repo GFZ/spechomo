@@ -4,7 +4,7 @@ import os
 import re
 from glob import glob
 from multiprocessing import cpu_count
-from typing import List, Tuple, Union, Dict  # noqa F401  # flake8 issue
+from typing import List, Tuple, Union, Dict, TYPE_CHECKING  # noqa F401  # flake8 issue
 import logging  # noqa F401  # flake8 issue
 
 import dill
@@ -26,10 +26,11 @@ from .training_data import RefCube
 from .logging import SpecHomo_Logger
 from .options import options
 
-# dependencies to get rid of
-from gms_preprocessing.model.gms_object import GMS_identifier
-from gms_preprocessing.model.metadata import get_LayerBandsAssignment, get_center_wavelengths_by_LBA
-from gms_preprocessing.io.input_reader import SRF
+# TODO dependencies to get rid of
+if TYPE_CHECKING:
+    from gms_preprocessing.model.gms_object import GMS_identifier
+    # from gms_preprocessing.model.metadata import get_LayerBandsAssignment, get_center_wavelengths_by_LBA
+    from gms_preprocessing.io.input_reader import SRF
 
 
 class ReferenceCube_Generator(object):
@@ -122,6 +123,7 @@ class ReferenceCube_Generator(object):
         :param tgt_sen:     target sensor
         :return:
         """
+        from gms_preprocessing.model.gms_object import GMS_identifier
         return GMS_identifier(satellite=tgt_sat, sensor=tgt_sen, subsystem=None, image_type='RSD', dataset_ID=-9999,
                               proc_level='L1C', logger=self.logger)  # use L1A to have all bands available
 
@@ -136,6 +138,7 @@ class ReferenceCube_Generator(object):
         :param tgt_sen:     target sensor
         :return:
         """
+        from gms_preprocessing.model.metadata import get_LayerBandsAssignment
         return get_LayerBandsAssignment(self._get_tgt_GMS_identifier(tgt_sat, tgt_sen), no_pan=False, sort_by_cwl=True)
 
     def _get_tgt_SRF_object(self, tgt_sat, tgt_sen):
@@ -146,6 +149,7 @@ class ReferenceCube_Generator(object):
         :param tgt_sen:     target sensor
         :return:
         """
+        from gms_preprocessing.io.input_reader import SRF
         return SRF(self._get_tgt_GMS_identifier(tgt_sat, tgt_sen), no_pan=False)
 
     def generate_reference_cubes(self, fmt_out='ENVI', try_read_dumped_clf=True, progress=True):
@@ -237,6 +241,8 @@ class ReferenceCube_Generator(object):
             # first, perform spectral resampling to Sentinel-2 to reduce dimensionality (speedup)
             if downsamp_sat and downsamp_sen:
                 # NOTE: The KMeansRSImage class already reduces the input data to 1 million spectra by default
+                from gms_preprocessing.model.gms_object import GMS_identifier
+                from gms_preprocessing.io.input_reader import SRF
                 tgt_srf = SRF(GMS_identifier(satellite=downsamp_sat, sensor=downsamp_sen, subsystem=None,
                                              image_type='RSD', dataset_ID=-9999, proc_level='L1A', logger=self.logger))
                 im2clust = self.resample_image_spectrally(im2clust, tgt_srf, progress=progress)  # output = int16
@@ -369,6 +375,8 @@ class ClusterClassifier_Generator(object):
         # NOTE: - signal of additional bands at L1A is not predictable by spectral harmonization because these bands
         #         are not driven by surface albedo but by atmospheric conditions (945, 1373 nm)
         #       - Landsat-8 band 9 (PAN) is currently not supported by AC => L1C_withPan does not exist  # FIXME
+        from gms_preprocessing.model.gms_object import GMS_identifier
+        from gms_preprocessing.model.metadata import get_LayerBandsAssignment
         L1C_GMSid = GMS_identifier(satellite=satellite, sensor=sensor, subsystem=None, image_type='RSD',
                                    dataset_ID=-9999, proc_level='L1C', logger=None)
 
@@ -445,6 +453,7 @@ class ClusterClassifier_Generator(object):
         # convert float64 attributes to float32 to save memory (affects <0,05% of homogenized pixels by 1 DN)
         for attr in ['coef_', 'intercept_', 'singular_', '_residues']:
             if isinstance(ML, Pipeline):
+                # noinspection PyProtectedMember
                 setattr(ML._final_estimator, attr, getattr(ML._final_estimator, attr).astype(np.float32))
             else:
                 try:
@@ -492,6 +501,8 @@ class ClusterClassifier_Generator(object):
             # NOTE: We use the GMS L1C bands (without atmospheric bands and PAN-band) for clustering.
             self.logger.info('Clustering %s %s reference cube (%s clusters)...'
                              % (src_cube.satellite, src_cube.sensor, n_clusters))
+            from gms_preprocessing.model.gms_object import GMS_identifier
+            from gms_preprocessing.model.metadata import get_LayerBandsAssignment
             L1C_GMSid = GMS_identifier(satellite=src_cube.satellite, sensor=src_cube.sensor, subsystem=None,
                                        image_type='RSD', dataset_ID=-9999, proc_level='L1C', logger=None)
             LBA2clust = get_LayerBandsAssignment(L1C_GMSid, no_pan=True, sort_by_cwl=True)
@@ -515,6 +526,7 @@ class ClusterClassifier_Generator(object):
 
                         # Get center wavelength positions
                         # NOTE: they cannot be taken from RefCube instances because they always represent L1C LBAs
+                        from gms_preprocessing.model.metadata import get_center_wavelengths_by_LBA
                         src_wavelengths = get_center_wavelengths_by_LBA(src_cube.satellite, src_cube.sensor, src_LBA)
                         tgt_wavelengths = get_center_wavelengths_by_LBA(tgt_cube.satellite, tgt_cube.sensor, tgt_LBA)
 
