@@ -608,7 +608,7 @@ class ClusterClassifier_Generator(object):
 
     @staticmethod
     def _extract_best_spectra_from_cluster(clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust,
-                                           max_distance_percent=80, max_angle_percent=50):
+                                           max_distance_percent=60, max_angle_degrees=5):
         # NOTE: We exclude the noisy spectra with the largest spectral distances to their cluster
         #       center here (random spectra from within the upper 80 %)
         assert len(df_src_spectra_allclust.index) == len(df_tgt_spectra_allclust.index), \
@@ -617,10 +617,8 @@ class ClusterClassifier_Generator(object):
         df_src_spectra = df_src_spectra_allclust[df_src_spectra_allclust.cluster_label == clusterlabel]
 
         max_dist = np.percentile(df_src_spectra.spectral_distance, max_distance_percent)
-        # max_angle = np.percentile(df_src_spectra.spectral_angle, max_angle_percent)
-        max_angle = 5  # degrees  # FIXME hardcoded
         df_src_spectra_best = df_src_spectra[(df_src_spectra.spectral_distance < max_dist) &
-                                             (df_src_spectra.spectral_angle < max_angle)]
+                                             (df_src_spectra.spectral_angle < max_angle_degrees)]
         df_tgt_spectra_best = df_tgt_spectra_allclust.loc[df_src_spectra_best.index, :]
 
         return df_src_spectra_best, df_tgt_spectra_best
