@@ -6,6 +6,7 @@ from glob import glob
 from multiprocessing import cpu_count
 from typing import List, Tuple, Union, Dict, TYPE_CHECKING  # noqa F401  # flake8 issue
 import logging  # noqa F401  # flake8 issue
+from itertools import product
 
 import dill
 import numpy as np
@@ -484,31 +485,19 @@ class ClusterClassifier_Generator(object):
                                     "spectral sub-clustering. Setting 'n_clusters' to 1.")
                 n_clusters = 1
 
-            if 'n_jobs' not in kwargs:
-                kwargs.update(dict(n_jobs=CPUs))
-            if 'n_estimators' not in kwargs:
-                kwargs.update(dict(n_estimators=options['classifiers']['RFR']['n_trees']))
-            if 'max_depth' not in kwargs:
-                kwargs.update(dict(max_depth=options['classifiers']['RFR']['max_depth']))
+            kwargs.update(dict(
+                n_jobs=kwargs.get('n_jobs', CPUs),
+                n_estimators=kwargs.get('n_estimators', options['classifiers']['RFR']['n_trees']),
+                max_depth=kwargs.get('max_depth', options['classifiers']['RFR']['max_depth'])
+            ))
 
         # build the classifier collections with separate classifiers for each cluster
         for src_cube in self.refcubes:  # type: RefCube
             cls_collection = nested_dict()
-            fName_cls = get_filename_classifier_collection(method, src_cube.satellite, src_cube.sensor,
-                                                           n_clusters=n_clusters, **kwargs)
 
-            # get cluster labels for each source cube separately
-            # NOTE: We use the GMS L1C bands (without atmospheric bands and PAN-band) for clustering.
-            self.logger.info('Clustering %s %s reference cube (%s clusters)...'
-                             % (src_cube.satellite, src_cube.sensor, n_clusters))
-            from gms_preprocessing.model.gms_object import GMS_identifier
-            from gms_preprocessing.model.metadata import get_LayerBandsAssignment
-            L1C_GMSid = GMS_identifier(satellite=src_cube.satellite, sensor=src_cube.sensor, subsystem=None,
-                                       image_type='RSD', dataset_ID=-9999, proc_level='L1C', logger=None)
-            LBA2clust = get_LayerBandsAssignment(L1C_GMSid, no_pan=True, sort_by_cwl=True)
-            src_data2clust = src_cube.get_band_combination(LBA2clust)
-            km = KMeansRSImage(src_data2clust, n_clusters=n_clusters, CPUs=CPUs)
-            km.compute_clusters()
+            # get cluster labels for each source cube separately (as they depend on source spectral characteristics)
+            clusterlabels_src_cube, spectral_distances = \
+                self._get_cluster_labels_for_source_refcube(src_cube, n_clusters, CPUs, return_spectral_distances=True)
 
             for tgt_cube in self.refcubes:
                 if (src_cube.satellite, src_cube.sensor) == (tgt_cube.satellite, tgt_cube.sensor):
@@ -519,95 +508,138 @@ class ClusterClassifier_Generator(object):
                 src_derived_LBAs = self._get_derived_LayerBandsAssignments(src_cube.satellite, src_cube.sensor)
                 tgt_derived_LBAs = self._get_derived_LayerBandsAssignments(tgt_cube.satellite, tgt_cube.sensor)
 
-                for src_LBA in src_derived_LBAs:
-                    for tgt_LBA in tgt_derived_LBAs:
-                        self.logger.debug('Creating %s cluster classifier for LBA %s => %s...'
-                                          % (method, '_'.join(src_LBA), '_'.join(tgt_LBA)))
+                for src_LBA, tgt_LBA in product(src_derived_LBAs, tgt_derived_LBAs):
+                    self.logger.debug('Creating %s cluster classifier for LBA %s => %s...'
+                                      % (method, '_'.join(src_LBA), '_'.join(tgt_LBA)))
 
-                        # Get center wavelength positions
-                        # NOTE: they cannot be taken from RefCube instances because they always represent L1C LBAs
-                        from gms_preprocessing.model.metadata import get_center_wavelengths_by_LBA
-                        src_wavelengths = get_center_wavelengths_by_LBA(src_cube.satellite, src_cube.sensor, src_LBA)
-                        tgt_wavelengths = get_center_wavelengths_by_LBA(tgt_cube.satellite, tgt_cube.sensor, tgt_LBA)
+                    # Get center wavelength positions
+                    # NOTE: they cannot be taken from RefCube instances because they always represent L1C LBAs
+                    from gms_preprocessing.model.metadata import get_center_wavelengths_by_LBA
+                    src_wavelengths = get_center_wavelengths_by_LBA(src_cube.satellite, src_cube.sensor, src_LBA)
+                    tgt_wavelengths = get_center_wavelengths_by_LBA(tgt_cube.satellite, tgt_cube.sensor, tgt_LBA)
 
-                        # Get training data for source and target image according to the given LayerBandsAssignments
-                        # e.g., source: Landsat 7 image in LBA 1__2__3__4__5__7 and target L8 in 1__2__3__4__5__6__7
-                        src_data = src_cube.get_band_combination(src_LBA)
-                        tgt_data = tgt_cube.get_band_combination(tgt_LBA)
+                    # Get training data for source and target image according to the given LayerBandsAssignments
+                    # e.g., source: Landsat 7 image in LBA 1__2__3__4__5__7 and target L8 in 1__2__3__4__5__6__7
+                    df_src_spectra_allclust = src_cube.get_spectra_dataframe(src_LBA)
+                    df_tgt_spectra_allclust = tgt_cube.get_spectra_dataframe(tgt_LBA)
 
-                        src_spectra = im2spectra(src_data)
-                        tgt_spectra = im2spectra(tgt_data)
+                    # assign clusterlabel and spectral distance to the cluster center to each spectrum
+                    for df in [df_src_spectra_allclust, df_tgt_spectra_allclust]:
+                        df.insert(0, 'cluster_label', clusterlabels_src_cube)
+                        df.insert(1, 'spectral_distance', spectral_distances)
 
-                        # assign clusterlabel and spectral distance to the cluster center to each spectrum
-                        src_df = DataFrame(src_spectra, columns=['B%s' % band for band in src_LBA])
-                        src_df.insert(0, 'cluster_label', km.labels_with_nodata)
-                        src_df.insert(1, 'spectral_distance', km.spectral_distances_with_nodata)
+                    # ensure source and target spectra do not contain nodata values (would affect classifiers)
+                    assert src_cube.data.nodata is None or src_cube.data.nodata not in df_src_spectra_allclust.values
+                    assert tgt_cube.data.nodata is None or tgt_cube.data.nodata not in df_tgt_spectra_allclust.values
 
-                        tgt_df = DataFrame(tgt_spectra, columns=['B%s' % band for band in tgt_LBA])
-                        tgt_df.insert(0, 'cluster_label', km.labels_with_nodata)
-                        tgt_df.insert(1, 'spectral_distance', km.spectral_distances_with_nodata)  # actually not needed
+                    for clusterlabel in range(n_clusters):
+                        self.logger.debug('Creating %s classifier for cluster %s...' % (method, clusterlabel))
 
-                        for clusterlabel in range(n_clusters):
-                            self.logger.debug('Creating %s classifier for cluster %s...' % (method, clusterlabel))
+                        df_src_spectra_best, df_tgt_spectra_best = \
+                            self._extract_best_spectra_from_cluster(
+                                clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust)
 
-                            # Set train and test variables for the classifier
-                            # NOTE: If random_state is set to an integer,
-                            #       train_test_split will always select the same 'pseudo-random' set of the input data.
-                            src_spectra_label = np.array(src_df[src_df.cluster_label == clusterlabel])[:, 1:]
-                            tgt_spectra_label = np.array(tgt_df[tgt_df.cluster_label == clusterlabel])[:, 1:]
+                        # Set train and test variables for the classifier
+                        src_spectra_curlabel = df_src_spectra_best.values[:, 2:]
+                        tgt_spectra_curlabel = df_tgt_spectra_best.values[:, 2:]
 
-                            train_X, test_X, train_Y, test_Y = \
-                                train_test_split(src_spectra_label, tgt_spectra_label,
-                                                 test_size=0.4, shuffle=True, random_state=0)
+                        train_src, test_src, train_tgt, test_tgt = \
+                            train_test_split(src_spectra_curlabel, tgt_spectra_curlabel,
+                                             test_size=0.4, shuffle=True, random_state=0)
 
-                            # get 100 sample source spectra (only from those spectra used for model training)
-                            # NOTE: We exclude the noisy spectra with the largest spectral distances to their cluster
-                            #       center here (random spectra from within the upper 40 %)
-                            src_df_lbl_train = DataFrame(train_X, columns=['spectral_distance'] +
-                                                                          ['B%s' % band for band in src_LBA])
-                            src_df_lbl_train.sort_values(by=['spectral_distance'], ascending=True)
-                            min_th = np.percentile(src_df_lbl_train.spectral_distance, 80)
-                            src_df_lbl_train_best = src_df_lbl_train[src_df_lbl_train.spectral_distance < min_th]
-                            sample_spectra = \
-                                np.array(src_df_lbl_train_best.sample(100, replace=True, random_state=20))[:, 1:]
+                        # train the learner and add metadata
+                        ML = self.train_machine_learner(train_src, train_tgt, test_src, test_tgt, method, **kwargs)
+                        ML = self._add_metadata_to_machine_learner(
+                            ML, src_cube, tgt_cube, src_LBA, tgt_LBA, src_wavelengths, tgt_wavelengths,
+                            train_src, n_clusters, clusterlabel)
 
-                            # compute cluster center for source spectra (only on those spectra used for model training)
-                            cluster_center = np.mean(train_X[:, 1:], axis=0).astype(src_data.dtype)
-                            cluster_median = np.median(train_X[:, 1:], axis=0).astype(src_data.dtype)
-
-                            # train the learner
-                            # NOTE: the first column contains spectral distances and is therefore excluded here
-                            ML = self.train_machine_learner(train_X[:, 1:], train_Y[:, 1:],
-                                                            test_X[:, 1:], test_Y[:, 1:], method, **kwargs)
-
-                            # add some metadata
-                            ML.src_satellite = src_cube.satellite
-                            ML.tgt_satellite = tgt_cube.satellite
-                            ML.src_sensor = src_cube.sensor
-                            ML.tgt_sensor = tgt_cube.sensor
-                            ML.src_LBA = src_LBA
-                            ML.tgt_LBA = tgt_LBA
-                            ML.src_n_bands = len(ML.src_LBA)
-                            ML.tgt_n_bands = len(ML.tgt_LBA)
-                            ML.src_wavelengths = list(np.array(src_wavelengths).astype(np.float32))
-                            ML.tgt_wavelengths = list(np.array(tgt_wavelengths).astype(np.float32))
-                            ML.n_clusters = n_clusters
-                            ML.clusterlabel = clusterlabel
-                            ML.cluster_center = cluster_center
-                            ML.cluster_median = cluster_median
-                            ML.cluster_sample_spectra = sample_spectra.astype(np.int16)  # scaled between 0 and 10000
-
-                            assert len(ML.src_LBA) == len(ML.src_wavelengths)
-                            assert len(ML.tgt_LBA) == len(ML.tgt_wavelengths)
-
-                            # append to classifier collection
-                            cls_collection[
-                                '__'.join(src_LBA)][tgt_cube.satellite, tgt_cube.sensor][
-                                '__'.join(tgt_LBA)][clusterlabel] = ML
+                        # append to classifier collection
+                        cls_collection[
+                            '__'.join(src_LBA)][tgt_cube.satellite, tgt_cube.sensor][
+                            '__'.join(tgt_LBA)][clusterlabel] = ML
 
             # dump to disk
+            fName_cls = get_filename_classifier_collection(method, src_cube.satellite, src_cube.sensor,
+                                                           n_clusters=n_clusters, **kwargs)
+
             with open(os.path.join(outDir, fName_cls), 'wb') as outF:
                 dill.dump(cls_collection.to_dict(), outF, protocol=dill.HIGHEST_PROTOCOL)
+
+    def _get_cluster_labels_for_source_refcube(self, src_cube, n_clusters, CPUs, return_spectral_distances=False):
+        """Get cluster labels for each source cube separately
+
+        NOTE: - We use the GMS L1C bands (without atmospheric bands and PAN-band) for clustering.
+              - clustering is only performed on the source cube because the source sensor spectral information
+                is later used to assign the correct homogenization classifier to each pixel
+
+        :param src_cube:
+        :param n_clusters:
+        :param CPUs:
+        :param return_spectral_distances:
+        :return:
+        """
+        self.logger.info('Clustering %s %s reference cube (%s clusters)...'
+                         % (src_cube.satellite, src_cube.sensor, n_clusters))
+        from gms_preprocessing.model.gms_object import GMS_identifier
+        from gms_preprocessing.model.metadata import get_LayerBandsAssignment
+        L1C_GMSid = GMS_identifier(satellite=src_cube.satellite, sensor=src_cube.sensor, subsystem=None,
+                                   image_type='RSD', dataset_ID=-9999, proc_level='L1C', logger=None)
+        LBA2clust = get_LayerBandsAssignment(L1C_GMSid, no_pan=True, sort_by_cwl=True)
+        src_data2clust = src_cube.get_band_combination(LBA2clust)
+        km = KMeansRSImage(src_data2clust, n_clusters=n_clusters, CPUs=CPUs)
+        km.compute_clusters()
+
+        return_vals = [km.labels_with_nodata]
+
+        if return_spectral_distances:
+            return_vals.append(km.spectral_distances_with_nodata)
+
+        return tuple(return_vals)
+
+    @staticmethod
+    def _extract_best_spectra_from_cluster(clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust):
+        # get 100 sample source spectra (only from those spectra used for model training)
+        # NOTE: We exclude the noisy spectra with the largest spectral distances to their cluster
+        #       center here (random spectra from within the upper 80 %)
+        assert len(df_src_spectra_allclust.index) == len(df_tgt_spectra_allclust.index), \
+            'Source and target spectra dataframes must have the same number of spectral samples.'
+
+        df_src_spectra = df_src_spectra_allclust[df_src_spectra_allclust.cluster_label == clusterlabel]
+
+        min_th = np.percentile(df_src_spectra.spectral_distance, 80)
+        df_src_spectra_best = df_src_spectra[df_src_spectra.spectral_distance < min_th]
+        df_tgt_spectra_best = df_tgt_spectra_allclust.loc[df_src_spectra_best.index, :]
+
+        return df_src_spectra_best, df_tgt_spectra_best
+
+    @staticmethod
+    def _add_metadata_to_machine_learner(ML, src_cube, tgt_cube, src_LBA, tgt_LBA, src_wavelengths, tgt_wavelengths,
+                                         src_train_spectra, n_clusters, clusterlabel):
+        # compute cluster center for source spectra (only on those spectra used for model training)
+        cluster_center = np.mean(src_train_spectra, axis=0)
+        cluster_median = np.median(src_train_spectra, axis=0)
+        sample_spectra = DataFrame(src_train_spectra).sample(100, replace=True, random_state=20).values
+
+        ML.src_satellite = src_cube.satellite
+        ML.tgt_satellite = tgt_cube.satellite
+        ML.src_sensor = src_cube.sensor
+        ML.tgt_sensor = tgt_cube.sensor
+        ML.src_LBA = src_LBA
+        ML.tgt_LBA = tgt_LBA
+        ML.src_n_bands = len(ML.src_LBA)
+        ML.tgt_n_bands = len(ML.tgt_LBA)
+        ML.src_wavelengths = list(np.array(src_wavelengths).astype(np.float32))
+        ML.tgt_wavelengths = list(np.array(tgt_wavelengths).astype(np.float32))
+        ML.n_clusters = n_clusters
+        ML.clusterlabel = clusterlabel
+        ML.cluster_center = cluster_center.astype(src_cube.data.dtype)
+        ML.cluster_median = cluster_median.astype(src_cube.data.dtype)
+        ML.cluster_sample_spectra = sample_spectra.astype(np.int16)  # scaled between 0 and 10000
+
+        assert len(ML.src_LBA) == len(ML.src_wavelengths)
+        assert len(ML.tgt_LBA) == len(ML.tgt_wavelengths)
+
+        return ML
 
 
 def get_machine_learner(method='LR', **init_params):

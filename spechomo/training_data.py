@@ -296,6 +296,19 @@ class RefCube(object):
         else:
             return self.data
 
+    def get_spectra_dataframe(self, tgt_LBA):
+        # type: (List[str]) -> DataFrame
+        """Return a pandas.DataFrame [sample x band] according to the given LayerBandsAssignment.
+
+        :param tgt_LBA: target LayerBandsAssignment
+        :return:
+        """
+        imdata = self.get_band_combination(tgt_LBA)
+        spectra = im2spectra(imdata)
+        df = DataFrame(spectra, columns=['B%s' % band for band in tgt_LBA])
+
+        return df
+
     def rearrange_layers(self, tgt_LBA):
         # type: (List[str]) -> None
         """Rearrange the spectral bands of the reference cube according to the given LayerBandsAssignment.
