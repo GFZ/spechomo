@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from multiprocessing import Pool
-from typing import Union  # noqa F401  # flake8 issue
+from typing import Union, TYPE_CHECKING  # noqa F401  # flake8 issue
 
 import numpy as np
 import scipy as sp
@@ -12,8 +12,9 @@ from scipy.interpolate import interp1d
 
 from .logging import SpecHomo_Logger
 
-# dependencies to get rid of
-from gms_preprocessing.io.input_reader import SRF  # noqa F401  # flake8 issue
+# TODO dependencies to get rid of
+if TYPE_CHECKING:
+    from gms_preprocessing.io.input_reader import SRF  # noqa F401  # flake8 issue
 
 
 class SpectralResampler(object):
