@@ -529,6 +529,11 @@ class ClusterClassifier_Generator(object):
                         df.insert(1, 'spectral_distance', spectral_distances)
                         df.insert(2, 'spectral_angle', spectral_angles)
 
+                    # remove spectra with cluster label -9999
+                    # (clusters with too few spectra that are set to nodata in the refcube)
+                    df_src_spectra_allclust = df_src_spectra_allclust[df_src_spectra_allclust.cluster_label != -9999]
+                    df_tgt_spectra_allclust = df_tgt_spectra_allclust[df_tgt_spectra_allclust.cluster_label != -9999]
+
                     # ensure source and target spectra do not contain nodata values (would affect classifiers)
                     assert src_cube.data.nodata is None or src_cube.data.nodata not in df_src_spectra_allclust.values
                     assert tgt_cube.data.nodata is None or tgt_cube.data.nodata not in df_tgt_spectra_allclust.values
