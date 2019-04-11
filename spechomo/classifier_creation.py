@@ -597,7 +597,7 @@ class ClusterClassifier_Generator(object):
         if return_spectral_distances:
             return_vals.append(km.spectral_distances_with_nodata)
         if return_spectral_angles:
-            return_vals.append(km.spectral_angles)
+            return_vals.append(km.spectral_angles_with_nodata)
 
         return tuple(return_vals)
 
