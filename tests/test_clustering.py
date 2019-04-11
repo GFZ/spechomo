@@ -43,6 +43,10 @@ class Test_KMeansRSImage(unittest.TestCase):
         self.assertIsInstance(labels, np.ndarray)
         self.assertTrue(labels.size == self.geoArr.rows * self.geoArr.cols)
 
+    def test_spectral_angles(self):
+        angles = self.kmeans.spectral_angles
+        self.assertIsInstance(angles, np.ndarray)
+
     def test_get_random_spectra_from_each_cluster(self):
         random_samples = self.kmeans.get_random_spectra_from_each_cluster()
         self.assertIsInstance(random_samples, dict)

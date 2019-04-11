@@ -21,7 +21,6 @@ from tqdm import tqdm
 from geoarray import GeoArray
 
 from .clustering import KMeansRSImage
-from .utils import im2spectra
 from .resampling import SpectralResampler
 from .training_data import RefCube
 from .logging import SpecHomo_Logger
@@ -496,8 +495,9 @@ class ClusterClassifier_Generator(object):
             cls_collection = nested_dict()
 
             # get cluster labels for each source cube separately (as they depend on source spectral characteristics)
-            clusterlabels_src_cube, spectral_distances = \
-                self._get_cluster_labels_for_source_refcube(src_cube, n_clusters, CPUs, return_spectral_distances=True)
+            clusterlabels_src_cube, spectral_distances, spectral_angles = \
+                self._get_cluster_labels_for_source_refcube(src_cube, n_clusters, CPUs,
+                                                            return_spectral_distances=True, return_spectral_angles=True)
 
             for tgt_cube in self.refcubes:
                 if (src_cube.satellite, src_cube.sensor) == (tgt_cube.satellite, tgt_cube.sensor):
@@ -527,6 +527,7 @@ class ClusterClassifier_Generator(object):
                     for df in [df_src_spectra_allclust, df_tgt_spectra_allclust]:
                         df.insert(0, 'cluster_label', clusterlabels_src_cube)
                         df.insert(1, 'spectral_distance', spectral_distances)
+                        df.insert(2, 'spectral_angle', spectral_angles)
 
                     # ensure source and target spectra do not contain nodata values (would affect classifiers)
                     assert src_cube.data.nodata is None or src_cube.data.nodata not in df_src_spectra_allclust.values
@@ -540,8 +541,8 @@ class ClusterClassifier_Generator(object):
                                 clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust)
 
                         # Set train and test variables for the classifier
-                        src_spectra_curlabel = df_src_spectra_best.values[:, 2:]
-                        tgt_spectra_curlabel = df_tgt_spectra_best.values[:, 2:]
+                        src_spectra_curlabel = df_src_spectra_best.values[:, 3:]
+                        tgt_spectra_curlabel = df_tgt_spectra_best.values[:, 3:]
 
                         train_src, test_src, train_tgt, test_tgt = \
                             train_test_split(src_spectra_curlabel, tgt_spectra_curlabel,
@@ -549,6 +550,7 @@ class ClusterClassifier_Generator(object):
 
                         # train the learner and add metadata
                         ML = self.train_machine_learner(train_src, train_tgt, test_src, test_tgt, method, **kwargs)
+                        # noinspection PyTypeChecker
                         ML = self._add_metadata_to_machine_learner(
                             ML, src_cube, tgt_cube, src_LBA, tgt_LBA, src_wavelengths, tgt_wavelengths,
                             train_src, n_clusters, clusterlabel)
@@ -565,7 +567,8 @@ class ClusterClassifier_Generator(object):
             with open(os.path.join(outDir, fName_cls), 'wb') as outF:
                 dill.dump(cls_collection.to_dict(), outF, protocol=dill.HIGHEST_PROTOCOL)
 
-    def _get_cluster_labels_for_source_refcube(self, src_cube, n_clusters, CPUs, return_spectral_distances=False):
+    def _get_cluster_labels_for_source_refcube(self, src_cube, n_clusters, CPUs,
+                                               return_spectral_distances=False, return_spectral_angles=False):
         """Get cluster labels for each source cube separately
 
         NOTE: - We use the GMS L1C bands (without atmospheric bands and PAN-band) for clustering.
@@ -593,12 +596,14 @@ class ClusterClassifier_Generator(object):
 
         if return_spectral_distances:
             return_vals.append(km.spectral_distances_with_nodata)
+        if return_spectral_angles:
+            return_vals.append(km.spectral_angles)
 
         return tuple(return_vals)
 
     @staticmethod
-    def _extract_best_spectra_from_cluster(clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust):
-        # get 100 sample source spectra (only from those spectra used for model training)
+    def _extract_best_spectra_from_cluster(clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust,
+                                           max_distance_percent=80, max_angle_precent=80):
         # NOTE: We exclude the noisy spectra with the largest spectral distances to their cluster
         #       center here (random spectra from within the upper 80 %)
         assert len(df_src_spectra_allclust.index) == len(df_tgt_spectra_allclust.index), \
@@ -606,8 +611,10 @@ class ClusterClassifier_Generator(object):
 
         df_src_spectra = df_src_spectra_allclust[df_src_spectra_allclust.cluster_label == clusterlabel]
 
-        min_th = np.percentile(df_src_spectra.spectral_distance, 80)
-        df_src_spectra_best = df_src_spectra[df_src_spectra.spectral_distance < min_th]
+        max_dist = np.percentile(df_src_spectra.spectral_distance, max_distance_percent)
+        max_angle = np.percentile(df_src_spectra.spectral_angle, max_angle_precent)
+        df_src_spectra_best = df_src_spectra[(df_src_spectra.spectral_distance < max_dist) &
+                                             (df_src_spectra.spectral_angle < max_angle)]
         df_tgt_spectra_best = df_tgt_spectra_allclust.loc[df_src_spectra_best.index, :]
 
         return df_src_spectra_best, df_tgt_spectra_best

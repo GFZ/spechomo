@@ -9,6 +9,7 @@ from geoarray import GeoArray
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 from sklearn.cluster import KMeans
+from sklearn.preprocessing import MaxAbsScaler
 
 from .utils import im2spectra
 
@@ -30,6 +31,8 @@ class KMeansRSImage(object):
         self._labels_with_nodata = None
         self._spectral_distances = None
         self._spectral_distances_with_nodata = None
+        self._spectral_angles = None
+        self._spectral_angles_with_nodata = None
 
         self.im = im
         self.n_clusters = n_clusters
@@ -151,6 +154,36 @@ class KMeansRSImage(object):
         self._spectral_distances = np.min(self.clusters.fit_transform(self.spectra), axis=1)
         return self.spectral_distances
 
+    def compute_spectral_angles(self):
+        from gms_preprocessing.algorithms.classification import calc_sam
+
+        def _get_normalized_spectra():
+            cm = self.clusters.cluster_centers_.astype(np.float)
+            sp = self.spectra.astype(np.float)
+            allVals = np.hstack([cm.flat, sp.flat]).reshape(-1, 1)
+
+            if allVals.min() < -1 or allVals.max() > 1:
+                max_abs_scaler = MaxAbsScaler()
+                max_abs_scaler.fit_transform(allVals)
+                cm_norm = max_abs_scaler.transform(cm)
+                sp_norm = max_abs_scaler.transform(self.spectra)
+                return cm_norm, sp_norm
+            else:
+                return cm, sp
+
+        # normalize input data because SAM asserts only data between -1 and 1
+        center_spectra_norm, spectra_norm = _get_normalized_spectra()
+
+        angles = np.zeros((spectra_norm.shape[0], self.n_clusters), np.float)
+        for i in range(center_spectra_norm.shape[0]):
+            center = center_spectra_norm[i, :].reshape(1, -1)
+            angles[:, i] = calc_sam(spectra_norm, center, axis=1)
+
+        angles_min = angles.min(axis=1)
+
+        self._spectral_angles = np.rad2deg(angles_min)
+        return self.spectral_angles
+
     @property
     def labels(self):
         """Get labels for all clustered spectra (excluding spectra that contain nodata values)."""
@@ -189,6 +222,27 @@ class KMeansRSImage(object):
                 self._spectral_distances_with_nodata = dists
 
         return self._spectral_distances_with_nodata
+
+    @property
+    def spectral_angles(self):
+        """Get spectral angles in degrees for all pixels that don't contain nodata values."""
+        # TODO compute that in multiprocessing
+        if self._spectral_angles is None:
+            self._spectral_angles = self.compute_spectral_angles()
+
+        return self._spectral_angles
+
+    @property
+    def spectral_angles_with_nodata(self):
+        if self._spectral_angles_with_nodata is None:
+            if self.n_spectra == (self.im.rows * self.im.cols):
+                self._spectral_angles_with_nodata = self._spectral_angles
+            else:
+                angles = np.full_like(self.goodSpecMask, np.nan, dtype=np.float)
+                angles[self.goodSpecMask] = self._spectral_angles
+                self._spectral_angles_with_nodata = angles
+
+        return self._spectral_angles_with_nodata
 
     def dump(self, path_out):
         with open(path_out, 'wb') as outF:
