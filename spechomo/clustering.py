@@ -206,14 +206,14 @@ class KMeansRSImage(object):
     def spectral_distances(self):
         """Get spectral distances for all pixels that don't contain nodata values."""
         # TODO compute that in multiprocessing
-        if self._spectral_distances is None:
+        if self._clusters is not None and self._spectral_distances is None:
             self._spectral_distances = self.compute_spectral_distances()
 
         return self._spectral_distances
 
     @property
     def spectral_distances_with_nodata(self):
-        if self._spectral_distances_with_nodata is None:
+        if self._clusters is not None and self._spectral_distances_with_nodata is None:
             if self.n_spectra == (self.im.rows * self.im.cols):
                 self._spectral_distances_with_nodata = self.spectral_distances
             else:
@@ -227,19 +227,19 @@ class KMeansRSImage(object):
     def spectral_angles(self):
         """Get spectral angles in degrees for all pixels that don't contain nodata values."""
         # TODO compute that in multiprocessing
-        if self._spectral_angles is None:
+        if self._clusters is not None and self._spectral_angles is None:
             self._spectral_angles = self.compute_spectral_angles()
 
         return self._spectral_angles
 
     @property
     def spectral_angles_with_nodata(self):
-        if self._spectral_angles_with_nodata is None:
+        if self._clusters is not None and self._spectral_angles_with_nodata is None:
             if self.n_spectra == (self.im.rows * self.im.cols):
                 self._spectral_angles_with_nodata = self._spectral_angles
             else:
                 angles = np.full_like(self.goodSpecMask, np.nan, dtype=np.float)
-                angles[self.goodSpecMask] = self._spectral_angles
+                angles[self.goodSpecMask] = self.spectral_angles
                 self._spectral_angles_with_nodata = angles
 
         return self._spectral_angles_with_nodata
