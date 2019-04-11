@@ -17,9 +17,9 @@ from .exceptions import ClassifierNotAvailableError
 from .logging import SpecHomo_Logger
 from . import __path__
 
-# dependencies to get rid of
-from gms_preprocessing.algorithms.classification import classify_image
-from gms_preprocessing.model.gms_object import GMS_object
+# TODO dependencies to get rid of
+# from gms_preprocessing.algorithms.classification import classify_image
+# from gms_preprocessing.model.gms_object import GMS_object
 
 __author__ = 'Daniel Scheffler'
 
@@ -289,6 +289,7 @@ class RSImage_ClusterPredictor(object):
                     train_spectra = classifier.cluster_centers
                     train_labels = classifier.cluster_pixVals
 
+                from gms_preprocessing.algorithms.classification import classify_image  # TODO get rid of this
                 self.classif_map, self.distance_metrics = classify_image(image, train_spectra, train_labels, **kw_clf)
 
                 self.logger.info('Total classification time: %s'
@@ -313,6 +314,7 @@ class RSImage_ClusterPredictor(object):
         # apply prediction
         # NOTE: prediction is applied in 1000 x 1000 tiles to save memory (because classifier.predict returns float32)
         t0 = time.time()
+        from gms_preprocessing.model.gms_object import GMS_object  # TODO get rid of this
         out_nodataVal = out_nodataVal if out_nodataVal is not None else image.nodata
         image_predicted = GeoArray(np.empty((image.rows, image.cols, classifier.tgt_n_bands), dtype=image.dtype),
                                    geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
