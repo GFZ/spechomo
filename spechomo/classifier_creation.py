@@ -617,8 +617,8 @@ class ClusterClassifier_Generator(object):
         df_src_spectra = df_src_spectra_allclust[df_src_spectra_allclust.cluster_label == clusterlabel]
 
         max_dist = np.percentile(df_src_spectra.spectral_distance, max_distance_percent)
-        df_src_spectra_best = df_src_spectra[(df_src_spectra.spectral_distance < max_dist) &
-                                             (df_src_spectra.spectral_angle < max_angle_degrees)]
+        df_src_spectra_best = df_src_spectra[(df_src_spectra.spectral_angle < max_angle_degrees) &
+                                             (df_src_spectra.spectral_distance < max_dist)]
         df_tgt_spectra_best = df_tgt_spectra_allclust.loc[df_src_spectra_best.index, :]
 
         return df_src_spectra_best, df_tgt_spectra_best
