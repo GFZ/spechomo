@@ -608,9 +608,9 @@ class ClusterClassifier_Generator(object):
 
     @staticmethod
     def _extract_best_spectra_from_cluster(clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust,
-                                           max_distance_percent=50, max_angle_degrees=4):
+                                           max_distance_percent=40, max_angle_degrees=5):
         # NOTE: We exclude the noisy spectra with the largest spectral distances to their cluster
-        #       center here (random spectra from within the upper 80 %)
+        #       center here (random spectra from within the upper 40 %)
         assert len(df_src_spectra_allclust.index) == len(df_tgt_spectra_allclust.index), \
             'Source and target spectra dataframes must have the same number of spectral samples.'
 
