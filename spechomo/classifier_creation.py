@@ -188,7 +188,8 @@ class ReferenceCube_Generator(object):
                 unif_random_spectra_rsp = self.resample_spectra(
                     unif_random_spectra,
                     src_cwl=np.array(src_im.meta.band_meta['wavelength'], dtype=np.float).flatten(),
-                    tgt_srf=self._get_tgt_SRF_object(tgt_sat, tgt_sen))
+                    tgt_srf=self._get_tgt_SRF_object(tgt_sat, tgt_sen),
+                    nodataVal=src_im.nodata)
 
                 # add the spectra as GeoArray instance to the in-mem ref cubes
                 refcube = self.refcubes[(tgt_sat, tgt_sen)]  # type: RefCube
@@ -279,13 +280,14 @@ class ReferenceCube_Generator(object):
 
         return random_samples
 
-    def resample_spectra(self, spectra, src_cwl, tgt_srf):
-        # type: (Union[GeoArray, np.ndarray], Union[list, np.array], SRF) -> np.ndarray
+    def resample_spectra(self, spectra, src_cwl, tgt_srf, nodataVal):
+        # type: (Union[GeoArray, np.ndarray], Union[list, np.array], SRF, int) -> np.ndarray
         """Perform spectral resampling of the given image to match the given spectral response functions.
 
         :param spectra:     2D array (rows: spectral samples;  columns: spectral information / bands
         :param src_cwl:     central wavelength positions of input spectra
         :param tgt_srf:     target spectral response functions to be used for spectral resampling
+        :param nodataVal:   nodata value of the given spectra to be ignored during resampling
         :return:
         """
         spectra = GeoArray(spectra)
@@ -297,7 +299,7 @@ class ReferenceCube_Generator(object):
         SR = SpectralResampler(src_cwl, tgt_srf)
         spectra_rsp = SR.resample_spectra(spectra,
                                           chunksize=200,
-                                          # nodataVal=im_gA.nodata,  # TODO
+                                          nodataVal=nodataVal,
                                           alg_nodata='radical',
                                           CPUs=self.CPUs)
 
