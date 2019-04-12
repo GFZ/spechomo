@@ -463,8 +463,11 @@ class ClusterClassifier_Generator(object):
 
         return ML
 
-    def create_classifiers(self, outDir, method='LR', n_clusters=50, CPUs=24, **kwargs):
-        # type: (str, str, int, int, dict) -> None
+    def create_classifiers(self, outDir, method='LR', n_clusters=50, CPUs=24,
+                           max_distance_percent=options['classifiers']['trainspec_filtering']['max_distance_percent'],
+                           max_angle_degrees=options['classifiers']['trainspec_filtering']['max_angle_degrees'],
+                           **kwargs):
+        # type: (str, str, int, int, int, int, dict) -> None
         """Create cluster classifiers for all combinations of the reference cubes given in __init__().
 
         :param outDir:      output directory for the created cluster classifier collections
@@ -475,6 +478,9 @@ class ClusterClassifier_Generator(object):
                             'RFR':  Random Forest Regression (50 trees with maximum depth of 3 by default)
         :param n_clusters:  number of clusters to be used for KMeans clustering
         :param CPUs:        number of CPUs to be used for KMeans clustering
+        :param max_distance_percent:    maximum spectral distance (percentile) allowed during filtering of training
+                                        spectra (e.g., 80 means that the worst 20 % of the input spectra are excluded)
+        :param max_angle_degrees:       maximum spectral angle in degrees allowed during filtering of training spectra
         :param kwargs:      keyword arguments to be passed to machine learner
         """
         # validate and set defaults
@@ -543,7 +549,8 @@ class ClusterClassifier_Generator(object):
 
                         df_src_spectra_best, df_tgt_spectra_best = \
                             self._extract_best_spectra_from_cluster(
-                                clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust)
+                                clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust,
+                                max_distance_percent=max_distance_percent, max_angle_degrees=max_angle_degrees)
 
                         # Set train and test variables for the classifier
                         src_spectra_curlabel = df_src_spectra_best.values[:, 3:]
@@ -608,7 +615,7 @@ class ClusterClassifier_Generator(object):
 
     @staticmethod
     def _extract_best_spectra_from_cluster(clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust,
-                                           max_distance_percent=40, max_angle_degrees=5):
+                                           max_distance_percent, max_angle_degrees):
         # NOTE: We exclude the noisy spectra with the largest spectral distances to their cluster
         #       center here (random spectra from within the upper 40 %)
         assert len(df_src_spectra_allclust.index) == len(df_tgt_spectra_allclust.index), \
