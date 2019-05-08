@@ -301,7 +301,7 @@ class RSImage_ClusterPredictor(object):
 
                 # overwrite all pixels where the input image contains nodata in ANY band
                 # (would lead to faulty predictions due to multivariate prediction algorithms)
-                if cmap_nodataVal is not None:
+                if in_nodataVal is not None and cmap_nodataVal is not None:
                     self.classif_map[np.any(image[:] == image.nodata, axis=2)] = cmap_nodataVal
 
                 self.distance_metrics = np.zeros_like(self.classif_map, np.float32)
