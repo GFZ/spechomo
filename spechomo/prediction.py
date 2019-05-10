@@ -204,6 +204,7 @@ class RSImage_ClusterPredictor(object):
         self.n_clusters = n_clusters
         self.classifier_rootDir = os.path.abspath(classifier_rootDir)
         self.classif_map = None
+        self.classif_map_fractions = None
         self.distance_metrics = None
         self.CPUs = CPUs or cpu_count()
         self.classif_alg = classif_alg
@@ -347,6 +348,11 @@ class RSImage_ClusterPredictor(object):
         #     '/home/gfz-fe/scheffler/temp/SPECHOM_py/image_predicted_QRclust1_MinDist_noB9.bsq')
         # GeoArray(self.classif_map).save(
         #     '/home/gfz-fe/scheffler/temp/SPECHOM_py/classif_map_QRclust1_MinDist_noB9.bsq')
+
+        # append some statistics regarding the homogenization
+        cmap_vals, cmap_valcounts = np.unique(self.classif_map, return_counts=True)
+        cmap_valfractions = cmap_valcounts / self.classif_map.size
+        self.classif_map_fractions = dict(zip(list(cmap_vals), list(cmap_valfractions)))
 
         return image_predicted
 
