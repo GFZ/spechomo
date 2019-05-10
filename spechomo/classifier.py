@@ -18,14 +18,21 @@ from .utils import im2spectra, spectra2im
 
 
 class Cluster_Learner(object):
-    def __init__(self, dict_clust_MLinstances):
-        # type: (dict) -> None
-        """
+    """
+    A class that holds the machine learning classifiers for multiple spectral clusters as well as a global classifier.
+    These classifiers can be applied to an input sensor image by using the predict method.
+    """
+    def __init__(self, dict_clust_MLinstances, global_classifier):
+        # type: (Union[dict, ClassifierCollection], any) -> None
+        """Get an instance of Cluster_Learner.
 
-        :param dict_clust_MLinstances:
+        :param dict_clust_MLinstances:  a dictionary of cluster specific machine learning classifiers
+        :param global_classifier:       the global machine learning classifier to be applied at image positions with
+                                        high spectral dissimilarity to the available cluster centers
         """
         self.cluster_pixVals = list(sorted(dict_clust_MLinstances.keys()))  # type: List[int]
         self.MLdict = OrderedDict((clust, dict_clust_MLinstances[clust]) for clust in self.cluster_pixVals)
+        self.global_clf = global_classifier
         sample_MLinst = list(self.MLdict.values())[0]
         self.src_satellite = sample_MLinst.src_satellite
         self.src_sensor = sample_MLinst.src_sensor
@@ -74,10 +81,10 @@ class Cluster_Learner(object):
         dict_clust_MLinstances = cls._read_ClassifierCollection_from_zipFile(*args, n_clusters=n_clusters)
 
         # get the global classifier and add it as cluster label '-1'
-        dict_clust_MLinstances[-1] = cls._read_ClassifierCollection_from_zipFile(*args, n_clusters=1)[0]
+        global_clf = cls._read_ClassifierCollection_from_zipFile(*args, n_clusters=1)[0]
 
         # create an instance of ClusterLearner based on the ClassifierCollection dictionary
-        return Cluster_Learner(dict_clust_MLinstances)
+        return Cluster_Learner(dict_clust_MLinstances, global_clf)
 
     @staticmethod
     def _read_ClassifierCollection_from_zipFile(path_classifier_zip, method, src_satellite, src_sensor, src_LBA,
@@ -139,7 +146,7 @@ class Cluster_Learner(object):
 
                 elif pixVal == cmap_unclassifiedVal:
                     # apply global homogenization coefficients
-                    classifier = self.MLdict[-1]  # this is the global classifier
+                    classifier = self.global_clf
 
                 else:
                     # apply cluster specific homogenization coefficients
