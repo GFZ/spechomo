@@ -47,6 +47,7 @@ class Cluster_Learner(object):
         """Read a previously saved ClusterLearner from disk and return a ClusterLearner instance.
 
         Describe the classifier specifications with the given arguments.
+
         :param classifier_rootDir:  root directory of the classifiers
         :param method:              harmonization method
                                     'LR':   Linear Regression
@@ -67,30 +68,45 @@ class Cluster_Learner(object):
         if not os.path.isfile(path_classifier_zip):
             raise FileNotFoundError("No '%s' classifiers available at %s." % (method, path_classifier_zip))
 
-        # create an instance of ClusterLearner by reading the requested classifier from the zip archive
+        args = (path_classifier_zip, method, src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
+
+        # get cluster specific classifiers and store them in a ClassifierCollection dictionary
+        dict_clust_MLinstances = cls._read_ClassifierCollection_from_zipFile(*args, n_clusters=n_clusters)
+
+        # get the global classifier and add it as cluster label '-1'
+        dict_clust_MLinstances[-1] = cls._read_ClassifierCollection_from_zipFile(*args, n_clusters=1)[0]
+
+        # create an instance of ClusterLearner based on the ClassifierCollection dictionary
+        return Cluster_Learner(dict_clust_MLinstances)
+
+    @staticmethod
+    def _read_ClassifierCollection_from_zipFile(path_classifier_zip, method, src_satellite, src_sensor, src_LBA,
+                                                tgt_satellite, tgt_sensor, tgt_LBA, n_clusters):
+        # type: (str, str, str, str, list, str, str, list, int) -> ClassifierCollection
+
+        # read requested classifier from zip archive and create a ClassifierCollection
         with zipfile.ZipFile(path_classifier_zip, "r") as zf, tempfile.TemporaryDirectory() as td:
-            # read requested classifier from zip archive and create a ClassifierCollection
             fName_cls = \
                 get_filename_classifier_collection(method, src_satellite, src_sensor, n_clusters=n_clusters)
 
             try:
                 zf.extract(fName_cls, td)
                 path_cls = os.path.join(td, fName_cls)
-                dict_clust_MLinstances = \
+                clf_collection = \
                     ClassifierCollection(path_cls)['__'.join(src_LBA)][tgt_satellite, tgt_sensor]['__'.join(tgt_LBA)]
             except KeyError:
                 raise ClassifierNotAvailableError(method, src_satellite, src_sensor, src_LBA,
                                                   tgt_satellite, tgt_sensor, tgt_LBA, n_clusters)
 
-            # validation
-            expected_MLtype = type(get_machine_learner(method))
-            for label, ml in dict_clust_MLinstances.items():
-                if not isinstance(ml, expected_MLtype):
-                    raise ValueError("The given dillFile %s contains a spectral cluster (label '%s') with a %s machine "
-                                     "learner instead of the expected %s."
-                                     % (os.path.basename(fName_cls), label, type(ml), expected_MLtype.__name__,))
+        # validation
+        expected_MLtype = type(get_machine_learner(method))
+        for label, ml in clf_collection.items():
+            if not isinstance(ml, expected_MLtype):
+                raise ValueError("The given dillFile %s contains a spectral cluster (label '%s') with a %s machine "
+                                 "learner instead of the expected %s."
+                                 % (os.path.basename(fName_cls), label, type(ml), expected_MLtype.__name__,))
 
-            return Cluster_Learner(dict_clust_MLinstances)
+        return clf_collection
 
     def __iter__(self):
         for cluster in self.cluster_pixVals:
@@ -120,12 +136,17 @@ class Cluster_Learner(object):
             for pixVal in cluster_labels:
                 if pixVal == cmap_nodataVal:
                     continue
+
                 elif pixVal == cmap_unclassifiedVal:
-                    continue
+                    # apply global homogenization coefficients
+                    classifier = self.MLdict[-1]  # this is the global classifier
+
                 else:
+                    # apply cluster specific homogenization coefficients
                     classifier = self.MLdict[pixVal]
-                    mask_pixVal = cmap == pixVal
-                    im_pred[mask_pixVal] = classifier.predict(im_src[mask_pixVal]).astype(im_src.dtype)
+
+                mask_pixVal = cmap == pixVal
+                im_pred[mask_pixVal] = classifier.predict(im_src[mask_pixVal]).astype(im_src.dtype)
 
         else:
             # predict target spectra directly (much faster than the above algorithm)
