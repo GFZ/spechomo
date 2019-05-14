@@ -57,7 +57,8 @@ class SpectralHomogenizer(object):
 
         self.logger.info(
             'Performing spectral homogenization (%s interpolation) with target wavelength positions at %s nm.'
-            % (kind, ', '.join(np.array(target_CWLs[:-1]).astype(str)) + ' and %s' % target_CWLs[-1]))
+            % (kind, ', '.join(np.round(np.array(target_CWLs[:-1]), 1).astype(str)) +
+               ' and %s' % np.round(target_CWLs[-1], 1)))
         outarr = interp1d(np.array(orig_CWLs), arrcube, axis=2, kind=kind, fill_value='extrapolate')(target_CWLs)
         outarr = outarr.astype(np.int16)
 

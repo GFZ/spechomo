@@ -224,7 +224,7 @@ class ReferenceCube_Generator(object):
                                 If it is None, no intermediate downsampling is performed.
         :param downsamp_sen:    sensor code used for intermediate image dimensionality reduction (requires downsamp_sat)
         :param basename_clf_dump:   basename of serialized KMeans classifier
-        :param try_read_dumped_clf: try to read a prediciouly serialized KMeans classifier from disk
+        :param try_read_dumped_clf: try to read a previously serialized KMeans classifier from disk
                                     (massively speeds up the RefCube generation)
         :param exclude_worst_percent:   percentage of spectra with the largest spectral distances to be excluded
                                         from the reference cube (default: 20)
