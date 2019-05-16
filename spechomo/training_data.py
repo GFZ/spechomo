@@ -5,6 +5,7 @@ import os
 import re
 from collections import OrderedDict
 from typing import Union, List  # noqa F401  # flake8 issue
+from tqdm import tqdm
 
 import numpy as np
 from geoarray import GeoArray
@@ -343,3 +344,79 @@ class RefCube(object):
         # save metadata as JSON file
         with open(os.path.splitext(path_out)[0] + '.meta', 'w') as metaF:
             json.dump(self.metadata.copy(), metaF, separators=(',', ': '), indent=4)
+
+    def _get_spectra_by_label_imname(self, cluster_label, image_basename, n_spectra2get=100, random_state=0):
+        cluster_start_pos_all = list(range(0, self.n_signatures, self.n_signatures_per_cluster))
+        cluster_start_pos = cluster_start_pos_all[cluster_label]
+        spectra = self.data[cluster_start_pos: cluster_start_pos + self.n_signatures_per_cluster,
+                            self.srcImNames.index(image_basename)]
+        idxs_specIncl = np.random.RandomState(seed=random_state).choice(range(self.n_signatures_per_cluster),
+                                                                        n_spectra2get)
+        return spectra[idxs_specIncl, :]
+
+    def plot_sample_spectra(self, image_basename, cluster_label='all', include_mean_spectrum=True,
+                            include_median_spectrum=True, ncols=5, **kw_fig):
+        # type: (Union[str, int, List], str, bool, bool, int, dict) -> plt.figure
+
+        if isinstance(cluster_label, int):
+            lbls2plot = [cluster_label]
+        elif isinstance(cluster_label, list):
+            lbls2plot = cluster_label
+        elif cluster_label == 'all':
+            lbls2plot = list(range(self.n_clusters))
+        else:
+            raise ValueError(cluster_label)
+
+        # create a single plot
+        if len(lbls2plot) == 1:
+            if cluster_label == 'all':
+                cluster_label = 0
+
+            fig, axes = plt.figure(), None
+            spectra = self._get_spectra_by_label_imname(cluster_label, image_basename, 100)
+            for i in range(100):
+                plt.plot(self.wavelengths, spectra[i, :])
+
+            plt.xlabel('wavelength [nm]')
+            plt.ylabel('%s %s\nreflectance [0-10000]' % (self.satellite, self.sensor))
+            plt.title('Cluster #%s' % cluster_label)
+
+            if include_mean_spectrum:
+                plt.plot(self.wavelengths, np.mean(spectra, axis=0), c='black', lw=3)
+            if include_median_spectrum:
+                plt.plot(self.wavelengths, np.median(spectra, axis=0), '--', c='black', lw=3)
+
+        # create a plot with multiple subplots
+        else:
+            nplots = len(lbls2plot)
+            ncols = nplots if nplots < ncols else ncols
+            nrows = nplots // ncols if not nplots % ncols else nplots // ncols + 1
+            figsize = (4 * ncols, 3 * nrows)
+            fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize, sharex='all', sharey='all',
+                                     **kw_fig)
+
+            for lbl, ax in tqdm(zip(lbls2plot, axes.flatten()), total=nplots):
+                spectra = self._get_spectra_by_label_imname(lbl, image_basename, 100)
+
+                for i in range(100):
+                    ax.plot(self.wavelengths, spectra[i, :], lw=1)
+
+                if include_mean_spectrum:
+                    ax.plot(self.wavelengths, np.mean(spectra, axis=0), c='black', lw=2)
+                if include_median_spectrum:
+                    ax.plot(self.wavelengths, np.median(spectra, axis=0), '--', c='black', lw=3)
+
+                ax.grid(lw=0.2)
+                ax.set_ylim(0, 10000)
+
+                if ax.is_last_row():
+                    ax.set_xlabel('wavelength [nm]')
+                if ax.is_first_col():
+                    ax.set_ylabel('%s %s\nreflectance [0-10000]' % (self.satellite, self.sensor))
+                ax.set_title('Cluster #%s' % lbl)
+
+        fig.suptitle("Refcube spectra from image '%s':" % image_basename, fontsize=15)
+        plt.tight_layout(rect=(0, 0, 1, .95))
+        plt.show()
+
+        return fig

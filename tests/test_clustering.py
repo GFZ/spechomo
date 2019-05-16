@@ -53,7 +53,7 @@ class Test_KMeansRSImage(unittest.TestCase):
         for cluster_label in range(self.kmeans.n_clusters):
             self.assertIn(cluster_label, random_samples)
 
-        random_samples = self.kmeans.get_random_spectra_from_each_cluster(exclude_worst_percent=50)
+        random_samples = self.kmeans.get_random_spectra_from_each_cluster(max_distance='50%')
         self.assertIsInstance(random_samples, dict)
         for cluster_label in range(self.kmeans.n_clusters):
             self.assertIn(cluster_label, random_samples)

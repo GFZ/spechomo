@@ -319,15 +319,22 @@ class KMeansRSImage(object):
         plt.imshow(image2plot, plt.get_cmap('prism'), interpolation='none', extent=(0, cols, rows, 0))
         plt.show()
 
-    def get_random_spectra_from_each_cluster(self, samplesize=50, exclude_worst_percent=None, nmin_unique_spectra=50):
-        # type: (int, int, int) -> dict
+    def get_random_spectra_from_each_cluster(self, samplesize=50, max_distance=None, max_angle=None,
+                                             nmin_unique_spectra=50):
+        # type: (int, Union[int, float, str], Union[int, float, str], int) -> dict
         """Returns a given number of spectra randomly selected within each cluster.
 
         E.g., 50 spectra belonging to cluster 1, 50 spectra belonging to cluster 2 and so on.
 
         :param samplesize:  number of spectra to be randomly selected from each cluster
-        :param exclude_worst_percent:   percentage of spectra with the largest spectral distances to be excluded
-                                        from random sampling
+        :param max_distance:    spectra with a larger spectral distance than the given value will be excluded from
+                                random sampling.
+                                - if given as string like '20%', the maximum spectral distance is computed as 20%
+                                  percentile within each cluster
+        :param max_angle:       spectra with a larger spectral angle than the given value will be excluded from
+                                random sampling.
+                                - if given as string like '20%', the maximum spectral angle is computed as 20%
+                                  percentile within each cluster
         :param nmin_unique_spectra:   in case a cluster has less than the given number, do not use its spectra
                                       (return missing values)
         :return:
@@ -336,24 +343,42 @@ class KMeansRSImage(object):
         df = DataFrame(self.spectra, columns=['B%s' % band for band in range(1, self.im.bands + 1)], )
         df.insert(0, 'cluster_label', self.clusters.labels_)
 
-        if exclude_worst_percent is not None:
-            if not 0 < exclude_worst_percent < 100:
-                raise ValueError(exclude_worst_percent)
+        if max_angle is not None:
+            if not (isinstance(max_angle, (int, float)) and max_angle > 0) and \
+               not (isinstance(max_angle, str) and max_angle.endswith('%')):
+                raise ValueError(max_angle)
+            df.insert(1, 'spectral_angle', self.spectral_angles)
+
+        if max_distance is not None:
+            if not (isinstance(max_distance, (int, float)) and 0 < max_distance < 100) and \
+               not (isinstance(max_distance, str) and max_distance.endswith('%')):
+                raise ValueError(max_distance)
             df.insert(1, 'spectral_distance', self.spectral_distances)
 
         # get random sample from each cluster and generate a dict like {cluster_label: random_sample}
         # NOTE: nodata label is skipped
         random_samples = dict()
         for label in range(self.n_clusters):
-            if exclude_worst_percent is None:
+            if max_angle is None and max_distance is None:
                 cluster_subset = df[df.cluster_label == label].loc[:, 'B1':]
             else:
-                cluster_subset = df[df.cluster_label == label].loc[:, 'spectral_distance':]
+                cluster_subset = df[df.cluster_label == label]
+
+                # filter by spectral angle
+                if len(cluster_subset.index) >= nmin_unique_spectra and max_angle is not None:
+                    if isinstance(max_angle, str):
+                        max_angle = np.percentile(self.spectral_angles, float(max_angle.split('%')[0].strip()))
+                    cluster_subset = cluster_subset[cluster_subset.spectral_angle < max_angle]
+
+                # filter by spectral distance
+                if len(cluster_subset.index) >= nmin_unique_spectra and max_distance is not None:
+                    if isinstance(max_distance, str):
+                        max_distance = np.percentile(self.spectral_distances, float(max_distance.split('%')[0].strip()))
+                    cluster_subset = cluster_subset[cluster_subset.spectral_distance < max_distance]
 
                 if len(cluster_subset.index) >= nmin_unique_spectra:
-                    cluster_subset.sort_values(by=['spectral_distance'], ascending=True)
-                    min_th = np.percentile(cluster_subset.spectral_distance, 100 - exclude_worst_percent)
-                    cluster_subset = cluster_subset[cluster_subset.spectral_distance < min_th].loc[:, 'B1':]
+                    cluster_subset = cluster_subset.loc[:, 'B1':]
+
                 else:
                     # don't use the cluster if there are less than nmin_unique_spectra in there (return nodata)
                     cluster_subset = cluster_subset.loc[:, 'B1':]
