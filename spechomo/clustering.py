@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from multiprocessing import cpu_count, Pool
+from multiprocessing import cpu_count
 from typing import Union  # noqa F401  # flake8 issue
 
 import dill
@@ -9,7 +9,6 @@ from geoarray import GeoArray
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import MaxAbsScaler
 
 from .utils import im2spectra
 
@@ -160,47 +159,14 @@ class KMeansRSImage(object):
         self._spectral_distances = np.min(self.clusters.fit_transform(self.spectra), axis=1)
         return self.spectral_distances
 
-    @staticmethod
-    def _calc_sam_mp(center_spectrum):
-        from gms_preprocessing.algorithms.classification import calc_sam
-        return calc_sam(_spectra_norm, center_spectrum, axis=1)
-
     def compute_spectral_angles(self):
+        from gms_preprocessing.algorithms.classification import classify_image  # TODO get rid of this
+        spectral_angles = classify_image(self.im, self.clusters.cluster_centers_, list(range(self.n_clusters)),
+                                         'SAM', in_nodataVal=self.im.nodata, cmap_nodataVal=-9999,
+                                         tiledims=(1000, 1000), CPUs=self.CPUs, return_distance=True,
+                                         unclassified_pixVal=-1)[1]
 
-        def _get_normalized_spectra():
-            cm = self.clusters.cluster_centers_.astype(np.float)
-            sp = self.spectra.astype(np.float)
-            allVals = np.hstack([cm.flat, sp.flat]).reshape(-1, 1)
-
-            if allVals.min() < -1 or allVals.max() > 1:
-                max_abs_scaler = MaxAbsScaler()
-                max_abs_scaler.fit_transform(allVals)
-                cm_norm = max_abs_scaler.transform(cm)
-                sp_norm = max_abs_scaler.transform(self.spectra)
-                return cm_norm, sp_norm
-            else:
-                return cm, sp
-
-        # normalize input data because SAM asserts only data between -1 and 1
-        center_spectra_norm, spectra_norm = _get_normalized_spectra()
-
-        angles = np.zeros((spectra_norm.shape[0], self.n_clusters), np.float)
-        centers = [center_spectra_norm[i, :].reshape(1, -1) for i in range(center_spectra_norm.shape[0])]
-
-        if self.CPUs > 1:
-            with Pool(self.CPUs, initializer=_sam_initializer_mp, initargs=(spectra_norm, )) as pool:
-                for i, res in enumerate(pool.map(self._calc_sam_mp, centers)):
-                    angles[:, i] = res
-
-        else:
-            from gms_preprocessing.algorithms.classification import calc_sam
-
-            for i in range(center_spectra_norm.shape[0]):
-                angles[:, i] = calc_sam(spectra_norm, centers[i], axis=1)
-
-        angles_min = angles.min(axis=1)
-
-        self._spectral_angles = np.rad2deg(angles_min)
+        self._spectral_angles = spectral_angles.flatten()[self.goodSpecMask]
         return self.spectral_angles
 
     @property
@@ -225,7 +191,7 @@ class KMeansRSImage(object):
     def spectral_distances(self):
         """Get spectral distances for all pixels that don't contain nodata values."""
         # TODO compute that in multiprocessing
-        if self._clusters is not None and self._spectral_distances is None:
+        if self._spectral_distances is None:
             self._spectral_distances = self.compute_spectral_distances()
 
         return self._spectral_distances
@@ -245,7 +211,7 @@ class KMeansRSImage(object):
     @property
     def spectral_angles(self):
         """Get spectral angles in degrees for all pixels that don't contain nodata values."""
-        if self._clusters is not None and self._spectral_angles is None:
+        if self._spectral_angles is None:
             self._spectral_angles = self.compute_spectral_angles()
 
         return self._spectral_angles
@@ -432,12 +398,3 @@ class KMeansRSImage(object):
             random_samples[label] = np.array(cluster_subset_sorted.loc[:, 'B1':][:samplesize])
 
         return random_samples
-
-
-_spectra_norm = None
-
-
-def _sam_initializer_mp(spectra_norm):
-    # type: (np.ndarray) -> None
-    global _spectra_norm
-    _spectra_norm = spectra_norm
