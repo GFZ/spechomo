@@ -159,14 +159,20 @@ class Cluster_Learner(object):
             # predict target spectra directly (much faster than the above algorithm)
             pixVal = cluster_labels[0]
 
-            if pixVal != cmap_nodataVal:
-                spectra = im2spectra(im_src)
-                classifier = self.MLdict[pixVal]
-                spectra_pred = classifier.predict(spectra).astype(im_src.dtype)
-                im_pred = spectra2im(spectra_pred, im_src.shape[0], im_src.shape[1])
-            else:
+            if pixVal == cmap_nodataVal:
                 # im_src consists only of no data values
                 pass  # im_pred keeps at nodataVal
+
+            else:
+                if pixVal == cmap_unclassifiedVal:
+                    # apply global homogenization coefficients
+                    classifier = self.global_clf
+                else:
+                    classifier = self.MLdict[pixVal]
+
+                spectra = im2spectra(im_src)
+                spectra_pred = classifier.predict(spectra).astype(im_src.dtype)
+                im_pred = spectra2im(spectra_pred, im_src.shape[0], im_src.shape[1])
 
         return im_pred
 

@@ -657,6 +657,10 @@ class ClusterClassifier_Generator(object):
 
         df_src_spectra_best = df_src_spectra[df_src_spectra.spectral_angle < max_angle]
         df_src_spectra_best = df_src_spectra_best[df_src_spectra_best.spectral_distance < max_dist]
+
+        if len(df_src_spectra_best.index) > 1700:
+            df_src_spectra_best = df_src_spectra_best.sort_values(by='spectral_angle').head(1700)
+
         df_tgt_spectra_best = df_tgt_spectra_allclust.loc[df_src_spectra_best.index, :]
 
         return df_src_spectra_best, df_tgt_spectra_best
