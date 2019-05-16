@@ -376,13 +376,15 @@ class KMeansRSImage(object):
                         max_distance = np.percentile(self.spectral_distances, float(max_distance.split('%')[0].strip()))
                     cluster_subset = cluster_subset[cluster_subset.spectral_distance < max_distance]
 
-                if len(cluster_subset.index) >= nmin_unique_spectra:
-                    cluster_subset = cluster_subset.loc[:, 'B1':]
+                cluster_subset = cluster_subset.loc[:, 'B1':]
+
+                if len(cluster_subset.index) > 0:
+                    # don't use the cluster if there are less than nmin_unique_spectra in there (return nodata)
+                    cluster_subset[:] = -9999
 
                 else:
-                    # don't use the cluster if there are less than nmin_unique_spectra in there (return nodata)
-                    cluster_subset = cluster_subset.loc[:, 'B1':]
-                    cluster_subset[:] = -9999
+                    # cluster_subset is empty after filtering -> return nodata
+                    cluster_subset.loc[0] = [-9999] * len(cluster_subset.columns)
 
             # get random sample while filling it with duplicates of the same sample when cluster has not enough spectra
             random_samples[label] = np.array(cluster_subset.sample(samplesize, replace=True, random_state=20))
