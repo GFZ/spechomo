@@ -163,7 +163,7 @@ class KMeansRSImage(object):
         from gms_preprocessing.algorithms.classification import classify_image  # TODO get rid of this
         spectral_angles = classify_image(self.im, self.clusters.cluster_centers_, list(range(self.n_clusters)),
                                          'SAM', in_nodataVal=self.im.nodata, cmap_nodataVal=-9999,
-                                         tiledims=(1000, 1000), CPUs=self.CPUs, return_distance=True,
+                                         tiledims=(400, 400), CPUs=self.CPUs, return_distance=True,
                                          unclassified_pixVal=-1)[1]
 
         self._spectral_angles = spectral_angles.flatten()[self.goodSpecMask]
