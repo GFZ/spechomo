@@ -493,8 +493,8 @@ class ClusterClassifier_Generator(object):
         return ML
 
     def create_classifiers(self, outDir, method='LR', n_clusters=50, CPUs=24,
-                           max_distance_percent=options['classifiers']['trainspec_filtering']['max_distance_percent'],
-                           max_angle_percent=options['classifiers']['trainspec_filtering']['max_angle_degrees'],
+                           max_distance=options['classifiers']['trainspec_filtering']['max_distance'],
+                           max_angle=options['classifiers']['trainspec_filtering']['max_angle'],
                            **kwargs):
         # type: (str, str, int, int, int, int, dict) -> None
         """Create cluster classifiers for all combinations of the reference cubes given in __init__().
@@ -507,9 +507,12 @@ class ClusterClassifier_Generator(object):
                             'RFR':  Random Forest Regression (50 trees with maximum depth of 3 by default)
         :param n_clusters:  number of clusters to be used for KMeans clustering
         :param CPUs:        number of CPUs to be used for KMeans clustering
-        :param max_distance_percent:    maximum spectral distance (percentile) allowed during filtering of training
-                                        spectra (e.g., 80 means that the worst 20 % of the input spectra are excluded)
-        :param max_angle_percent:       maximum spectral angle (percentile) allowed during filtering of training spectra
+        :param max_distance:    maximum spectral distance allowed during filtering of training spectra
+                                - if given as string, e.g., '80%' means that the worst 20 % of the input spectra are
+                                  excluded)
+        :param max_angle:       maximum spectral angle allowed during filtering of training spectra
+                                 - if given as string, e.g., '80%' means that the worst 20 % of the input spectra are
+                                   excluded)
         :param kwargs:      keyword arguments to be passed to machine learner
         """
         # validate and set defaults
@@ -579,7 +582,7 @@ class ClusterClassifier_Generator(object):
                         df_src_spectra_best, df_tgt_spectra_best = \
                             self._extract_best_spectra_from_cluster(
                                 clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust,
-                                max_distance_percent=max_distance_percent, max_angle_percent=max_angle_percent)
+                                max_distance=max_distance, max_angle=max_angle)
 
                         # Set train and test variables for the classifier
                         src_spectra_curlabel = df_src_spectra_best.values[:, 3:]
@@ -644,7 +647,7 @@ class ClusterClassifier_Generator(object):
 
     @staticmethod
     def _extract_best_spectra_from_cluster(clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust,
-                                           max_distance_percent, max_angle_percent):
+                                           max_distance, max_angle):
         # NOTE: We exclude the noisy spectra with the largest spectral distances to their cluster
         #       center here (random spectra from within the upper 40 %)
         assert len(df_src_spectra_allclust.index) == len(df_tgt_spectra_allclust.index), \
@@ -652,18 +655,31 @@ class ClusterClassifier_Generator(object):
 
         df_src_spectra = df_src_spectra_allclust[df_src_spectra_allclust.cluster_label == clusterlabel]
 
-        max_dist = np.percentile(df_src_spectra.spectral_distance, max_distance_percent)
-        max_angle = np.percentile(df_src_spectra.spectral_angle, max_angle_percent)
+        # max_dist = np.percentile(df_src_spectra.spectral_distance, max_distance)
+        # max_angle = np.percentile(df_src_spectra.spectral_angle, max_angle_percent)
 
-        df_src_spectra_best = df_src_spectra[df_src_spectra.spectral_angle < max_angle]
-        df_src_spectra_best = df_src_spectra_best[df_src_spectra_best.spectral_distance < max_dist]
+        if isinstance(max_angle, str):
+            max_angle = np.percentile(df_src_spectra.spectral_angle,
+                                      int(max_angle.split('%')[0].strip()))
 
-        if len(df_src_spectra_best.index) > 1700:
-            df_src_spectra_best = df_src_spectra_best.sort_values(by='spectral_angle').head(1700)
+        tmp = df_src_spectra[df_src_spectra.spectral_angle < max_angle]
+        if len(tmp.index) > 10:
+            df_src_spectra = tmp
 
-        df_tgt_spectra_best = df_tgt_spectra_allclust.loc[df_src_spectra_best.index, :]
+        if isinstance(max_distance, str):
+            max_distance = np.percentile(df_src_spectra.spectral_distance,
+                                         int(max_distance.split('%')[0].strip()))
 
-        return df_src_spectra_best, df_tgt_spectra_best
+        tmp = df_src_spectra[df_src_spectra.spectral_distance < max_distance]
+        if len(tmp.index) > 10:
+            df_src_spectra = tmp
+
+        if len(df_src_spectra.index) > 1700:
+            df_src_spectra = df_src_spectra.sort_values(by='spectral_angle').head(1700)
+
+        df_tgt_spectra = df_tgt_spectra_allclust.loc[df_src_spectra.index, :]
+
+        return df_src_spectra, df_tgt_spectra
 
     @staticmethod
     def _add_metadata_to_machine_learner(ML, src_cube, tgt_cube, src_LBA, tgt_LBA, src_wavelengths, tgt_wavelengths,

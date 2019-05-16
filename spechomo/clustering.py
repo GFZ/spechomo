@@ -144,10 +144,10 @@ class KMeansRSImage(object):
         self.clusters = kmeans
 
         # override cluster labels with labels computed via SAM
-        from gms_preprocessing.algorithms.classification import SAM_Classifier
-        SC = SAM_Classifier(self.clusters.cluster_centers_, CPUs=32)
-        sam_labels = SC.classify(self.im)
-        self.clusters.labels_ = sam_labels[self.im.mask_nodata]
+        # from gms_preprocessing.algorithms.classification import SAM_Classifier
+        # SC = SAM_Classifier(self.clusters.cluster_centers_, CPUs=32)
+        # sam_labels = SC.classify(self.im)
+        # self.clusters.labels_ = sam_labels[self.im.mask_nodata]
 
         return self.clusters
 

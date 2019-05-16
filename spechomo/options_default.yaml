@@ -4,5 +4,5 @@ classifiers:
         max_depth: 3
 
     trainspec_filtering:
-        max_distance_percent: 80
-        max_angle_degrees: 5
+        max_distance: '80%'
+        max_angle: 5
