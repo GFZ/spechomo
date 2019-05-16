@@ -390,13 +390,15 @@ class KMeansRSImage(object):
 
                 cluster_subset = cluster_subset.loc[:, 'B1':]
 
-                if len(cluster_subset.index) > 0:
-                    # don't use the cluster if there are less than nmin_unique_spectra in there (return nodata)
-                    cluster_subset[:] = -9999
+                # handle clusters with less than nmin_unique_spectra in there
+                if len(cluster_subset.index) < nmin_unique_spectra:
+                    if len(cluster_subset.index) > 0:
+                        # don't use the cluster (return nodata)
+                        cluster_subset[:] = -9999
 
-                else:
-                    # cluster_subset is empty after filtering -> return nodata
-                    cluster_subset.loc[0] = [-9999] * len(cluster_subset.columns)
+                    else:
+                        # cluster_subset is empty after filtering -> return nodata
+                        cluster_subset.loc[0] = [-9999] * len(cluster_subset.columns)
 
             # get random sample while filling it with duplicates of the same sample when cluster has not enough spectra
             random_samples[label] = np.array(cluster_subset.sample(samplesize, replace=True, random_state=20))
