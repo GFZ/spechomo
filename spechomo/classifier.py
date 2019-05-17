@@ -72,28 +72,28 @@ class Cluster_Learner(object):
         """
         # get path of classifier zip archive
         path_classifier_zip = os.path.join(classifier_rootDir, '%s_classifiers.zip' % method)
-        fName_cls = get_filename_classifier_collection(method, src_satellite, src_sensor, n_clusters=n_clusters)
-        path_classifier_unzipped = os.path.join(classifier_rootDir, fName_cls)
-
         args = (method, src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
 
         if os.path.isfile(path_classifier_zip):
             # get cluster specific classifiers and store them in a ClassifierCollection dictionary
             dict_clust_MLinstances = cls._read_ClassifierCollection_from_zipFile(
-                path_classifier_zip, fName_cls, *args, n_clusters=n_clusters)
+                path_classifier_zip, *args, n_clusters=n_clusters)
 
             # get the global classifier and add it as cluster label '-1'
             global_clf = cls._read_ClassifierCollection_from_zipFile(
-                path_classifier_zip, fName_cls, *args, n_clusters=1)[0]
+                path_classifier_zip, *args, n_clusters=1)[0]
 
-        elif os.path.isfile(path_classifier_unzipped):
+        elif os.path.isdir(classifier_rootDir):
             # get cluster specific classifiers and store them in a ClassifierCollection dictionary
+            fName_clf_clustN = get_filename_classifier_collection(method, src_satellite, src_sensor,
+                                                                  n_clusters=n_clusters)
             dict_clust_MLinstances = cls._read_ClassifierCollection_from_unzippedFile(
-                path_classifier_unzipped, *args, n_clusters=n_clusters)
+                os.path.join(classifier_rootDir, fName_clf_clustN), *args, n_clusters=n_clusters)
 
             # get the global classifier and add it as cluster label '-1'
+            fName_clf_clust1 = get_filename_classifier_collection(method, src_satellite, src_sensor, n_clusters=1)
             global_clf = cls._read_ClassifierCollection_from_unzippedFile(
-                path_classifier_unzipped, *args, n_clusters=1)[0]
+                os.path.join(classifier_rootDir, fName_clf_clust1), *args, n_clusters=1)[0]
 
         else:
             raise FileNotFoundError("No '%s' classifiers available at %s." % (method, path_classifier_zip))
@@ -102,14 +102,15 @@ class Cluster_Learner(object):
         return Cluster_Learner(dict_clust_MLinstances, global_clf)
 
     @staticmethod
-    def _read_ClassifierCollection_from_zipFile(path_classifier_zip, fName_cls, method, src_satellite, src_sensor,
+    def _read_ClassifierCollection_from_zipFile(path_classifier_zip, method, src_satellite, src_sensor,
                                                 src_LBA, tgt_satellite, tgt_sensor, tgt_LBA, n_clusters):
-        # type: (str, str, str, str, str, list, str, str, list, int) -> ClassifierCollection
+        # type: (str, str, str, str, list, str, str, list, int) -> ClassifierCollection
 
         # read requested classifier from zip archive and create a ClassifierCollection
         with zipfile.ZipFile(path_classifier_zip, "r") as zf, tempfile.TemporaryDirectory() as td:
-            zf.extract(fName_cls, td)
-            path_clf = os.path.join(td, fName_cls)
+            fName_clf = get_filename_classifier_collection(method, src_satellite, src_sensor, n_clusters=n_clusters)
+            zf.extract(fName_clf, td)
+            path_clf = os.path.join(td, fName_clf)
 
             return Cluster_Learner._read_ClassifierCollection_from_unzippedFile(
                 path_clf, method, src_satellite, src_sensor, src_LBA,
@@ -130,6 +131,9 @@ class Cluster_Learner(object):
 
         # validation
         expected_MLtype = type(get_machine_learner(method))
+        if len(clf_collection.keys()) != n_clusters:
+            raise RuntimeError('Read classifier with %s clusters instead of %s.'
+                               % (len(clf_collection.keys()), n_clusters))
         for label, ml in clf_collection.items():
             if not isinstance(ml, expected_MLtype):
                 raise ValueError("The given dillFile %s contains a spectral cluster (label '%s') with a %s machine "
