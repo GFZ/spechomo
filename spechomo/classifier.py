@@ -196,6 +196,7 @@ class Cluster_Learner(object):
                     classifier = self.global_clf
                 else:
                     classifier = self.MLdict[pixVal]
+                    assert classifier.clusterlabel == pixVal
 
                 spectra = im2spectra(im_src)
                 spectra_pred = classifier.predict(spectra).astype(im_src.dtype)
