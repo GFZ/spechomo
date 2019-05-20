@@ -597,7 +597,7 @@ class ClusterClassifier_Generator(object):
                         # noinspection PyTypeChecker
                         ML = self._add_metadata_to_machine_learner(
                             ML, src_cube, tgt_cube, src_LBA, tgt_LBA, src_wavelengths, tgt_wavelengths,
-                            train_src, n_clusters, clusterlabel)
+                            train_src, train_tgt, n_clusters, clusterlabel)
 
                         # append to classifier collection
                         cls_collection[
@@ -683,7 +683,7 @@ class ClusterClassifier_Generator(object):
 
     @staticmethod
     def _add_metadata_to_machine_learner(ML, src_cube, tgt_cube, src_LBA, tgt_LBA, src_wavelengths, tgt_wavelengths,
-                                         src_train_spectra, n_clusters, clusterlabel):
+                                         src_train_spectra, tgt_train_spectra, n_clusters, clusterlabel):
         # compute cluster center for source spectra (only on those spectra used for model training)
         cluster_center = np.mean(src_train_spectra, axis=0)
         cluster_median = np.median(src_train_spectra, axis=0)
@@ -704,6 +704,8 @@ class ClusterClassifier_Generator(object):
         ML.cluster_center = cluster_center.astype(src_cube.data.dtype)
         ML.cluster_median = cluster_median.astype(src_cube.data.dtype)
         ML.cluster_sample_spectra = sample_spectra.astype(np.int16)  # scaled between 0 and 10000
+        ML.tgt_cluster_center = np.mean(tgt_train_spectra, axis=0).astype(tgt_cube.data.dtype)
+        ML.tgt_cluster_median = np.median(tgt_train_spectra, axis=0).astype(tgt_cube.data.dtype)
 
         assert len(ML.src_LBA) == len(ML.src_wavelengths)
         assert len(ML.tgt_LBA) == len(ML.tgt_wavelengths)

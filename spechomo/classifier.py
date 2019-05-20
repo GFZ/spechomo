@@ -228,11 +228,13 @@ class Cluster_Learner(object):
             plt.xlabel('wavelength [nm]')
             plt.ylabel('%s %s\nreflectance [0-10000]' % (self.src_satellite, self.src_sensor))
             plt.title('Cluster #%s' % cluster_label)
+            plt.grid(lw=0.2)
+            plt.ylim(0, 10000)
 
             if include_mean_spectrum:
                 plt.plot(self.src_wavelengths, self.MLdict[cluster_label].cluster_center, c='black', lw=3)
             if include_median_spectrum:
-                plt.plot(self.src_wavelengths, np.median(self.MLdict[cluster_label].cluster_sample_spectra),
+                plt.plot(self.src_wavelengths, np.median(self.MLdict[cluster_label].cluster_sample_spectra, axis=0),
                          '--', c='black', lw=3)
 
         # create a plot with multiple subplots
