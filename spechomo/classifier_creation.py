@@ -81,9 +81,8 @@ class ReferenceCube_Generator(object):
                                  LayerBandsAssignment=self._get_tgt_LayerBandsAssignment(sat, sen))
              for sat, sen in self.tgt_sat_sen_list}
 
-        # validation
         if dir_refcubes and not os.path.isdir(self.dir_refcubes):
-            raise ValueError("%s is not a directory." % self.dir_refcubes)
+            os.makedirs(self.dir_refcubes)
 
     @property
     def refcubes(self):
