@@ -35,7 +35,7 @@ class Test_KMeansRSImage(unittest.TestCase):
         os.environ['MPLBACKEND'] = 'Template'  # disables matplotlib figure popups # NOTE: import geoarray sets 'Agg'
 
     def test_compute_clusters(self):
-        self.kmeans.compute_clusters()
+        self.kmeans.compute_clusters(nmax_spectra=1e6)
         self.assertIsInstance(self.kmeans.clusters, KMeans)
 
     def test_apply_clusters(self):
@@ -46,6 +46,10 @@ class Test_KMeansRSImage(unittest.TestCase):
     def test_spectral_angles(self):
         angles = self.kmeans.spectral_angles
         self.assertIsInstance(angles, np.ndarray)
+
+    def test_spectral_distances(self):
+        distances = self.kmeans.spectral_distances
+        self.assertIsInstance(distances, np.ndarray)
 
     def test_get_random_spectra_from_each_cluster(self):
         random_samples = self.kmeans.get_random_spectra_from_each_cluster()

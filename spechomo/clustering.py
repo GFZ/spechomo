@@ -114,7 +114,7 @@ class KMeansRSImage(object):
         :return:
         """
         # data reduction in case we have too many spectra
-        if self.spectra.shape[0] > 1e6:
+        if self.spectra.shape[0] > nmax_spectra:
             if self.v:
                 print('Reducing data...')
             idxs_specIncl = np.random.RandomState(seed=0).choice(range(self.n_spectra), nmax_spectra)
@@ -125,13 +125,19 @@ class KMeansRSImage(object):
             if self.v:
                 print('Fitting KMeans...')
             kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
-            kmeans.fit(spectra_incl)
+            distmatrix_incl = kmeans.fit_transform(spectra_incl)
 
             if self.v:
                 print('Computing full resolution labels...')
             labels = np.zeros((self.n_spectra,), dtype=kmeans.labels_.dtype)
+            distances = np.zeros((self.n_spectra,), dtype=distmatrix_incl.dtype)
+
             labels[idxs_specIncl] = kmeans.labels_
-            labels[idxs_specNotIncl] = kmeans.predict(spectra_notIncl)
+            distances[idxs_specIncl] = np.min(distmatrix_incl, axis=1)
+
+            distmatrix_specNotIncl = kmeans.transform(spectra_notIncl)
+            labels[idxs_specNotIncl] = np.argmin(distmatrix_specNotIncl, axis=1)
+            distances[idxs_specNotIncl] = np.min(distmatrix_specNotIncl, axis=1)
 
             kmeans.labels_ = labels
 
@@ -139,16 +145,18 @@ class KMeansRSImage(object):
             if self.v:
                 print('Fitting KMeans...')
             kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
-            kmeans.fit(self.spectra)
+            distmatrix = kmeans.fit_transform(self.spectra)
+            distances = np.min(distmatrix, axis=1)
 
         self.clusters = kmeans
+        self._spectral_distances = distances
 
         # override cluster labels with labels computed via SAM
-        from gms_preprocessing.algorithms.classification import SAM_Classifier
-        print('Using SAM class assignment.')
-        SC = SAM_Classifier(self.clusters.cluster_centers_, CPUs=32)
-        sam_labels = SC.classify(self.im)
-        self.clusters.labels_ = sam_labels[self.im.mask_nodata]
+        # from gms_preprocessing.algorithms.classification import SAM_Classifier
+        # print('Using SAM class assignment.')
+        # SC = SAM_Classifier(self.clusters.cluster_centers_, CPUs=32)
+        # sam_labels = SC.classify(self.im)
+        # self.clusters.labels_ = sam_labels[self.im.mask_nodata]
 
         return self.clusters
 
@@ -157,7 +165,7 @@ class KMeansRSImage(object):
         return labels
 
     def compute_spectral_distances(self):
-        self._spectral_distances = np.min(self.clusters.fit_transform(self.spectra), axis=1)
+        self._spectral_distances = np.min(self.clusters.transform(self.spectra), axis=1)
         return self.spectral_distances
 
     def compute_spectral_angles(self):
@@ -191,7 +199,6 @@ class KMeansRSImage(object):
     @property
     def spectral_distances(self):
         """Get spectral distances for all pixels that don't contain nodata values."""
-        # TODO compute that in multiprocessing
         if self._spectral_distances is None:
             self._spectral_distances = self.compute_spectral_distances()
 
