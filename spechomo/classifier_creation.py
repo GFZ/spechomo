@@ -219,9 +219,9 @@ class ReferenceCube_Generator(object):
         return self.refcubes
 
     def cluster_image_and_get_uniform_spectra(self, im, downsamp_sat=None, downsamp_sen=None, basename_clf_dump='',
-                                              try_read_dumped_clf=True, max_distance='80%', max_angle=6,
-                                              nmin_unique_spectra=50, progress=False):
-        # type: (Union[str, GeoArray, np.ndarray], str, str, str, bool, int, Union[int, float, str], Union[int, float, str], bool) -> np.ndarray  # noqa
+                                              try_read_dumped_clf=True, sam_classassignment=False, max_distance='80%',
+                                              max_angle=6, nmin_unique_spectra=50, progress=False):
+        # type: (Union[str, GeoArray, np.ndarray], str, str, str, bool, bool, int, Union[int, float, str], Union[int, float, str], bool) -> np.ndarray  # noqa
         """Compute KMeans clusters for the given image and return the an array of uniform random samples.
 
         :param im:              image to be clustered
@@ -232,6 +232,8 @@ class ReferenceCube_Generator(object):
         :param basename_clf_dump:   basename of serialized KMeans classifier
         :param try_read_dumped_clf: try to read a previously serialized KMeans classifier from disk
                                     (massively speeds up the RefCube generation)
+        :param sam_classassignment: False: use minimal euclidian distance to assign classes to cluster centers
+                                    True: use the minimal spectral angle to assign classes to cluster centers
         :param max_distance:    spectra with a larger spectral distance than the given value will be excluded from
                                 random sampling.
                                 - if given as string like '20%', the maximum spectral distance is computed as 20%
@@ -254,8 +256,12 @@ class ReferenceCube_Generator(object):
 
         # get a KMeans classifier for the hyperspectral image
         path_clf = os.path.join(self.dir_clf_dump, '%s__KMeansClf.dill' % basename_clf_dump)
-        path_clustermap = os.path.join(self.dir_clf_dump,
-                                       '%s__KMeansClusterMap_nclust%d.bsq' % (basename_clf_dump, self.n_clusters))
+        if not sam_classassignment:
+            path_clustermap = os.path.join(self.dir_clf_dump,
+                                           '%s__KMeansClusterMap_nclust%d.bsq' % (basename_clf_dump, self.n_clusters))
+        else:
+            path_clustermap = os.path.join(self.dir_clf_dump,
+                                           '%s__SAMClusterMap_nclust%d.bsq' % (basename_clf_dump, self.n_clusters))
 
         if try_read_dumped_clf and os.path.isfile(path_clf):
             # read the previously dumped classifier from disk
@@ -277,7 +283,8 @@ class ReferenceCube_Generator(object):
             # NOTE: Nodata values are ignored during KMeans clustering.
             self.logger.info('Computing %s KMeans clusters from the input image %s...'
                              % (self.n_clusters, im2clust.basename))
-            kmeans = KMeansRSImage(im2clust, n_clusters=self.n_clusters, CPUs=self.CPUs, v=self.v)
+            kmeans = KMeansRSImage(im2clust, n_clusters=self.n_clusters, sam_classassignment=sam_classassignment,
+                                   CPUs=self.CPUs, v=self.v)
             kmeans.compute_clusters()
             kmeans.compute_spectral_distances()
 
@@ -491,11 +498,11 @@ class ClusterClassifier_Generator(object):
 
         return ML
 
-    def create_classifiers(self, outDir, method='LR', n_clusters=50, CPUs=24,
+    def create_classifiers(self, outDir, method='LR', n_clusters=50, sam_classassignment=False, CPUs=24,
                            max_distance=options['classifiers']['trainspec_filtering']['max_distance'],
                            max_angle=options['classifiers']['trainspec_filtering']['max_angle'],
                            **kwargs):
-        # type: (str, str, int, int, int, int, dict) -> None
+        # type: (str, str, int, bool, int, int, int, dict) -> None
         """Create cluster classifiers for all combinations of the reference cubes given in __init__().
 
         :param outDir:      output directory for the created cluster classifier collections
@@ -505,6 +512,8 @@ class ClusterClassifier_Generator(object):
                             'QR':   Quadratic Regression
                             'RFR':  Random Forest Regression (50 trees with maximum depth of 3 by default)
         :param n_clusters:  number of clusters to be used for KMeans clustering
+        :param sam_classassignment: False: use minimal euclidian distance to assign classes to cluster centers
+                                    True: use the minimal spectral angle to assign classes to cluster centers
         :param CPUs:        number of CPUs to be used for KMeans clustering
         :param max_distance:    maximum spectral distance allowed during filtering of training spectra
                                 - if given as string, e.g., '80%' means that the worst 20 % of the input spectra are
@@ -534,6 +543,7 @@ class ClusterClassifier_Generator(object):
             # get cluster labels for each source cube separately (as they depend on source spectral characteristics)
             clusterlabels_src_cube, spectral_distances, spectral_angles = \
                 self._get_cluster_labels_for_source_refcube(src_cube, n_clusters, CPUs,
+                                                            sam_classassignment=sam_classassignment,
                                                             return_spectral_distances=True, return_spectral_angles=True)
 
             for tgt_cube in self.refcubes:
@@ -610,7 +620,7 @@ class ClusterClassifier_Generator(object):
             with open(os.path.join(outDir, fName_cls), 'wb') as outF:
                 dill.dump(cls_collection.to_dict(), outF, protocol=dill.HIGHEST_PROTOCOL)
 
-    def _get_cluster_labels_for_source_refcube(self, src_cube, n_clusters, CPUs,
+    def _get_cluster_labels_for_source_refcube(self, src_cube, n_clusters, CPUs, sam_classassignment=False,
                                                return_spectral_distances=False, return_spectral_angles=False):
         """Get cluster labels for each source cube separately
 
@@ -620,6 +630,8 @@ class ClusterClassifier_Generator(object):
 
         :param src_cube:
         :param n_clusters:
+        :param sam_classassignment:         False: use minimal euclidian distance to assign classes to cluster centers
+                                            True: use the minimal spectral angle to assign classes to cluster centers
         :param CPUs:
         :param return_spectral_distances:
         :return:
@@ -632,7 +644,7 @@ class ClusterClassifier_Generator(object):
                                    image_type='RSD', dataset_ID=-9999, proc_level='L1C', logger=None)
         LBA2clust = get_LayerBandsAssignment(L1C_GMSid, no_pan=True, sort_by_cwl=True)
         src_data2clust = src_cube.get_band_combination(LBA2clust)
-        km = KMeansRSImage(src_data2clust, n_clusters=n_clusters, CPUs=CPUs)
+        km = KMeansRSImage(src_data2clust, n_clusters=n_clusters, sam_classassignment=sam_classassignment, CPUs=CPUs)
         km.compute_clusters()
 
         return_vals = [km.labels_with_nodata]

@@ -19,8 +19,8 @@ class KMeansRSImage(object):
     NOTE: Based on the nodata value of the input GeoArray those pixels that have nodata values in some bands are
           ignored when computing the cluster coefficients. Nodata values would affect clustering result otherwise.
     """
-    def __init__(self, im, n_clusters, CPUs=1, v=False):
-        # type: (GeoArray, int, Union[None, int], bool) -> None
+    def __init__(self, im, n_clusters, sam_classassignment=False, CPUs=1, v=False):
+        # type: (GeoArray, int, bool, Union[None, int], bool) -> None
 
         # privates
         self._clusters = None
@@ -35,6 +35,7 @@ class KMeansRSImage(object):
 
         self.im = im
         self.n_clusters = n_clusters
+        self.sam_classassignment = sam_classassignment
         self.CPUs = CPUs or cpu_count()
         self.v = v
 
@@ -145,18 +146,21 @@ class KMeansRSImage(object):
             if self.v:
                 print('Fitting KMeans...')
             kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
+
             distmatrix = kmeans.fit_transform(self.spectra)
             distances = np.min(distmatrix, axis=1)
 
+        if self.sam_classassignment:
+            # override cluster labels with labels computed via SAM (distances have be recomputed then)
+            from gms_preprocessing.algorithms.classification import SAM_Classifier
+            print('Using SAM class assignment.')
+            SC = SAM_Classifier(kmeans.cluster_centers_, CPUs=self.CPUs)
+            sam_labels = SC.classify(self.im)
+            kmeans.labels_ = sam_labels.flatten()[self.goodSpecMask]
+            self._spectral_angles = SC.angles_deg.flatten()[self.goodSpecMask]
+
         self.clusters = kmeans
         self._spectral_distances = distances
-
-        # override cluster labels with labels computed via SAM
-        # from gms_preprocessing.algorithms.classification import SAM_Classifier
-        # print('Using SAM class assignment.')
-        # SC = SAM_Classifier(self.clusters.cluster_centers_, CPUs=32)
-        # sam_labels = SC.classify(self.im)
-        # self.clusters.labels_ = sam_labels[self.im.mask_nodata]
 
         return self.clusters
 
@@ -333,12 +337,16 @@ class KMeansRSImage(object):
             if not (isinstance(max_angle, (int, float)) and max_angle > 0) and \
                not (isinstance(max_angle, str) and max_angle.endswith('%')):
                 raise ValueError(max_angle)
+            if isinstance(max_angle, str):
+                max_angle = np.percentile(self.spectral_angles, float(max_angle.split('%')[0].strip()))
             df.insert(1, 'spectral_angle', self.spectral_angles)
 
         if max_distance is not None:
             if not (isinstance(max_distance, (int, float)) and 0 < max_distance < 100) and \
                not (isinstance(max_distance, str) and max_distance.endswith('%')):
                 raise ValueError(max_distance)
+            if isinstance(max_distance, str):
+                max_distance = np.percentile(self.spectral_distances, float(max_distance.split('%')[0].strip()))
             df.insert(1, 'spectral_distance', self.spectral_distances)
 
         # get random sample from each cluster and generate a dict like {cluster_label: random_sample}
@@ -352,14 +360,10 @@ class KMeansRSImage(object):
 
                 # filter by spectral angle
                 if len(cluster_subset.index) >= nmin_unique_spectra and max_angle is not None:
-                    if isinstance(max_angle, str):
-                        max_angle = np.percentile(self.spectral_angles, float(max_angle.split('%')[0].strip()))
                     cluster_subset = cluster_subset[cluster_subset.spectral_angle < max_angle]
 
                 # filter by spectral distance
                 if len(cluster_subset.index) >= nmin_unique_spectra and max_distance is not None:
-                    if isinstance(max_distance, str):
-                        max_distance = np.percentile(self.spectral_distances, float(max_distance.split('%')[0].strip()))
                     cluster_subset = cluster_subset[cluster_subset.spectral_distance < max_distance]
 
                 cluster_subset = cluster_subset.loc[:, 'B1':]
