@@ -151,9 +151,9 @@ class ReferenceCube_Generator(object):
         from gms_preprocessing.io.input_reader import SRF
         return SRF(self._get_tgt_GMS_identifier(tgt_sat, tgt_sen), no_pan=False)
 
-    def generate_reference_cubes(self, fmt_out='ENVI', try_read_dumped_clf=True, max_distance='80%',
-                                 max_angle=6, nmin_unique_spectra=50, progress=True):
-        # type: (str, bool, int, Union[int, float, str], Union[int, float, str], bool) -> ReferenceCube_Generator.refcubes  # noqa
+    def generate_reference_cubes(self, fmt_out='ENVI', try_read_dumped_clf=True, sam_classassignment=False,
+                                 max_distance='80%', max_angle=6, nmin_unique_spectra=50, progress=True):
+        # type: (str, bool, bool, int, Union[int, float, str], Union[int, float, str], bool) -> ReferenceCube_Generator.refcubes  # noqa
         """Generate reference spectra from all hyperspectral input images.
 
         Workflow:
@@ -167,6 +167,8 @@ class ReferenceCube_Generator(object):
         :param fmt_out:             output format (GDAL driver code)
         :param try_read_dumped_clf: try to read a prediciouly serialized KMeans classifier from disk
                                     (massively speeds up the RefCube generation)
+        :param sam_classassignment: False: use minimal euclidian distance to assign classes to cluster centers
+                                    True: use the minimal spectral angle to assign classes to cluster centers
         :param max_distance:    spectra with a larger spectral distance than the given value will be excluded from
                                 random sampling.
                                 - if given as string like '20%', the maximum spectral distance is computed as 20%
@@ -189,6 +191,7 @@ class ReferenceCube_Generator(object):
             unif_random_spectra = \
                 self.cluster_image_and_get_uniform_spectra(src_im,
                                                            try_read_dumped_clf=try_read_dumped_clf,
+                                                           sam_classassignment=sam_classassignment,
                                                            max_distance=max_distance,
                                                            max_angle=max_angle,
                                                            nmin_unique_spectra=nmin_unique_spectra,
