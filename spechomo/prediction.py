@@ -279,7 +279,7 @@ class RSImage_ClusterPredictor(object):
                               return_distance=True,
                               **self.kw_clf_init)
 
-                if self.classif_alg in ['MinDist', 'SAM', 'SID']:
+                if self.classif_alg in ['MinDist', 'SAM', 'SID', 'FEDSA']:
                     kw_clf.update(dict(unclassified_threshold=unclassified_threshold,
                                        unclassified_pixVal=unclassified_pixVal))
 

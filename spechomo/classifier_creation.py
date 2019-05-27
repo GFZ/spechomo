@@ -505,7 +505,7 @@ class ClusterClassifier_Generator(object):
                            max_distance=options['classifiers']['trainspec_filtering']['max_distance'],
                            max_angle=options['classifiers']['trainspec_filtering']['max_angle'],
                            **kwargs):
-        # type: (str, str, int, bool, int, int, int, dict) -> None
+        # type: (str, str, int, bool, int, Union[int, str], Union[int, str], dict) -> None
         """Create cluster classifiers for all combinations of the reference cubes given in __init__().
 
         :param outDir:      output directory for the created cluster classifier collections
