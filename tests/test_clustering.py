@@ -26,14 +26,16 @@ class Test_KMeansRSImage(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.geoArr = GeoArray(testdata)
+        cls.geoArr = GeoArray(testdata, nodata=-9999)
         cls.geoArr.to_mem()
-        cls.kmeans = KMeansRSImage(cls.geoArr, n_clusters=10)
+        cls.geoArr[:10, :10, :10] = -9999  # simulate some pixels that have nodata in some bands (unusable for KMeans)
+
+        cls.kmeans = KMeansRSImage(cls.geoArr, n_clusters=5)
 
         os.environ['MPLBACKEND'] = 'Template'  # disables matplotlib figure popups # NOTE: import geoarray sets 'Agg'
 
     def test_compute_clusters(self):
-        self.kmeans.compute_clusters()
+        self.kmeans.compute_clusters(nmax_spectra=1e6)
         self.assertIsInstance(self.kmeans.clusters, KMeans)
 
     def test_apply_clusters(self):
@@ -41,8 +43,27 @@ class Test_KMeansRSImage(unittest.TestCase):
         self.assertIsInstance(labels, np.ndarray)
         self.assertTrue(labels.size == self.geoArr.rows * self.geoArr.cols)
 
+    def test_spectral_angles(self):
+        angles = self.kmeans.spectral_angles
+        self.assertIsInstance(angles, np.ndarray)
+
+    def test_spectral_distances(self):
+        distances = self.kmeans.spectral_distances
+        self.assertIsInstance(distances, np.ndarray)
+
     def test_get_random_spectra_from_each_cluster(self):
         random_samples = self.kmeans.get_random_spectra_from_each_cluster()
+        self.assertIsInstance(random_samples, dict)
+        for cluster_label in range(self.kmeans.n_clusters):
+            self.assertIn(cluster_label, random_samples)
+
+        random_samples = self.kmeans.get_random_spectra_from_each_cluster(max_distance='50%', max_angle=4)
+        self.assertIsInstance(random_samples, dict)
+        for cluster_label in range(self.kmeans.n_clusters):
+            self.assertIn(cluster_label, random_samples)
+
+    def test_get_purest_spectra_from_each_cluster(self):
+        random_samples = self.kmeans.get_purest_spectra_from_each_cluster()
         self.assertIsInstance(random_samples, dict)
         for cluster_label in range(self.kmeans.n_clusters):
             self.assertIn(cluster_label, random_samples)
@@ -54,4 +75,4 @@ class Test_KMeansRSImage(unittest.TestCase):
         self.kmeans.plot_cluster_histogram()
 
     def test_plot_clustered_image(self):
-        self.kmeans.plot_clustered_image()
+        self.kmeans.plot_clustermap()

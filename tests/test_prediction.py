@@ -14,10 +14,12 @@ import os
 import numpy as np
 from geoarray import GeoArray
 
-from spechomo.prediction import SpectralHomogenizer
+from spechomo.prediction import SpectralHomogenizer, RSImage_ClusterPredictor
+from spechomo.utils import spectra2im
 from spechomo import __path__
 
 classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
+testdata_rootdir = os.path.join(__path__[0], '..', 'tests', 'data')
 
 
 class Test_SpectralHomogenizer(unittest.TestCase):
@@ -26,7 +28,10 @@ class Test_SpectralHomogenizer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.SpH = SpectralHomogenizer(classifier_rootDir=classifier_rootdir)
-        cls.testArr_L8 = GeoArray(np.random.randint(1, 10000, (50, 50, 7), dtype=np.int16))  # no band 9, no pan
+        # cls.testArr_L8 = GeoArray(np.random.randint(1, 10000, (50, 50, 7), dtype=np.int16))  # no band 9, no pan
+        cls.testArr_L8 = GeoArray('/home/gfz-fe/scheffler/temp/SPECHOM_py/images_train/'
+                                  # 'Landsat-8_OLI_TIRS__f141006t01p00r16_refl_preprocessed.bsq')
+                                  'Landsat-8_OLI_TIRS__f130502t01p00r09_refl_master_calibration_Aviris_preprocessed.bsq')
         # cls.testArr_L8 = GeoArray('/home/gfz-fe/scheffler/temp/'
         #                           'Landsat-8__OLI_TIRS__LC81940242014072LGN00_L2B__250x250.bsq')  # no pan
         # cls.testArr_L8 = GeoArray('/home/gfz-fe/scheffler/temp/'
@@ -53,11 +58,32 @@ class Test_SpectralHomogenizer(unittest.TestCase):
         """Test linear regression from Landsat-8 to Sentinel-2A."""
         predarr, errors = self.SpH.predict_by_machine_learner(
             self.testArr_L8,
-            method='LR', n_clusters=1,
+            method='LR', n_clusters=50,
             src_satellite='Landsat-8', src_sensor='OLI_TIRS',
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
-            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
+            compute_errors=True
+        )
+
+        self.assertIsInstance(predarr, GeoArray)
+        self.assertEqual(predarr.shape, (50, 50, 13))
+        self.assertEqual(predarr.dtype, np.int16)
+
+        self.assertIsInstance(errors, np.ndarray)
+        self.assertEqual(errors.shape, (50, 50, 13))
+        self.assertEqual(errors.dtype, np.int16)
+
+    def test_predict_by_machine_learner__LR_RF_L8_S2(self):
+        """Test linear regression from Landsat-8 to Sentinel-2A."""
+        predarr, errors = self.SpH.predict_by_machine_learner(
+            self.testArr_L8,
+            method='LR', n_clusters=5,
+            classif_alg='RF',
+            src_satellite='Landsat-8', src_sensor='OLI_TIRS',
+            src_LBA=['1', '2', '3', '4', '5', '6', '7'],
+            tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True
         )
 
@@ -77,7 +103,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             src_satellite='Landsat-8', src_sensor='OLI_TIRS',
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
-            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True)
 
         self.assertIsInstance(predarr, GeoArray)
@@ -96,7 +122,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             src_satellite='Landsat-8', src_sensor='OLI_TIRS',
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
-            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True)
 
         self.assertIsInstance(predarr, GeoArray)
@@ -117,7 +143,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             # src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
-            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True,
             # compute_errors=False,
             nodataVal=-9999)
@@ -141,7 +167,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             # src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
-            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '9', '10', '11', '12'],
+            tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True,
             # compute_errors=False,
             nodataVal=-9999)
@@ -153,3 +179,33 @@ class Test_SpectralHomogenizer(unittest.TestCase):
         self.assertIsInstance(errors, np.ndarray)
         self.assertEqual(errors.shape, (50, 50, 13))
         self.assertEqual(errors.dtype, np.int16)
+
+
+class Test_RSImage_ClusterPredictor(unittest.TestCase):
+    def setUp(self) -> None:
+        self.CP_SAMcla = RSImage_ClusterPredictor(method='LR', n_clusters=50,
+                                                  classif_alg='SAM',
+                                                  classifier_rootDir=os.path.join(testdata_rootdir, 'classifiers',
+                                                                                  'SAMclassassignment'))
+        self.clf_L8 = self.CP_SAMcla.get_classifier(src_satellite='Landsat-8', src_sensor='OLI_TIRS',
+                                                    src_LBA=['1', '2', '3', '4', '5', '6', '7'],
+                                                    tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
+                                                    tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'])
+
+    def test_predict(self):
+        for clf_alg in ['MinDist', 'SAM', 'SID']:
+            self.CP_SAMcla.classif_alg = clf_alg
+
+            # build a testimage consisting of the cluster centers
+            im_src = spectra2im(self.clf_L8.cluster_centers, 1, 50)
+
+            # predict
+            im_homo = self.CP_SAMcla.predict(im_src, self.clf_L8)
+
+            # classifier should predict almost the target sensor center spectra
+            self.assertTrue(np.array_equal(self.CP_SAMcla.classif_map[:].flatten(), np.arange(50)))
+            self.assertTrue(np.allclose(im_homo, np.vstack([self.clf_L8.MLdict[i].tgt_cluster_center
+                                                            for i in range(50)]), atol=5))
+            print(clf_alg)
+
+

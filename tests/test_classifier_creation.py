@@ -23,6 +23,10 @@ from gms_preprocessing.model.gms_object import GMS_identifier  # FIXME
 hyspec_data = os.path.join(__path__[0], '../tests/data/Bavaria_farmland_LMU_Hyspex_subset.bsq')
 refcube_l8 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp100.bsq')
 refcube_l5 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-5__TM__nclust50__nsamp100.bsq')
+# TODO remove that
+# refcube_l7 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/refcube__Landsat-7__ETM+__nclust50__nsamp20000.bsq'
+refcube_l8 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp20000.bsq'
+refcube_s2 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/refcube__Sentinel-2A__MSI__nclust50__nsamp20000.bsq'
 
 
 class Test_ReferenceCube_Generator(unittest.TestCase):
@@ -48,7 +52,10 @@ class Test_ReferenceCube_Generator(unittest.TestCase):
         cls.tgt_n_samples = 500
         cls.SHC = ReferenceCube_Generator(cls.testIms, dir_refcubes=cls.tmpOutdir.name,
                                           tgt_sat_sen_list=cls.tgt_sat_sen_list,
-                                          n_clusters=cls.n_clusters, tgt_n_samples=cls.tgt_n_samples, v=False)
+                                          n_clusters=cls.n_clusters,
+                                          tgt_n_samples=cls.tgt_n_samples,
+                                          dir_clf_dump=cls.tmpOutdir.name,
+                                          v=False)
 
     @classmethod
     def tearDownClass(cls):
@@ -56,7 +63,8 @@ class Test_ReferenceCube_Generator(unittest.TestCase):
 
     def test_cluster_image_and_get_uniform_samples(self):
         src_im = self.SHC.ims_ref[0]
-        unif_random_spectra = self.SHC.cluster_image_and_get_uniform_spectra(src_im)
+        baseN = os.path.splitext(os.path.basename(src_im))[0]
+        unif_random_spectra = self.SHC.cluster_image_and_get_uniform_spectra(src_im, basename_clf_dump=baseN)
         self.assertIsInstance(unif_random_spectra, np.ndarray)
         self.assertEqual(unif_random_spectra.shape, (self.tgt_n_samples, GeoArray(src_im).bands))
 
@@ -78,7 +86,7 @@ class Test_ReferenceCube_Generator(unittest.TestCase):
         refcubes = self.SHC.generate_reference_cubes()
         self.assertIsInstance(refcubes, dict)
         self.assertIsInstance(refcubes[('Landsat-8', 'OLI_TIRS')], RefCube)
-        self.assertEqual(refcubes[('Landsat-8', 'OLI_TIRS')].data.shape, (self.tgt_n_samples, len(self.testIms), 9))
+        self.assertEqual(refcubes[('Landsat-8', 'OLI_TIRS')].data.shape, (self.tgt_n_samples, len(self.testIms), 7))
         self.assertNotEqual(len(os.listdir(self.tmpOutdir.name)), 0)
 
     # @unittest.SkipTest
@@ -113,14 +121,14 @@ class Test_ClusterClassifier_Generator(unittest.TestCase):
         CCG = ClusterClassifier_Generator([RC, RC])
         self.assertIsInstance(CCG, ClusterClassifier_Generator)
 
-    def test_cluster_refcube_spectra(self):
-        CCG = ClusterClassifier_Generator([refcube_l8, refcube_l5])
-        CCG.cluster_refcube_spectra(cube2cluster=refcube_l8, n_clusters=5)
-
     def test_create_classifiers_LR(self):
         """Test creation of linear regression classifiers."""
-        CCG = ClusterClassifier_Generator([refcube_l8, refcube_l5])
-        CCG.create_classifiers(outDir=self.tmpOutdir.name, method='LR', n_clusters=5)
+        # CCG = ClusterClassifier_Generator([refcube_l8, refcube_l5])
+        # CCG = ClusterClassifier_Generator([refcube_l7, refcube_s2])
+        CCG = ClusterClassifier_Generator([refcube_l8, refcube_s2])
+        # CCG = ClusterClassifier_Generator([refcube_s2, refcube_l8, ])
+        CCG.create_classifiers(outDir=self.tmpOutdir.name, method='LR', n_clusters=5,
+                               max_distance='20%', max_angle=5)
 
         outpath_cls = os.path.join(self.tmpOutdir.name, 'LR_clust5__Landsat-8__OLI_TIRS.dill')
         self.assertTrue(os.path.exists(outpath_cls))

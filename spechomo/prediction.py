@@ -5,27 +5,21 @@
 import os
 import numpy as np
 import logging  # noqa F401  # flake8 issue
-from typing import Union, List, Tuple  # noqa F401  # flake8 issue
+from typing import Union, Tuple  # noqa F401  # flake8 issue
 from multiprocessing import cpu_count
-from collections import OrderedDict
-import dill
-from pprint import pformat
 import traceback
-import zipfile
-import tempfile
 import time
 from scipy.interpolate import interp1d
 from geoarray import GeoArray  # noqa F401  # flake8 issue
 
-from .utils import im2spectra, spectra2im
+from .classifier import Cluster_Learner
 from .exceptions import ClassifierNotAvailableError
-from .classifier_creation import get_machine_learner, get_filename_classifier_collection
 from .logging import SpecHomo_Logger
 from . import __path__
 
-# dependencies to get rid of
-from gms_preprocessing.algorithms.classification import classify_image
-from gms_preprocessing.model.gms_object import GMS_object
+# TODO dependencies to get rid of
+# from gms_preprocessing.algorithms.classification import classify_image
+# from gms_preprocessing.model.gms_object import GMS_object
 
 __author__ = 'Daniel Scheffler'
 
@@ -34,7 +28,7 @@ classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
 
 class SpectralHomogenizer(object):
     """Class for applying spectral homogenization by applying an interpolation or machine learning approach."""
-    def __init__(self, classifier_rootDir='', logger=None):
+    def __init__(self, classifier_rootDir='', logger=None, CPUs=None):
         """Get instance of SpectralHomogenizer.
 
         :param classifier_rootDir:  root directory where machine learning classifiers are stored.
@@ -42,6 +36,7 @@ class SpectralHomogenizer(object):
         """
         self.classifier_rootDir = classifier_rootDir or classifier_rootdir
         self.logger = logger or SpecHomo_Logger(__name__)
+        self.CPUs = CPUs or cpu_count()
 
     def interpolate_cube(self, arrcube, source_CWLs, target_CWLs, kind='linear'):
         # type: (Union[np.ndarray, GeoArray], list, list, str) -> np.ndarray
@@ -62,7 +57,8 @@ class SpectralHomogenizer(object):
 
         self.logger.info(
             'Performing spectral homogenization (%s interpolation) with target wavelength positions at %s nm.'
-            % (kind, ', '.join(np.array(target_CWLs[:-1]).astype(str)) + ' and %s' % target_CWLs[-1]))
+            % (kind, ', '.join(np.round(np.array(target_CWLs[:-1]), 1).astype(str)) +
+               ' and %s' % np.round(target_CWLs[-1], 1)))
         outarr = interp1d(np.array(orig_CWLs), arrcube, axis=2, kind=kind, fill_value='extrapolate')(target_CWLs)
         outarr = outarr.astype(np.int16)
 
@@ -115,7 +111,8 @@ class SpectralHomogenizer(object):
         kw = dict(method=method,
                   classifier_rootDir=self.classifier_rootDir,
                   n_clusters=n_clusters,
-                  classif_alg=classif_alg)
+                  classif_alg=classif_alg,
+                  CPUs=self.CPUs)
 
         if classif_alg == 'kNN':
             kw['n_neighbors'] = kNN_n_neighbors
@@ -175,23 +172,6 @@ class SpectralHomogenizer(object):
         return im_homo, errors
 
 
-class ClassifierCollection(object):
-    def __init__(self, path_dillFile):
-        with open(path_dillFile, 'rb') as inF:
-            self.content = dill.load(inF)
-
-    def __repr__(self):
-        """Returns representation of ClassifierCollection.
-
-        :return: e.g., "{'1__2__3__4__5__7': {('Landsat-5', 'TM'): {'1__2__3__4__5__7':
-                        LinearRegression(copy_X=True, fit_intercept=True, n_jobs=1, normalize=False)}, ..."
-        """
-        return pformat(self.content)
-
-    def __getitem__(self, item):
-        return self.content[item]
-
-
 class RSImage_ClusterPredictor(object):
     """Predictor class applying the predict() function of a machine learning classifier described by the given args."""
     def __init__(self, method='LR', n_clusters=50, classif_alg='MinDist', classifier_rootDir='',
@@ -217,7 +197,7 @@ class RSImage_ClusterPredictor(object):
                                     'SAM': spectral angle mapping
                                     'SID': spectral information divergence
         :param classifier_rootDir:  root directory where machine learning classifiers are stored.
-        :param CPUs:                number of CPUs to use
+        :param CPUs:                number of CPUs to use (default: 1)
         :param logger:              instance of logging.Logger()
         :param kw_clf_init          keyword arguments to be passed to classifier init functions if possible
         """
@@ -225,7 +205,9 @@ class RSImage_ClusterPredictor(object):
         self.n_clusters = n_clusters
         self.classifier_rootDir = os.path.abspath(classifier_rootDir)
         self.classif_map = None
-        self.CPUs = CPUs
+        self.classif_map_fractions = None
+        self.distance_metrics = None
+        self.CPUs = CPUs or cpu_count()
         self.classif_alg = classif_alg
         self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
         self.kw_clf_init = kw_clf_init
@@ -252,38 +234,12 @@ class RSImage_ClusterPredictor(object):
         :param tgt_LBA:         target LayerBandsAssignment
         :return:                classifier instance loaded from disk
         """
-        # get path of classifier zip archive
-        path_classifier_zip = os.path.join(self.classifier_rootDir, '%s_classifiers.zip' % self.method)
-        if not os.path.isfile(path_classifier_zip):
-            raise FileNotFoundError("No '%s' classifiers available at %s." % (self.method, path_classifier_zip))
+        return Cluster_Learner.from_disk(self.classifier_rootDir, self.method, self.n_clusters,
+                                         src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
 
-        # create an instance of ClusterLearner by reading the requested classifier from the zip archive
-        with zipfile.ZipFile(path_classifier_zip, "r") as zf, tempfile.TemporaryDirectory() as td:
-            # read requested classifier from zip archive and create a ClassifierCollection
-            fName_cls = \
-                get_filename_classifier_collection(self.method, src_satellite, src_sensor, n_clusters=self.n_clusters)
-
-            try:
-                zf.extract(fName_cls, td)
-                path_cls = os.path.join(td, fName_cls)
-                dict_clust_MLinstances = \
-                    ClassifierCollection(path_cls)['__'.join(src_LBA)][tgt_satellite, tgt_sensor]['__'.join(tgt_LBA)]
-            except KeyError:
-                raise ClassifierNotAvailableError(self.method, src_satellite, src_sensor, src_LBA,
-                                                  tgt_satellite, tgt_sensor, tgt_LBA, self.n_clusters)
-
-            # validation
-            expected_MLtype = type(get_machine_learner(self.method))
-            for label, ml in dict_clust_MLinstances.items():
-                if not isinstance(ml, expected_MLtype):
-                    raise ValueError("The given dillFile %s contains a spectral cluster (label '%s') with a %s machine "
-                                     "learner instead of the expected %s."
-                                     % (os.path.basename(fName_cls), label, type(ml), expected_MLtype.__name__,))
-
-            return Cluster_Learner(dict_clust_MLinstances)
-
-    def predict(self, image, classifier, in_nodataVal=None, out_nodataVal=None, cmap_nodataVal=None, CPUs=1):
-        # type: (Union[np.ndarray, GeoArray], Cluster_Learner, float, float, float, int) -> GeoArray
+    def predict(self, image, classifier, in_nodataVal=None, out_nodataVal=None, cmap_nodataVal=None,
+                unclassified_threshold=None, unclassified_pixVal=-1):
+        # type: (Union[np.ndarray, GeoArray], Cluster_Learner, float, float, float, Union[str, int, float], int) -> GeoArray  # noqa
         """Apply the prediction function of the given specifier to the given remote sensing image.
 
         # NOTE: The 'nodataVal' is written
@@ -296,7 +252,15 @@ class RSImage_ClusterPredictor(object):
                                 (copied from the input image if not given)
         :param cmap_nodataVal:  no data value for the classification map
                                 in case more than one sub-classes are used for prediction
-        :param CPUs:            CPUs to use (default: 1)
+        :param unclassified_threshold:  if given, all pixels where the computed distance metric exceeds the given
+                                        threshold are labelled as unclassified
+                                        (only usable for 'MinDist', 'SAM' and 'SID')
+                                        - may be given as float, integer or string to label a certain distance
+                                          percentile
+                                        - if given as string, it must match the format, e.g., '10%' for labelling the
+                                          worst 10 % of the distances as unclassified
+        :param unclassified_pixVal:     pixel value to be used in the classification map for unclassified pixels
+                                        (default: -1)
         :return:                3D array representing the predicted spectral image cube
         """
         image = image if isinstance(image, GeoArray) else GeoArray(image, nodata=in_nodataVal)
@@ -305,37 +269,59 @@ class RSImage_ClusterPredictor(object):
         image.nodata = in_nodataVal if in_nodataVal is not None else image.nodata  # might be auto-computed here
 
         # assign each input pixel to a cluster (compute classification with cluster centers as endmembers)
-        if not self.classif_map:
+        if self.classif_map is None:
             if self.n_clusters > 1:
                 t0 = time.time()
                 kw_clf = dict(classif_alg=self.classif_alg,
                               in_nodataVal=image.nodata,
                               cmap_nodataVal=cmap_nodataVal,  # written into classif_map at nodata
                               CPUs=self.CPUs,
+                              return_distance=True,
                               **self.kw_clf_init)
 
-                self.classif_map = classify_image(image, classifier.cluster_centers, classifier.cluster_pixVals,
-                                                  **kw_clf)
+                if self.classif_alg in ['MinDist', 'SAM', 'SID', 'FEDSA']:
+                    kw_clf.update(dict(unclassified_threshold=unclassified_threshold,
+                                       unclassified_pixVal=unclassified_pixVal))
+
+                if self.classif_alg == 'RF':
+                    train_spectra = np.vstack([classifier.MLdict[clust].cluster_sample_spectra
+                                               for clust in range(classifier.n_clusters)])
+                    train_labels = list(np.hstack([[i] * 100 for i in range(classifier.n_clusters)]))
+                else:
+                    train_spectra = classifier.cluster_centers
+                    train_labels = classifier.cluster_pixVals
+
+                from gms_preprocessing.algorithms.classification import classify_image  # TODO get rid of this
+                self.classif_map, self.distance_metrics = classify_image(image, train_spectra, train_labels, **kw_clf)
 
                 self.logger.info('Total classification time: %s'
                                  % time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)))
 
             else:
-                self.classif_map = np.full((image.rows, image.cols), classifier.cluster_pixVals[0], np.int8)
+                self.classif_map = GeoArray(np.full((image.rows, image.cols), classifier.cluster_pixVals[0], np.int16),
+                                            nodata=cmap_nodataVal)
+
+                # overwrite all pixels where the input image contains nodata in ANY band
+                # (would lead to faulty predictions due to multivariate prediction algorithms)
+                if in_nodataVal is not None and cmap_nodataVal is not None:
+                    self.classif_map[np.any(image[:] == image.nodata, axis=2)] = cmap_nodataVal
+
+                self.distance_metrics = np.zeros_like(self.classif_map, np.float32)
 
         # adjust classifier
-        if CPUs is None or CPUs > 1:
+        if self.CPUs is None or self.CPUs > 1:
             # FIXME does not work -> parallelize with https://github.com/ajtulloch/sklearn-compiledtrees?
-            classifier.n_jobs = cpu_count() if CPUs is None else CPUs
+            classifier.n_jobs = cpu_count() if self.CPUs is None else self.CPUs
 
         # apply prediction
         # NOTE: prediction is applied in 1000 x 1000 tiles to save memory (because classifier.predict returns float32)
+        t0 = time.time()
+        from gms_preprocessing.model.gms_object import GMS_object  # TODO get rid of this
         out_nodataVal = out_nodataVal if out_nodataVal is not None else image.nodata
         image_predicted = GeoArray(np.empty((image.rows, image.cols, classifier.tgt_n_bands), dtype=image.dtype),
                                    geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
                                    bandnames=GMS_object.LBA2bandnames(classifier.tgt_LBA))
 
-        t0 = time.time()
         for ((rS, rE), (cS, cE)), im_tile in image.tiles(tilesize=(1000, 1000)):
             self.logger.info('Predicting tile ((%s, %s), (%s, %s))...' % (rS, rE, cS, cE))
 
@@ -344,8 +330,27 @@ class RSImage_ClusterPredictor(object):
             # predict!
             im_tile_pred = \
                 classifier.predict(im_tile, classif_map_tile,
-                                   nodataVal=out_nodataVal, cmap_nodataVal=cmap_nodataVal).astype(image.dtype)
+                                   nodataVal=out_nodataVal,
+                                   cmap_nodataVal=cmap_nodataVal,
+                                   cmap_unclassifiedVal=unclassified_pixVal,
+                                   ).astype(image.dtype)
             image_predicted[rS:rE + 1, cS:cE + 1] = im_tile_pred
+
+        # TODO add multiprocessing here
+        # print(time.time() -t0)
+        # t0 = time.time()
+        # from multiprocessing import Pool
+        # from geoarray.baseclasses import get_array_tilebounds
+        # with Pool(self.CPUs, initializer=_mp_initializer, initargs=(image, self.classif_map, classifier)) as pool:
+        #     tiles_pred = pool.starmap(_predict_tile_mp,
+        #                               [(tilebounds, out_nodataVal, cmap_nodataVal)
+        #                                for tilebounds in get_array_tilebounds(array_shape=image.shape,
+        #                                                                       tile_shape=(1000, 1000))])
+        #
+        # for ((rS, rE), (cS, cE)), tile_pred in tiles_pred:
+        #     image_predicted[rS: rE + 1, cS: cE + 1, :] = tile_pred
+        #
+        # print(time.time() - t0)
 
         self.logger.info('Total prediction time: %s' % time.strftime("%H:%M:%S", time.gmtime(time.time()-t0)))
 
@@ -360,6 +365,11 @@ class RSImage_ClusterPredictor(object):
         #     '/home/gfz-fe/scheffler/temp/SPECHOM_py/image_predicted_QRclust1_MinDist_noB9.bsq')
         # GeoArray(self.classif_map).save(
         #     '/home/gfz-fe/scheffler/temp/SPECHOM_py/classif_map_QRclust1_MinDist_noB9.bsq')
+
+        # append some statistics regarding the homogenization
+        cmap_vals, cmap_valcounts = np.unique(self.classif_map, return_counts=True)
+        cmap_valfractions = cmap_valcounts / self.classif_map.size
+        self.classif_map_fractions = dict(zip(list(cmap_vals), list(cmap_valfractions)))
 
         return image_predicted
 
@@ -410,73 +420,24 @@ class RSImage_ClusterPredictor(object):
 
         return errors
 
-
-class Cluster_Learner(object):
-    def __init__(self, dict_clust_MLinstances):
-        # type: (dict) -> None
-        """
-
-        :param dict_clust_MLinstances:
-        """
-        self.cluster_pixVals = list(sorted(dict_clust_MLinstances.keys()))  # type: List[int]
-        self.MLdict = OrderedDict((clust, dict_clust_MLinstances[clust]) for clust in self.cluster_pixVals)
-        sample_MLinst = list(self.MLdict.values())[0]
-        self.src_satellite = sample_MLinst.src_satellite
-        self.src_sensor = sample_MLinst.src_sensor
-        self.tgt_satellite = sample_MLinst.tgt_satellite
-        self.tgt_sensor = sample_MLinst.tgt_sensor
-        self.src_LBA = sample_MLinst.src_LBA
-        self.tgt_LBA = sample_MLinst.tgt_LBA
-        self.src_n_bands = sample_MLinst.src_n_bands
-        self.tgt_n_bands = sample_MLinst.tgt_n_bands
-        self.src_wavelengths = sample_MLinst.src_wavelengths
-        self.tgt_wavelengths = sample_MLinst.tgt_wavelengths
-        self.n_clusters = sample_MLinst.n_clusters
-        self.cluster_centers = np.array([cc.cluster_center for cc in self.MLdict.values()])
-
-    def __iter__(self):
-        for cluster in self.cluster_pixVals:
-            yield self.MLdict[cluster]
-
-    def predict(self, im_src, cmap, nodataVal=None, cmap_nodataVal=None):
-        """
-
-        :param im_src:
-        :param cmap:            classification map that assigns each image spectrum to its corresponding cluster
-                                -> must be a 1D np.ndarray with the same Y-dimension like src_spectra
-        :param nodataVal:       nodata value to be used to fill into the predicted image
-        :param cmap_nodataVal:  nodata class value of the nodata class of the classification map
-        :return:
-        """
-        cluster_labels = sorted(list(np.unique(cmap)))
-
-        im_pred = np.full((im_src.shape[0], im_src.shape[1], self.tgt_n_bands),
-                          fill_value=nodataVal if nodataVal is not None else 0,
-                          dtype=im_src.dtype)
-
-        if len(cluster_labels) > 1:
-            # iterate over all cluster labels and apply corresponding machine learner parameters
-            # to predict target spectra
-
-            for pixVal in cluster_labels:
-                if pixVal == cmap_nodataVal:
-                    continue
-
-                classifier = self.MLdict[pixVal]
-                mask_pixVal = cmap == pixVal
-                im_pred[mask_pixVal] = classifier.predict(im_src[mask_pixVal]).astype(im_src.dtype)
-
-        else:
-            # predict target spectra directly (much faster than the above algorithm)
-            pixVal = cluster_labels[0]
-
-            if pixVal != cmap_nodataVal:
-                spectra = im2spectra(im_src)
-                classifier = self.MLdict[pixVal]
-                spectra_pred = classifier.predict(spectra).astype(im_src.dtype)
-                im_pred = spectra2im(spectra_pred, im_src.shape[0], im_src.shape[1])
-            else:
-                # im_src consists only of no data values
-                pass  # im_pred keeps at nodataVal
-
-        return im_pred
+#
+# _global_image, _global_classif_map, _global_classifier = None, None, None
+#
+#
+# def _mp_initializer(image, classif_map, classifier):
+#     global _global_image, _global_classif_map, _global_classifier
+#     _global_image, _global_classif_map, _global_classifier = image, classif_map, classifier
+#
+#
+# def _predict_tile_mp(tilebounds, out_nodataVal, cmap_nodataVal):
+#     (rS, rE), (cS, cE) = tilebounds
+#     im_tile = _global_image[rS: rE + 1, cS: cE + 1, :]
+#     classif_map_tile = _global_classif_map[rS: rE + 1, cS: cE + 1]  # integer array
+#     classifier = _global_classifier
+#
+#     # predict!
+#     im_tile_pred = \
+#         classifier.predict(im_tile, classif_map_tile,
+#                            nodataVal=out_nodataVal, cmap_nodataVal=cmap_nodataVal).astype(_global_image.dtype)
+#
+#     return tilebounds, im_tile_pred
