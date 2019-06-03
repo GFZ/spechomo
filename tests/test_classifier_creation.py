@@ -23,6 +23,10 @@ from gms_preprocessing.model.gms_object import GMS_identifier  # FIXME
 hyspec_data = os.path.join(__path__[0], '../tests/data/Bavaria_farmland_LMU_Hyspex_subset.bsq')
 refcube_l8 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp100.bsq')
 refcube_l5 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-5__TM__nclust50__nsamp100.bsq')
+# TODO remove that
+# refcube_l7 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/refcube__Landsat-7__ETM+__nclust50__nsamp20000.bsq'
+refcube_l8 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp20000.bsq'
+refcube_s2 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/refcube__Sentinel-2A__MSI__nclust50__nsamp20000.bsq'
 
 
 class Test_ReferenceCube_Generator(unittest.TestCase):
@@ -119,8 +123,12 @@ class Test_ClusterClassifier_Generator(unittest.TestCase):
 
     def test_create_classifiers_LR(self):
         """Test creation of linear regression classifiers."""
-        CCG = ClusterClassifier_Generator([refcube_l8, refcube_l5])
-        CCG.create_classifiers(outDir=self.tmpOutdir.name, method='LR', n_clusters=5)
+        # CCG = ClusterClassifier_Generator([refcube_l8, refcube_l5])
+        # CCG = ClusterClassifier_Generator([refcube_l7, refcube_s2])
+        CCG = ClusterClassifier_Generator([refcube_l8, refcube_s2])
+        # CCG = ClusterClassifier_Generator([refcube_s2, refcube_l8, ])
+        CCG.create_classifiers(outDir=self.tmpOutdir.name, method='LR', n_clusters=5,
+                               max_distance='20%', max_angle=5)
 
         outpath_cls = os.path.join(self.tmpOutdir.name, 'LR_clust5__Landsat-8__OLI_TIRS.dill')
         self.assertTrue(os.path.exists(outpath_cls))

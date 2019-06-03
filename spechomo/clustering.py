@@ -358,6 +358,7 @@ class KMeansRSImage(object):
             else:
                 cluster_subset = df[df.cluster_label == label]
 
+                # if self.n_clusters > 1:
                 # filter by spectral angle
                 if len(cluster_subset.index) >= nmin_unique_spectra and max_angle is not None:
                     cluster_subset = cluster_subset[cluster_subset.spectral_angle < max_angle]
