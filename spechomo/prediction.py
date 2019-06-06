@@ -114,7 +114,7 @@ class SpectralHomogenizer(object):
                   classif_alg=classif_alg,
                   CPUs=self.CPUs)
 
-        if classif_alg == 'kNN':
+        if classif_alg.startswith('kNN'):
             kw['n_neighbors'] = kNN_n_neighbors
 
         PR = RSImage_ClusterPredictor(**kw)
@@ -218,7 +218,9 @@ class RSImage_ClusterPredictor(object):
                                 "sub-clustering. Setting 'n_clusters' to 1.")
             self.n_clusters = 1
 
-        if self.classif_alg == 'kNN' and 'n_neighbors' in kw_clf_init and self.n_clusters < kw_clf_init['n_neighbors']:
+        if self.classif_alg.startswith('kNN') and \
+           'n_neighbors' in kw_clf_init and \
+           self.n_clusters < kw_clf_init['n_neighbors']:
             self.kw_clf_init['n_neighbors'] = self.n_clusters
 
     def get_classifier(self, src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA):
@@ -268,6 +270,10 @@ class RSImage_ClusterPredictor(object):
         # ensure image.nodata is present (important for classify_image() -> overwrites cmap at nodata positions)
         image.nodata = in_nodataVal if in_nodataVal is not None else image.nodata  # might be auto-computed here
 
+        ##########################
+        # get classification map #
+        ##########################
+
         # assign each input pixel to a cluster (compute classification with cluster centers as endmembers)
         if self.classif_map is None:
             if self.n_clusters > 1:
@@ -279,7 +285,7 @@ class RSImage_ClusterPredictor(object):
                               return_distance=True,
                               **self.kw_clf_init)
 
-                if self.classif_alg in ['MinDist', 'SAM', 'SID', 'FEDSA']:
+                if self.classif_alg in ['MinDist', 'SAM', 'kNN_SAM', 'SID', 'FEDSA']:
                     kw_clf.update(dict(unclassified_threshold=unclassified_threshold,
                                        unclassified_pixVal=unclassified_pixVal))
 
@@ -308,12 +314,15 @@ class RSImage_ClusterPredictor(object):
 
                 self.distance_metrics = np.zeros_like(self.classif_map, np.float32)
 
+        ####################
+        # apply prediction #
+        ####################
+
         # adjust classifier
         if self.CPUs is None or self.CPUs > 1:
             # FIXME does not work -> parallelize with https://github.com/ajtulloch/sklearn-compiledtrees?
             classifier.n_jobs = cpu_count() if self.CPUs is None else self.CPUs
 
-        # apply prediction
         # NOTE: prediction is applied in 1000 x 1000 tiles to save memory (because classifier.predict returns float32)
         t0 = time.time()
         from gms_preprocessing.model.gms_object import GMS_object  # TODO get rid of this
@@ -322,18 +331,33 @@ class RSImage_ClusterPredictor(object):
                                    geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
                                    bandnames=GMS_object.LBA2bandnames(classifier.tgt_LBA))
 
+        weights = None if self.classif_map.ndim == 2 else \
+            1 - (self.distance_metrics / np.sum(self.distance_metrics, axis=2, keepdims=True))
+
         for ((rS, rE), (cS, cE)), im_tile in image.tiles(tilesize=(1000, 1000)):
             self.logger.info('Predicting tile ((%s, %s), (%s, %s))...' % (rS, rE, cS, cE))
 
-            classif_map_tile = self.classif_map[rS: rE+1, cS: cE+1]  # integer array
+            classif_map_tile = self.classif_map[rS: rE + 1, cS: cE + 1]  # integer array
 
             # predict!
-            im_tile_pred = \
-                classifier.predict(im_tile, classif_map_tile,
-                                   nodataVal=out_nodataVal,
-                                   cmap_nodataVal=cmap_nodataVal,
-                                   cmap_unclassifiedVal=unclassified_pixVal,
-                                   ).astype(image.dtype)
+            if self.classif_map.ndim == 2:
+                im_tile_pred = \
+                    classifier.predict(im_tile, classif_map_tile,
+                                       nodataVal=out_nodataVal,
+                                       cmap_nodataVal=cmap_nodataVal,
+                                       cmap_unclassifiedVal=unclassified_pixVal,
+                                       ).astype(image.dtype)
+
+            else:
+                weights_tile = weights[rS: rE + 1, cS: cE + 1]  # float array
+
+                im_tile_pred = \
+                    classifier.predict_weighted_averages(im_tile, classif_map_tile, weights_tile,
+                                                         nodataVal=out_nodataVal,
+                                                         cmap_nodataVal=cmap_nodataVal,
+                                                         cmap_unclassifiedVal=unclassified_pixVal,
+                                                         ).astype(image.dtype)
+
             image_predicted[rS:rE + 1, cS:cE + 1] = im_tile_pred
 
         # TODO add multiprocessing here
@@ -353,6 +377,10 @@ class RSImage_ClusterPredictor(object):
         # print(time.time() - t0)
 
         self.logger.info('Total prediction time: %s' % time.strftime("%H:%M:%S", time.gmtime(time.time()-t0)))
+
+        ###############################
+        # complete prediction results #
+        ###############################
 
         # re-apply nodata values to predicted result
         if image.nodata is not None:

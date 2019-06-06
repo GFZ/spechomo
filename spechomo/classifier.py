@@ -11,6 +11,7 @@ import dill
 import numpy as np
 from matplotlib import pyplot as plt
 from pandas import DataFrame
+from geoarray import GeoArray  # noqa F401  # flake8 issue
 
 from .classifier_creation import get_filename_classifier_collection, get_machine_learner
 from .exceptions import ClassifierNotAvailableError
@@ -147,11 +148,12 @@ class Cluster_Learner(object):
             yield self.MLdict[cluster]
 
     def predict(self, im_src, cmap, nodataVal=None, cmap_nodataVal=None, cmap_unclassifiedVal=-1):
-        """
+        # type: (Union[np.ndarray, GeoArray], np.ndarray, Union[int, float], Union[int, float], Union[int, float]) -> np.ndarray  # noqa
+        """Predict target satellite spectral information using separate prediction coefficients for spectral clusters.
 
-        :param im_src:
-        :param cmap:            classification map that assigns each image spectrum to its corresponding cluster
-                                -> must be a 1D np.ndarray with the same Y-dimension like src_spectra
+        :param im_src:          input image to be used for prediction
+        :param cmap:            classification map that assigns each image spectrum to a corresponding cluster
+                                -> must be a 2D np.ndarray with the same X-/Y-dimension like im_src
         :param nodataVal:       nodata value to be used to fill into the predicted image
         :param cmap_nodataVal:  nodata class value of the nodata class of the classification map
         :param cmap_unclassifiedVal:    'unclassified' class value of the nodata class of the classification map
@@ -201,6 +203,53 @@ class Cluster_Learner(object):
                 spectra = im2spectra(im_src)
                 spectra_pred = classifier.predict(spectra).astype(im_src.dtype)
                 im_pred = spectra2im(spectra_pred, im_src.shape[0], im_src.shape[1])
+
+        return im_pred
+
+    def predict_weighted_averages(self, im_src, cmap_3D, weights_3D=None, nodataVal=None,
+                                  cmap_nodataVal=None, cmap_unclassifiedVal=-1):
+        # type: (Union[np.ndarray, GeoArray], np.ndarray, np.ndarray, Union[int, float], Union[int, float], Union[int, float]) -> np.ndarray  # noqa
+        """Predict target satellite spectral information using separate prediction coefficients for spectral clusters.
+
+        NOTE:   This version of the prediction function uses the prediction coefficients of multiple spectral clusters
+                and computes the result as weighted average of them. Therefore, the classifcation map must assign
+                multiple spectral cluster to each input pixel.
+
+        :param im_src:          input image to be used for prediction
+        :param cmap_3D:         classification map that assigns each image spectrum to multiple corresponding clusters
+                                -> must be a 3D np.ndarray with the same X-/Y-dimension like im_src
+        :param weights_3D:
+        :param nodataVal:       nodata value to be used to fill into the predicted image
+        :param cmap_nodataVal:  nodata class value of the nodata class of the classification map
+        :param cmap_unclassifiedVal:    'unclassified' class value of the nodata class of the classification map
+        :return:
+        """
+        if not cmap_3D.ndim > 2:
+            raise ValueError('Input classification map needs at least 2 bands to compute prediction results as'
+                             'weighted averages.')
+
+        if cmap_3D.shape != weights_3D.shape:
+            raise ValueError("The input arrays 'cmap_3D' and 'weights_3D' need to have the same dimensions. "
+                             "Received %s vs. %s." % (cmap_3D.shape, weights_3D.shape))
+
+        # predict for each classification map band
+        ims_pred_temp = []
+
+        for band in range(cmap_3D.shape[2]):
+            ims_pred_temp.append(
+                self.predict(im_src, cmap_3D[:, :, band],
+                             nodataVal=nodataVal,
+                             cmap_nodataVal=cmap_nodataVal,
+                             cmap_unclassifiedVal=cmap_unclassifiedVal
+                             ))
+
+        # merge classification results by weighted averaging
+        weights = None if weights_3D is None else \
+            np.tile(weights_3D.reshape(weights_3D.shape[0] * weights_3D.shape[1], 1, weights_3D.shape[2]),
+                    (1, ims_pred_temp[0].shape[2], 1))
+
+        spectra_pred = np.average(np.dstack([im2spectra(im) for im in ims_pred_temp]), weights=weights, axis=2)
+        im_pred = spectra2im(spectra_pred, tgt_rows=im_src.shape[0], tgt_cols=im_src.shape[1])
 
         return im_pred
 
