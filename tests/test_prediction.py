@@ -202,7 +202,7 @@ class Test_RSImage_ClusterPredictor(unittest.TestCase):
             im_src = spectra2im(self.clf_L8.cluster_centers, 1, self.n_clusters)
 
             # predict
-            im_homo = self.CP_SAMcla.predict(im_src, self.clf_L8)
+            im_homo = self.CP_SAMcla.predict(im_src, self.clf_L8, unclassified_threshold=8)
 
             # classifier should predict almost the target sensor center spectra
             if clf_alg != 'kNN_SAM':
