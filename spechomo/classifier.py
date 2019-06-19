@@ -226,9 +226,10 @@ class Cluster_Learner(object):
         NOTE:   This version of the prediction function uses the prediction coefficients of multiple spectral clusters
                 and computes the result as weighted average of them. Therefore, the classifcation map must assign
                 multiple spectral cluster to each input pixel.
-        NOTE:   At unclassified pixel positions (cmap_3D[y,x,z>0] == -1) the prediction result using global coefficients
-                is ignored in the weighted average. In that case the prediction result is based on the found valid
-                spectral clusters and is not affected by the global coefficients (should improve prediction results).
+
+        # NOTE:   At unclassified pixels (cmap_3D[y,x,z>0] == -1) the prediction result using global coefficients
+        #         is ignored in the weighted average. In that case the prediction result is based on the found valid
+        #         spectral clusters and is not affected by the global coefficients (should improve prediction results).
 
         :param im_src:          input image to be used for prediction
         :param cmap_3D:         classification map that assigns each image spectrum to multiple corresponding clusters
@@ -262,13 +263,13 @@ class Cluster_Learner(object):
         nsamp, nbandpred, nbandscmap = np.dot(*weights_3D.shape[:2]), ims_pred_temp[0].shape[2], weights_3D.shape[2]
         weights = \
             np.ones((nsamp, nbandpred, nbandscmap)) if weights_3D is None else \
-            np.tile(weights_3D.reshape(nsamp, 1, nbandscmap), (1, nbandpred, 1))
+            np.tile(weights_3D.reshape(nsamp, 1, nbandscmap), (1, nbandpred, 1))  # nclust x n_tgt_bands x n_cmap_bands
 
         # set weighting of unclassified pixel positions to zero (except from the first cmap band)
         #   -> see NOTE #2 in the docstring
-        mask_unclassif = np.tile(cmap_3D.reshape(nsamp, 1, nbandscmap), (1, nbandpred, 1)) == cmap_unclassifiedVal
-        mask_unclassif[:, :, 0] = False  # if all other clusters are invalid, at least the first one is used for prediction # noqa
-        weights[mask_unclassif] = 0
+        # mask_unclassif = np.tile(cmap_3D.reshape(nsamp, 1, nbandscmap), (1, nbandpred, 1)) == cmap_unclassifiedVal
+        # mask_unclassif[:, :, :1] = False  # if all other clusters are invalid, at least the first one is used for prediction # noqa
+        # weights[mask_unclassif] = 0
 
         spectra_pred = np.average(np.dstack([im2spectra(im) for im in ims_pred_temp]), weights=weights, axis=2)
         im_pred = spectra2im(spectra_pred, tgt_rows=im_src.shape[0], tgt_cols=im_src.shape[1])
