@@ -61,9 +61,9 @@ class SpectralHomogenizer(object):
                ' and %s' % np.round(target_CWLs[-1], 1)))
         outarr = interp1d(np.array(orig_CWLs), arrcube, axis=2, kind=kind, fill_value='extrapolate')(target_CWLs)
 
-        if np.can_cast(outarr, np.int16):
+        if np.min(outarr) >= np.iinfo(np.int16).min and np.max(outarr) <= np.iinfo(np.int16).max:
             outarr = outarr.astype(np.int16)
-        elif np.can_cast(outarr, np.int32):
+        elif np.min(outarr) >= np.iinfo(np.int32).min and np.max(outarr) <= np.iinfo(np.int32).max:
             outarr = outarr.astype(np.int32)
         else:
             raise TypeError('The interpolated data cube cannot be cast into a 16- or 32-bit integer array.')
