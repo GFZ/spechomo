@@ -60,7 +60,13 @@ class SpectralHomogenizer(object):
             % (kind, ', '.join(np.round(np.array(target_CWLs[:-1]), 1).astype(str)) +
                ' and %s' % np.round(target_CWLs[-1], 1)))
         outarr = interp1d(np.array(orig_CWLs), arrcube, axis=2, kind=kind, fill_value='extrapolate')(target_CWLs)
-        outarr = outarr.astype(np.int16)
+
+        if np.can_cast(outarr, np.int16):
+            outarr = outarr.astype(np.int16)
+        elif np.can_cast(outarr, np.int32):
+            outarr = outarr.astype(np.int32)
+        else:
+            raise TypeError('The interpolated data cube cannot be cast into a 16- or 32-bit integer array.')
 
         assert outarr.shape == tuple([*arrcube.shape[:2], len(target_CWLs)])
 
@@ -285,7 +291,7 @@ class RSImage_ClusterPredictor(object):
                               return_distance=True,
                               **self.kw_clf_init)
 
-                if self.classif_alg in ['MinDist', 'SAM', 'kNN_SAM', 'SID', 'FEDSA']:
+                if self.classif_alg in ['MinDist', 'kNN_MinDist', 'SAM', 'kNN_SAM', 'SID', 'FEDSA', 'kNN_FEDSA']:
                     kw_clf.update(dict(unclassified_threshold=unclassified_threshold,
                                        unclassified_pixVal=unclassified_pixVal))
 
@@ -299,6 +305,15 @@ class RSImage_ClusterPredictor(object):
 
                 from gms_preprocessing.algorithms.classification import classify_image  # TODO get rid of this
                 self.classif_map, self.distance_metrics = classify_image(image, train_spectra, train_labels, **kw_clf)
+
+                # compute spectral distance
+                # from gms_preprocessing.algorithms.classification import kNN_MinimumDistance_Classifier
+                # dist = kNN_MinimumDistance_Classifier.compute_euclidian_distance_3D(image, train_spectra)
+                # idxs = self.classif_map.reshape(-1, self.classif_map.shape[2])
+                # self.distance_metrics = \
+                #     dist.reshape(-1, dist.shape[2])[np.arange(dist.shape[0] * dist.shape[1])[:, np.newaxis], idxs] \
+                #         .reshape(self.classif_map.shape)
+                # print('ED MAX MIN:', self.distance_metrics.max(), self.distance_metrics.min())
 
                 self.logger.info('Total classification time: %s'
                                  % time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)))
@@ -331,8 +346,16 @@ class RSImage_ClusterPredictor(object):
                                    geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
                                    bandnames=GMS_object.LBA2bandnames(classifier.tgt_LBA))
 
-        weights = None if self.classif_map.ndim == 2 else \
-            1 - (self.distance_metrics / np.sum(self.distance_metrics, axis=2, keepdims=True))
+        dist_min, dist_max = self.distance_metrics.min(), self.distance_metrics.max()
+        dist_norm = (self.distance_metrics - dist_min) / (dist_max - dist_min)
+        weights = None if self.classif_map.ndim == 2 else 1 - dist_norm
+
+        # weights = None if self.classif_map.ndim == 2 else \
+        #     1 - (self.distance_metrics / np.sum(self.distance_metrics, axis=2, keepdims=True))
+
+        # if self.classif_map.ndim > 2:
+        #     print(self.distance_metrics[0, 0, :])
+        #     print(weights[0, 0, :])
 
         for ((rS, rE), (cS, cE)), im_tile in image.tiles(tilesize=(1000, 1000)):
             self.logger.info('Predicting tile ((%s, %s), (%s, %s))...' % (rS, rE, cS, cE))
