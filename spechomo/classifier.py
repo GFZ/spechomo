@@ -189,7 +189,7 @@ class Cluster_Learner(object):
                     im_pred[mask_pixVal] = spectra_pred.astype(im_src.dtype)
                 else:
                     raise TypeError('Predicted values for class %d exceed the value range of the output data type '
-                                    '(%s - %s).' % (pixVal, np.iinfo(im_src.dtype.min), np.iinfo(im_src.dtype.max)))
+                                    '(%s - %s).' % (pixVal, np.iinfo(im_src.dtype).min, np.iinfo(im_src.dtype).max))
 
         else:
             # predict target spectra directly (much faster than the above algorithm)
@@ -214,7 +214,7 @@ class Cluster_Learner(object):
                     im_pred = spectra2im(spectra_pred.astype(im_src.dtype), im_src.shape[0], im_src.shape[1])
                 else:
                     raise TypeError('Predicted values for class %d exceed the value range of the output data type '
-                                    '(%s - %s).' % (pixVal, np.iinfo(im_src.dtype.min), np.iinfo(im_src.dtype.max)))
+                                    '(%s - %s).' % (pixVal, np.iinfo(im_src.dtype).min, np.iinfo(im_src.dtype).max))
 
         return im_pred
 
