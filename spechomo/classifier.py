@@ -5,8 +5,6 @@ import zipfile
 from collections import OrderedDict
 from pprint import pformat
 from typing import Union, List  # noqa F401  # flake8 issue
-from multiprocessing import Pool, cpu_count
-import time
 
 from tqdm import tqdm
 import dill
@@ -149,31 +147,8 @@ class Cluster_Learner(object):
         for cluster in self.cluster_pixVals:
             yield self.MLdict[cluster]
 
-    @staticmethod
-    def _predict_for_separate_clusters(args):
-        # iterate over all cluster labels and apply corresponding machine learner parameters
-        # to predict target spectra
-        cmap_pixVal, cmap_nodataVal, cmap_unclassifiedVal = args
-
-        if cmap_pixVal == cmap_nodataVal:
-            raise ValueError("Don't pass the nodata value of the classification map to "
-                             "Cluster_Learner._predict_for_separate_clusters()!")
-
-        elif cmap_pixVal == cmap_unclassifiedVal:
-            # apply global homogenization coefficients
-            classifier = _globalMP__global_clf
-
-        else:
-            # apply cluster specific homogenization coefficients
-            classifier = _globalMP__MLdict[cmap_pixVal]
-
-        mask_pixVal = _globalMP__cmap == cmap_pixVal
-        spectra_pred = classifier.predict(_globalMP__im_src[mask_pixVal])
-
-        return spectra_pred.astype(np.int16), mask_pixVal
-
-    def predict(self, im_src, cmap, nodataVal=None, cmap_nodataVal=None, cmap_unclassifiedVal=-1, CPUs=None):
-        # type: (Union[np.ndarray, GeoArray], np.ndarray, Union[int, float], Union[int, float], Union[int, float], int) -> np.ndarray  # noqa
+    def predict(self, im_src, cmap, nodataVal=None, cmap_nodataVal=None, cmap_unclassifiedVal=-1):
+        # type: (Union[np.ndarray, GeoArray], np.ndarray, Union[int, float], Union[int, float], Union[int, float]) -> np.ndarray  # noqa
         """Predict target satellite spectral information using separate prediction coefficients for spectral clusters.
 
         :param im_src:          input image to be used for prediction
@@ -182,7 +157,6 @@ class Cluster_Learner(object):
         :param nodataVal:       nodata value to be used to fill into the predicted image
         :param cmap_nodataVal:  nodata class value of the nodata class of the classification map
         :param cmap_unclassifiedVal:    'unclassified' class value of the nodata class of the classification map
-        :param CPUs:            number of CPUs to use in case the classification map has multiple pixel values
         :return:
         """
         cluster_labels = sorted(list(np.unique(cmap)))
@@ -194,42 +168,20 @@ class Cluster_Learner(object):
         if len(cluster_labels) > 1:
             # iterate over all cluster labels and apply corresponding machine learner parameters
             # to predict target spectra
+            for pixVal in cluster_labels:
+                if pixVal == cmap_nodataVal:
+                    continue
 
-            CPUs = CPUs or cpu_count()
-            args_tuples = [(int(cmap_pixVal), cmap_nodataVal, cmap_unclassifiedVal)
-                           for cmap_pixVal in cluster_labels if cmap_pixVal != cmap_nodataVal]
-            if CPUs > 1:
-                # from multiprocessing.dummy import Pool
-                with Pool(CPUs, initializer=_mp_initializer,
-                          initargs=(im_src, cmap, self.global_clf, self.MLdict)) as pool:
-                    res = pool.map_async(self._predict_for_separate_clusters, args_tuples)
+                elif pixVal == cmap_unclassifiedVal:
+                    # apply global homogenization coefficients
+                    classifier = self.global_clf
 
-                    while True:
-                        time.sleep(.1)
-                        if res.ready():
-                            for spectra_pred, mask_pixVal in res.get():
-                                im_pred[mask_pixVal] = spectra_pred
-            else:
-                _mp_initializer(im_src, cmap, self.global_clf, self.MLdict)
-                res = [self._predict_for_separate_clusters(args) for args in args_tuples]
+                else:
+                    # apply cluster specific homogenization coefficients
+                    classifier = self.MLdict[pixVal]
 
-                for spectra_pred, mask_pixVal in res:
-                    im_pred[mask_pixVal] = spectra_pred
-
-            # for pixVal in cluster_labels:
-            #     if pixVal == cmap_nodataVal:
-            #         continue
-            #
-            #     elif pixVal == cmap_unclassifiedVal:
-            #         # apply global homogenization coefficients
-            #         classifier = self.global_clf
-            #
-            #     else:
-            #         # apply cluster specific homogenization coefficients
-            #         classifier = self.MLdict[pixVal]
-            #
-            #     mask_pixVal = cmap == pixVal
-            #     im_pred[mask_pixVal] = classifier.predict(im_src[mask_pixVal])
+                mask_pixVal = cmap == pixVal
+                im_pred[mask_pixVal] = classifier.predict(im_src[mask_pixVal])
 
         else:
             # predict target spectra directly (much faster than the above algorithm)
@@ -416,12 +368,3 @@ class ClassifierCollection(object):
 
     def __getitem__(self, item):
         return self.content[item]
-
-
-_globalMP__global_clf, _globalMP__MLdict, _globalMP__cmap, _globalMP__im_src = [None] * 4
-
-
-def _mp_initializer(im_src, cmap, global_clf, MLdict):
-    global _globalMP__global_clf, _globalMP__MLdict, _globalMP__cmap, _globalMP__im_src
-    _globalMP__global_clf, _globalMP__MLdict, _globalMP__cmap, _globalMP__im_src = \
-        global_clf, MLdict, cmap, im_src
