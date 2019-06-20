@@ -163,8 +163,7 @@ class Cluster_Learner(object):
 
         im_pred = np.full((im_src.shape[0], im_src.shape[1], self.tgt_n_bands),
                           fill_value=nodataVal if nodataVal is not None else 0,
-                          dtype=im_src.dtype)
-        out_dTMin, out_dTMax = np.iinfo(im_src.dtype).min, np.iinfo(im_src.dtype).max
+                          dtype=np.float32)
 
         if len(cluster_labels) > 1:
             # iterate over all cluster labels and apply corresponding machine learner parameters
@@ -183,13 +182,7 @@ class Cluster_Learner(object):
                     classifier = self.MLdict[pixVal]
 
                 mask_pixVal = cmap == pixVal
-                spectra_pred = classifier.predict(im_src[mask_pixVal])
-
-                if spectra_pred.min() >= out_dTMin and spectra_pred.max() <= out_dTMax:
-                    im_pred[mask_pixVal] = spectra_pred.astype(im_src.dtype)
-                else:
-                    raise TypeError('Predicted values for class %d exceed the value range of the output data type '
-                                    '(%s - %s).' % (pixVal, np.iinfo(im_src.dtype).min, np.iinfo(im_src.dtype).max))
+                im_pred[mask_pixVal] = classifier.predict(im_src[mask_pixVal])
 
         else:
             # predict target spectra directly (much faster than the above algorithm)
@@ -209,14 +202,9 @@ class Cluster_Learner(object):
 
                 spectra = im2spectra(im_src)
                 spectra_pred = classifier.predict(spectra)
+                im_pred = spectra2im(spectra_pred, im_src.shape[0], im_src.shape[1])
 
-                if spectra_pred.min() >= out_dTMin and spectra_pred.max() <= out_dTMax:
-                    im_pred = spectra2im(spectra_pred.astype(im_src.dtype), im_src.shape[0], im_src.shape[1])
-                else:
-                    raise TypeError('Predicted values for class %d exceed the value range of the output data type '
-                                    '(%s - %s).' % (pixVal, np.iinfo(im_src.dtype).min, np.iinfo(im_src.dtype).max))
-
-        return im_pred
+        return im_pred  # float32 array
 
     def predict_weighted_averages(self, im_src, cmap_3D, weights_3D=None, nodataVal=None,
                                   cmap_nodataVal=None, cmap_unclassifiedVal=-1):

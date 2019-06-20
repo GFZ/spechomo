@@ -357,6 +357,7 @@ class RSImage_ClusterPredictor(object):
         #     print(self.distance_metrics[0, 0, :])
         #     print(weights[0, 0, :])
 
+        n_saturated_px = 0
         for ((rS, rE), (cS, cE)), im_tile in image.tiles(tilesize=(1000, 1000)):
             self.logger.info('Predicting tile ((%s, %s), (%s, %s))...' % (rS, rE, cS, cE))
 
@@ -368,8 +369,7 @@ class RSImage_ClusterPredictor(object):
                     classifier.predict(im_tile, classif_map_tile,
                                        nodataVal=out_nodataVal,
                                        cmap_nodataVal=cmap_nodataVal,
-                                       cmap_unclassifiedVal=unclassified_pixVal,
-                                       ).astype(image.dtype)
+                                       cmap_unclassifiedVal=unclassified_pixVal)
 
             else:
                 weights_tile = weights[rS: rE + 1, cS: cE + 1]  # float array
@@ -378,10 +378,21 @@ class RSImage_ClusterPredictor(object):
                     classifier.predict_weighted_averages(im_tile, classif_map_tile, weights_tile,
                                                          nodataVal=out_nodataVal,
                                                          cmap_nodataVal=cmap_nodataVal,
-                                                         cmap_unclassifiedVal=unclassified_pixVal,
-                                                         ).astype(image.dtype)
+                                                         cmap_unclassifiedVal=unclassified_pixVal)
 
-            image_predicted[rS:rE + 1, cS:cE + 1] = im_tile_pred
+            # set saturated pixels (exceeding the output data range with respect to the data type) to no-data
+            if isinstance(image_predicted.dtype, np.integer):
+                out_dTMin, out_dTMax = np.iinfo(image_predicted.dtype).min, np.iinfo(image_predicted.dtype).max
+                if im_tile_pred.min() < out_dTMin or im_tile_pred.max() > out_dTMax:
+                    mask_saturated = np.any(im_tile_pred > out_dTMax | im_tile_pred < out_dTMin, axis=2)
+                    n_saturated_px += np.sum(mask_saturated)
+                    im_tile_pred[mask_saturated] = out_nodataVal
+
+            image_predicted[rS:rE + 1, cS:cE + 1] = im_tile_pred.astype(image_predicted.dtype)
+
+        if n_saturated_px:
+            self.logger.warning("%.2f %% of the predicted pixels are saturated and set to no-data."
+                                % n_saturated_px / np.dot(*image_predicted.shape[:2]) * 100)
 
         # TODO add multiprocessing here
         # print(time.time() -t0)
@@ -457,7 +468,7 @@ class RSImage_ClusterPredictor(object):
             self.logger.info('Inpainting error values for cluster #%s...' % pixVal)
 
             rmse_per_band_int = np.round(cluster_classifier.MLdict[pixVal].rmse_per_band, 0).astype(np.int16)
-            errors[self.classif_map == pixVal] = rmse_per_band_int
+            errors[self.classif_map[:] == pixVal] = rmse_per_band_int
 
         # TODO validate this equation
         # errors = (errors * im_predicted[:] / 10000).astype(errors.dtype)
