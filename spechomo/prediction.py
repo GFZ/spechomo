@@ -346,9 +346,12 @@ class RSImage_ClusterPredictor(object):
                                    geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
                                    bandnames=GMS_object.LBA2bandnames(classifier.tgt_LBA))
 
-        dist_min, dist_max = self.distance_metrics.min(), self.distance_metrics.max()
-        dist_norm = (self.distance_metrics - dist_min) / (dist_max - dist_min)
-        weights = None if self.classif_map.ndim == 2 else 1 - dist_norm
+        if classifier.n_clusters > 1 and self.classif_map.ndim > 2:
+            dist_min, dist_max = self.distance_metrics.min(), self.distance_metrics.max()
+            dist_norm = (self.distance_metrics - dist_min) / (dist_max - dist_min)
+            weights = 1 - dist_norm
+        else:
+            weights = None
 
         # weights = None if self.classif_map.ndim == 2 else \
         #     1 - (self.distance_metrics / np.sum(self.distance_metrics, axis=2, keepdims=True))
@@ -394,7 +397,7 @@ class RSImage_ClusterPredictor(object):
             self.logger.warning("%.2f %% of the predicted pixels are saturated and set to no-data."
                                 % n_saturated_px / np.dot(*image_predicted.shape[:2]) * 100)
 
-        # TODO add multiprocessing here
+        # TODO add multiprocessing here? ML classifiers seem to use multiprocessing already
         # print(time.time() -t0)
         # t0 = time.time()
         # from multiprocessing import Pool
