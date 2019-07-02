@@ -294,7 +294,7 @@ class KMeansRSImage(object):
     def spectral_angles_with_nodata(self):
         if self._clusters is not None and self._spectral_angles_with_nodata is None:
             if self.n_spectra == (self.im.rows * self.im.cols):
-                self._spectral_angles_with_nodata = self._spectral_angles
+                self._spectral_angles_with_nodata = self.spectral_angles
             else:
                 angles = np.full_like(self.goodSpecMask, np.nan, dtype=np.float)
                 angles[self.goodSpecMask] = self.spectral_angles
