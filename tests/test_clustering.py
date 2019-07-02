@@ -30,7 +30,8 @@ class Test_KMeansRSImage(unittest.TestCase):
         cls.geoArr.to_mem()
         cls.geoArr[:10, :10, :10] = -9999  # simulate some pixels that have nodata in some bands (unusable for KMeans)
 
-        cls.kmeans = KMeansRSImage(cls.geoArr, n_clusters=5)
+        cls.kmeans = KMeansRSImage(cls.geoArr, n_clusters=5,
+                                   sam_classassignment=True)
 
         os.environ['MPLBACKEND'] = 'Template'  # disables matplotlib figure popups # NOTE: import geoarray sets 'Agg'
 

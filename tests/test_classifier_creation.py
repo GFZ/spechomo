@@ -25,8 +25,8 @@ refcube_l8 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-8__OLI_TI
 refcube_l5 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-5__TM__nclust50__nsamp100.bsq')
 # TODO remove that
 # refcube_l7 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/refcube__Landsat-7__ETM+__nclust50__nsamp20000.bsq'
-refcube_l8 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp20000.bsq'
-refcube_s2 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/refcube__Sentinel-2A__MSI__nclust50__nsamp20000.bsq'
+refcube_l8 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/20k_SCA_nofilt_without_aviris/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp20000.bsq'
+refcube_s2 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/20k_SCA_nofilt_without_aviris/refcube__Sentinel-2A__MSI__nclust50__nsamp20000.bsq'
 
 
 class Test_ReferenceCube_Generator(unittest.TestCase):
@@ -128,7 +128,7 @@ class Test_ClusterClassifier_Generator(unittest.TestCase):
         CCG = ClusterClassifier_Generator([refcube_l8, refcube_s2])
         # CCG = ClusterClassifier_Generator([refcube_s2, refcube_l8, ])
         CCG.create_classifiers(outDir=self.tmpOutdir.name, method='LR', n_clusters=5,
-                               max_distance='20%', max_angle=5)
+                               max_distance='10%', max_angle=3)
 
         outpath_cls = os.path.join(self.tmpOutdir.name, 'LR_clust5__Landsat-8__OLI_TIRS.dill')
         self.assertTrue(os.path.exists(outpath_cls))
@@ -178,3 +178,30 @@ class Test_ClusterClassifier_Generator(unittest.TestCase):
             undilled = dill.load(inF)
             self.assertIsInstance(undilled, dict)
             self.assertTrue(bool(undilled), msg='Generated classifier collection is empty.')
+
+    def test_preview_classifiers(self):
+        method = 'LR'
+        n_clusters = 5
+        CCG = ClusterClassifier_Generator([refcube_l8, refcube_s2])
+        # CCG.create_classifiers(outDir=self.tmpOutdir.name,
+        #                        method='LR',
+        #                        n_clusters=1,
+        #                        CPUs=32,
+        #                        sam_classassignment=True,
+        #                        max_distance=max_distance,
+        #                        max_angle=max_angle)
+        CCG.create_classifiers(outDir=self.tmpOutdir.name,
+                               method=method,
+                               n_clusters=n_clusters,
+                               CPUs=32,
+                               sam_classassignment=True,
+                               max_distance='10%',
+                               max_angle=3)
+
+        from spechomo.classifier import Cluster_Learner, ClassifierCollection
+        coll = ClassifierCollection(
+            os.path.join(self.tmpOutdir.name, '%s_clust%s__Landsat-8__OLI_TIRS.dill' % (method, n_clusters)))
+        CL = Cluster_Learner(
+            coll['1__2__3__4__5__6__7'][('Sentinel-2A', 'MSI')]['1__2__3__4__5__6__7__8__8A__11__12'],
+            global_classifier=None)
+        fig, axes = CL.plot_sample_spectra(dpi=60, ncols=6)

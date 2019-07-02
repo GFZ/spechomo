@@ -659,8 +659,7 @@ class ClusterClassifier_Generator(object):
 
         return tuple(return_vals)
 
-    @staticmethod
-    def _extract_best_spectra_from_cluster(clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust,
+    def _extract_best_spectra_from_cluster(self, clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust,
                                            max_distance, max_angle):
         # NOTE: We exclude the noisy spectra with the largest spectral distances to their cluster
         #       center here (random spectra from within the upper 40 %)
@@ -679,6 +678,10 @@ class ClusterClassifier_Generator(object):
         tmp = df_src_spectra[df_src_spectra.spectral_angle < max_angle]
         if len(tmp.index) > 10:
             df_src_spectra = tmp
+        else:
+            df_src_spectra = df_src_spectra.sort_values(by='spectral_angle').head(25)
+            self.logger.warning('Had to choose spectra with SA up to %.2f degrees for cluster #%s.'
+                                % (np.max(df_src_spectra['spectral_angle']), clusterlabel))
 
         if isinstance(max_distance, str):
             max_distance = np.percentile(df_src_spectra.spectral_distance,
@@ -687,6 +690,10 @@ class ClusterClassifier_Generator(object):
         tmp = df_src_spectra[df_src_spectra.spectral_distance < max_distance]
         if len(tmp.index) > 10:
             df_src_spectra = tmp
+        else:
+            df_src_spectra = df_src_spectra.sort_values(by='spectral_distance').head(10)
+            self.logger.warning('Had to choose spectra with SD up to %.1f for cluster #%s.'
+                                % (np.max(df_src_spectra['spectral_distance']), clusterlabel))
 
         if len(df_src_spectra.index) > 1700:
             df_src_spectra = df_src_spectra.sort_values(by='spectral_angle').head(1700)
