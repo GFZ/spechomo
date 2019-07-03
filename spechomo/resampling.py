@@ -146,7 +146,7 @@ class SpectralResampler(object):
                                 contain nodata within the spectral response of a target band
                                 'radical':      set output band to nodata
                                 'conservative': use existing spectral information and ignore nodata
-                                                (might alter the outpur spectral information,
+                                                (might alter the output spectral information,
                                                  e.g., at spectral absorption bands)
         :param CPUs:            CPUs to use for processing
         :return:    resampled spectral image cube

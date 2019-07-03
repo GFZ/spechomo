@@ -152,8 +152,9 @@ class ReferenceCube_Generator(object):
         return SRF(self._get_tgt_GMS_identifier(tgt_sat, tgt_sen), no_pan=False)
 
     def generate_reference_cubes(self, fmt_out='ENVI', try_read_dumped_clf=True, sam_classassignment=False,
-                                 max_distance='80%', max_angle=6, nmin_unique_spectra=50, progress=True):
-        # type: (str, bool, bool, int, Union[int, float, str], Union[int, float, str], bool) -> ReferenceCube_Generator.refcubes  # noqa
+                                 max_distance='80%', max_angle=6, nmin_unique_spectra=50, alg_nodata='radical',
+                                 progress=True):
+        # type: (str, bool, bool, int, Union[int, float, str], Union[int, float, str], str, bool) -> ReferenceCube_Generator.refcubes  # noqa
         """Generate reference spectra from all hyperspectral input images.
 
         Workflow:
@@ -179,6 +180,12 @@ class ReferenceCube_Generator(object):
                                   percentile within each cluster
         :param nmin_unique_spectra:   in case a cluster has less than the given number,
                                       do not include it in the reference cube (default: 50)
+        :param alg_nodata:      algorithm how to deal with pixels where the spectral bands of the source image
+                                contain nodata within the spectral response of a target band
+                                    'radical':      set output band to nodata
+                                    'conservative': use existing spectral information and ignore nodata
+                                                    (might alter the outpur spectral information,
+                                                     e.g., at spectral absorption bands)
         :param progress:            show progress bar (default: True)
         :return:                    np.array: [tgt_n_samples x images x spectral bands of the target sensor]
         """
@@ -206,7 +213,8 @@ class ReferenceCube_Generator(object):
                     unif_random_spectra,
                     src_cwl=np.array(src_im.meta.band_meta['wavelength'], dtype=np.float).flatten(),
                     tgt_srf=self._get_tgt_SRF_object(tgt_sat, tgt_sen),
-                    nodataVal=src_im.nodata)
+                    nodataVal=src_im.nodata,
+                    alg_nodata=alg_nodata)
 
                 # add the spectra as GeoArray instance to the in-mem ref cubes
                 refcube = self.refcubes[(tgt_sat, tgt_sen)]  # type: RefCube
@@ -316,14 +324,20 @@ class ReferenceCube_Generator(object):
 
         return random_samples
 
-    def resample_spectra(self, spectra, src_cwl, tgt_srf, nodataVal):
-        # type: (Union[GeoArray, np.ndarray], Union[list, np.array], SRF, int) -> np.ndarray
+    def resample_spectra(self, spectra, src_cwl, tgt_srf, nodataVal, alg_nodata='radical'):
+        # type: (Union[GeoArray, np.ndarray], Union[list, np.array], SRF, int, str) -> np.ndarray
         """Perform spectral resampling of the given image to match the given spectral response functions.
 
         :param spectra:     2D array (rows: spectral samples;  columns: spectral information / bands
         :param src_cwl:     central wavelength positions of input spectra
         :param tgt_srf:     target spectral response functions to be used for spectral resampling
         :param nodataVal:   nodata value of the given spectra to be ignored during resampling
+        :param alg_nodata:  algorithm how to deal with pixels where the spectral bands of the source image
+                            contain nodata within the spectral response of a target band
+                            'radical':      set output band to nodata
+                            'conservative': use existing spectral information and ignore nodata
+                                                (might alter the outpur spectral information,
+                                                 e.g., at spectral absorption bands)
         :return:
         """
         spectra = GeoArray(spectra)
@@ -336,18 +350,24 @@ class ReferenceCube_Generator(object):
         spectra_rsp = SR.resample_spectra(spectra,
                                           chunksize=200,
                                           nodataVal=nodataVal,
-                                          alg_nodata='radical',
+                                          alg_nodata=alg_nodata,
                                           CPUs=self.CPUs)
 
         return spectra_rsp
 
-    def resample_image_spectrally(self, src_im, tgt_srf, src_nodata=None, progress=False):
-        # type: (Union[str, GeoArray], SRF, Union[float, int], bool) -> Union[GeoArray, None]
+    def resample_image_spectrally(self, src_im, tgt_srf, src_nodata=None, alg_nodata='radical', progress=False):
+        # type: (Union[str, GeoArray], SRF, Union[float, int], str, bool) -> Union[GeoArray, None]
         """Perform spectral resampling of the given image to match the given spectral response functions.
 
         :param src_im:      source image to be resampled
         :param tgt_srf:     target spectral response functions to be used for spectral resampling
         :param src_nodata:  source image nodata value
+        :param alg_nodata:  algorithm how to deal with pixels where the spectral bands of the source image
+                            contain nodata within the spectral response of a target band
+                            'radical':      set output band to nodata
+                            'conservative': use existing spectral information and ignore nodata
+                                                (might alter the outpur spectral information,
+                                                 e.g., at spectral absorption bands)
         :param progress:    show progress bar (default: false)
         :return:
         """
@@ -379,7 +399,7 @@ class ReferenceCube_Generator(object):
         for ((rS, rE), (cS, cE)), tiledata in (tqdm(tiles) if progress else tiles):
             tgt_im[rS: rE + 1, cS: cE + 1, :] = SR.resample_image(tiledata.astype(np.int16),
                                                                   nodataVal=im_gA.nodata,
-                                                                  alg_nodata='radical',
+                                                                  alg_nodata=alg_nodata,
                                                                   CPUs=self.CPUs)
 
         return tgt_im
