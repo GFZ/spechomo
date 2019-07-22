@@ -256,7 +256,7 @@ def _resample_tile_mp(tilebounds, nodataVal=None, alg_nodata='radical'):
             res = np.ma.filled(res_ma, nodataVal)
 
             if alg_nodata == 'radical':
-                # set those output values to nodata where the input bands within the target SRF contains any nodata
+                # set those output values to nodata where the input bands within the target SRF contain any nodata
                 badspec = np.any(isnan_sub & (srf_1nm[band] > 0), axis=1)
                 res[badspec] = nodataVal
 
