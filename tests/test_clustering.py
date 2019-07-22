@@ -30,12 +30,13 @@ class Test_KMeansRSImage(unittest.TestCase):
         cls.geoArr.to_mem()
         cls.geoArr[:10, :10, :10] = -9999  # simulate some pixels that have nodata in some bands (unusable for KMeans)
 
-        cls.kmeans = KMeansRSImage(cls.geoArr, n_clusters=5)
+        cls.kmeans = KMeansRSImage(cls.geoArr, n_clusters=5,
+                                   sam_classassignment=False)
 
         os.environ['MPLBACKEND'] = 'Template'  # disables matplotlib figure popups # NOTE: import geoarray sets 'Agg'
 
     def test_compute_clusters(self):
-        self.kmeans.compute_clusters(nmax_spectra=1e6)
+        self.kmeans.compute_clusters(nmax_spectra=1e5)
         self.assertIsInstance(self.kmeans.clusters, KMeans)
 
     def test_apply_clusters(self):

@@ -60,7 +60,13 @@ class SpectralHomogenizer(object):
             % (kind, ', '.join(np.round(np.array(target_CWLs[:-1]), 1).astype(str)) +
                ' and %s' % np.round(target_CWLs[-1], 1)))
         outarr = interp1d(np.array(orig_CWLs), arrcube, axis=2, kind=kind, fill_value='extrapolate')(target_CWLs)
-        outarr = outarr.astype(np.int16)
+
+        if np.min(outarr) >= np.iinfo(np.int16).min and np.max(outarr) <= np.iinfo(np.int16).max:
+            outarr = outarr.astype(np.int16)
+        elif np.min(outarr) >= np.iinfo(np.int32).min and np.max(outarr) <= np.iinfo(np.int32).max:
+            outarr = outarr.astype(np.int32)
+        else:
+            raise TypeError('The interpolated data cube cannot be cast into a 16- or 32-bit integer array.')
 
         assert outarr.shape == tuple([*arrcube.shape[:2], len(target_CWLs)])
 
@@ -114,7 +120,7 @@ class SpectralHomogenizer(object):
                   classif_alg=classif_alg,
                   CPUs=self.CPUs)
 
-        if classif_alg == 'kNN':
+        if classif_alg.startswith('kNN'):
             kw['n_neighbors'] = kNN_n_neighbors
 
         PR = RSImage_ClusterPredictor(**kw)
@@ -218,7 +224,9 @@ class RSImage_ClusterPredictor(object):
                                 "sub-clustering. Setting 'n_clusters' to 1.")
             self.n_clusters = 1
 
-        if self.classif_alg == 'kNN' and 'n_neighbors' in kw_clf_init and self.n_clusters < kw_clf_init['n_neighbors']:
+        if self.classif_alg.startswith('kNN') and \
+           'n_neighbors' in kw_clf_init and \
+           self.n_clusters < kw_clf_init['n_neighbors']:
             self.kw_clf_init['n_neighbors'] = self.n_clusters
 
     def get_classifier(self, src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA):
@@ -268,6 +276,10 @@ class RSImage_ClusterPredictor(object):
         # ensure image.nodata is present (important for classify_image() -> overwrites cmap at nodata positions)
         image.nodata = in_nodataVal if in_nodataVal is not None else image.nodata  # might be auto-computed here
 
+        ##########################
+        # get classification map #
+        ##########################
+
         # assign each input pixel to a cluster (compute classification with cluster centers as endmembers)
         if self.classif_map is None:
             if self.n_clusters > 1:
@@ -279,7 +291,7 @@ class RSImage_ClusterPredictor(object):
                               return_distance=True,
                               **self.kw_clf_init)
 
-                if self.classif_alg in ['MinDist', 'SAM', 'SID', 'FEDSA']:
+                if self.classif_alg in ['MinDist', 'kNN_MinDist', 'SAM', 'kNN_SAM', 'SID', 'FEDSA', 'kNN_FEDSA']:
                     kw_clf.update(dict(unclassified_threshold=unclassified_threshold,
                                        unclassified_pixVal=unclassified_pixVal))
 
@@ -293,6 +305,15 @@ class RSImage_ClusterPredictor(object):
 
                 from gms_preprocessing.algorithms.classification import classify_image  # TODO get rid of this
                 self.classif_map, self.distance_metrics = classify_image(image, train_spectra, train_labels, **kw_clf)
+
+                # compute spectral distance
+                # from gms_preprocessing.algorithms.classification import kNN_MinimumDistance_Classifier
+                # dist = kNN_MinimumDistance_Classifier.compute_euclidian_distance_3D(image, train_spectra)
+                # idxs = self.classif_map.reshape(-1, self.classif_map.shape[2])
+                # self.distance_metrics = \
+                #     dist.reshape(-1, dist.shape[2])[np.arange(dist.shape[0] * dist.shape[1])[:, np.newaxis], idxs] \
+                #         .reshape(self.classif_map.shape)
+                # print('ED MAX MIN:', self.distance_metrics.max(), self.distance_metrics.min())
 
                 self.logger.info('Total classification time: %s'
                                  % time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)))
@@ -308,12 +329,15 @@ class RSImage_ClusterPredictor(object):
 
                 self.distance_metrics = np.zeros_like(self.classif_map, np.float32)
 
+        ####################
+        # apply prediction #
+        ####################
+
         # adjust classifier
         if self.CPUs is None or self.CPUs > 1:
             # FIXME does not work -> parallelize with https://github.com/ajtulloch/sklearn-compiledtrees?
             classifier.n_jobs = cpu_count() if self.CPUs is None else self.CPUs
 
-        # apply prediction
         # NOTE: prediction is applied in 1000 x 1000 tiles to save memory (because classifier.predict returns float32)
         t0 = time.time()
         from gms_preprocessing.model.gms_object import GMS_object  # TODO get rid of this
@@ -322,21 +346,58 @@ class RSImage_ClusterPredictor(object):
                                    geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
                                    bandnames=GMS_object.LBA2bandnames(classifier.tgt_LBA))
 
+        if classifier.n_clusters > 1 and self.classif_map.ndim > 2:
+            dist_min, dist_max = self.distance_metrics.min(), self.distance_metrics.max()
+            dist_norm = (self.distance_metrics - dist_min) / (dist_max - dist_min)
+            weights = 1 - dist_norm
+        else:
+            weights = None
+
+        # weights = None if self.classif_map.ndim == 2 else \
+        #     1 - (self.distance_metrics / np.sum(self.distance_metrics, axis=2, keepdims=True))
+
+        # if self.classif_map.ndim > 2:
+        #     print(self.distance_metrics[0, 0, :])
+        #     print(weights[0, 0, :])
+
+        n_saturated_px = 0
         for ((rS, rE), (cS, cE)), im_tile in image.tiles(tilesize=(1000, 1000)):
             self.logger.info('Predicting tile ((%s, %s), (%s, %s))...' % (rS, rE, cS, cE))
 
-            classif_map_tile = self.classif_map[rS: rE+1, cS: cE+1]  # integer array
+            classif_map_tile = self.classif_map[rS: rE + 1, cS: cE + 1]  # integer array
 
             # predict!
-            im_tile_pred = \
-                classifier.predict(im_tile, classif_map_tile,
-                                   nodataVal=out_nodataVal,
-                                   cmap_nodataVal=cmap_nodataVal,
-                                   cmap_unclassifiedVal=unclassified_pixVal,
-                                   ).astype(image.dtype)
-            image_predicted[rS:rE + 1, cS:cE + 1] = im_tile_pred
+            if self.classif_map.ndim == 2:
+                im_tile_pred = \
+                    classifier.predict(im_tile, classif_map_tile,
+                                       nodataVal=out_nodataVal,
+                                       cmap_nodataVal=cmap_nodataVal,
+                                       cmap_unclassifiedVal=unclassified_pixVal)
 
-        # TODO add multiprocessing here
+            else:
+                weights_tile = weights[rS: rE + 1, cS: cE + 1]  # float array
+
+                im_tile_pred = \
+                    classifier.predict_weighted_averages(im_tile, classif_map_tile, weights_tile,
+                                                         nodataVal=out_nodataVal,
+                                                         cmap_nodataVal=cmap_nodataVal,
+                                                         cmap_unclassifiedVal=unclassified_pixVal)
+
+            # set saturated pixels (exceeding the output data range with respect to the data type) to no-data
+            if isinstance(image_predicted.dtype, np.integer):
+                out_dTMin, out_dTMax = np.iinfo(image_predicted.dtype).min, np.iinfo(image_predicted.dtype).max
+                if im_tile_pred.min() < out_dTMin or im_tile_pred.max() > out_dTMax:
+                    mask_saturated = np.any(im_tile_pred > out_dTMax | im_tile_pred < out_dTMin, axis=2)
+                    n_saturated_px += np.sum(mask_saturated)
+                    im_tile_pred[mask_saturated] = out_nodataVal
+
+            image_predicted[rS:rE + 1, cS:cE + 1] = im_tile_pred.astype(image_predicted.dtype)
+
+        if n_saturated_px:
+            self.logger.warning("%.2f %% of the predicted pixels are saturated and set to no-data."
+                                % n_saturated_px / np.dot(*image_predicted.shape[:2]) * 100)
+
+        # TODO add multiprocessing here? ML classifiers seem to use multiprocessing already
         # print(time.time() -t0)
         # t0 = time.time()
         # from multiprocessing import Pool
@@ -353,6 +414,10 @@ class RSImage_ClusterPredictor(object):
         # print(time.time() - t0)
 
         self.logger.info('Total prediction time: %s' % time.strftime("%H:%M:%S", time.gmtime(time.time()-t0)))
+
+        ###############################
+        # complete prediction results #
+        ###############################
 
         # re-apply nodata values to predicted result
         if image.nodata is not None:
@@ -406,7 +471,7 @@ class RSImage_ClusterPredictor(object):
             self.logger.info('Inpainting error values for cluster #%s...' % pixVal)
 
             rmse_per_band_int = np.round(cluster_classifier.MLdict[pixVal].rmse_per_band, 0).astype(np.int16)
-            errors[self.classif_map == pixVal] = rmse_per_band_int
+            errors[self.classif_map[:] == pixVal] = rmse_per_band_int
 
         # TODO validate this equation
         # errors = (errors * im_predicted[:] / 10000).astype(errors.dtype)

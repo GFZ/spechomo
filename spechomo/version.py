@@ -1,2 +1,2 @@
-__version__ = '0.2.0'
-__versionalias__ = '20190603.01'
+__version__ = '0.2.1'
+__versionalias__ = '20190722.01'

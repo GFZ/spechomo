@@ -63,7 +63,9 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             src_LBA=['1', '2', '3', '4', '5', '6', '7'],
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
             tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
-            compute_errors=True
+            compute_errors=True,
+            classif_alg='kNN_SAM',
+            nodataVal=-9999
         )
 
         self.assertIsInstance(predarr, GeoArray)
@@ -183,7 +185,8 @@ class Test_SpectralHomogenizer(unittest.TestCase):
 
 class Test_RSImage_ClusterPredictor(unittest.TestCase):
     def setUp(self) -> None:
-        self.CP_SAMcla = RSImage_ClusterPredictor(method='LR', n_clusters=50,
+        self.n_clusters = 50
+        self.CP_SAMcla = RSImage_ClusterPredictor(method='LR', n_clusters=self.n_clusters,
                                                   classif_alg='SAM',
                                                   classifier_rootDir=os.path.join(testdata_rootdir, 'classifiers',
                                                                                   'SAMclassassignment'))
@@ -193,19 +196,19 @@ class Test_RSImage_ClusterPredictor(unittest.TestCase):
                                                     tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'])
 
     def test_predict(self):
-        for clf_alg in ['MinDist', 'SAM', 'SID']:
+        for clf_alg in ['kNN_SAM', 'kNN_FEDSA', 'kNN_MinDist', 'MinDist', 'SAM', 'SID']:
             self.CP_SAMcla.classif_alg = clf_alg
+            self.CP_SAMcla.classif_map = None  # reset classification map
 
             # build a testimage consisting of the cluster centers
-            im_src = spectra2im(self.clf_L8.cluster_centers, 1, 50)
+            im_src = spectra2im(self.clf_L8.cluster_centers, 1, self.n_clusters)
 
             # predict
-            im_homo = self.CP_SAMcla.predict(im_src, self.clf_L8)
+            im_homo = self.CP_SAMcla.predict(im_src, self.clf_L8, unclassified_threshold=4)
 
             # classifier should predict almost the target sensor center spectra
-            self.assertTrue(np.array_equal(self.CP_SAMcla.classif_map[:].flatten(), np.arange(50)))
+            if clf_alg not in ['kNN_MinDist', 'kNN_SAM', 'kNN_FEDSA']:
+                self.assertTrue(np.array_equal(self.CP_SAMcla.classif_map[:].flatten(), np.arange(self.n_clusters)))
             self.assertTrue(np.allclose(im_homo, np.vstack([self.clf_L8.MLdict[i].tgt_cluster_center
-                                                            for i in range(50)]), atol=5))
-            print(clf_alg)
-
-
+                                                            for i in range(self.n_clusters)]),
+                                        atol=5 if clf_alg not in ['kNN_MinDist', 'kNN_SAM', 'kNN_FEDSA'] else 1000))

@@ -146,7 +146,7 @@ class SpectralResampler(object):
                                 contain nodata within the spectral response of a target band
                                 'radical':      set output band to nodata
                                 'conservative': use existing spectral information and ignore nodata
-                                                (might alter the outpur spectral information,
+                                                (might alter the output spectral information,
                                                  e.g., at spectral absorption bands)
         :param CPUs:            CPUs to use for processing
         :return:    resampled spectral image cube
@@ -256,7 +256,7 @@ def _resample_tile_mp(tilebounds, nodataVal=None, alg_nodata='radical'):
             res = np.ma.filled(res_ma, nodataVal)
 
             if alg_nodata == 'radical':
-                # set those output values to nodata where the input bands within the target SRF contains any nodata
+                # set those output values to nodata where the input bands within the target SRF contain any nodata
                 badspec = np.any(isnan_sub & (srf_1nm[band] > 0), axis=1)
                 res[badspec] = nodataVal
 

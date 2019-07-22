@@ -108,7 +108,7 @@ class KMeansRSImage(object):
 
         return self._clustermap
 
-    def compute_clusters(self, nmax_spectra=1000000):
+    def compute_clusters(self, nmax_spectra=100000):
         """Compute the cluster means and labels.
 
         :param nmax_spectra:    maximum number of spectra to be included (pseudo-randomly selected (reproducable))
@@ -136,11 +136,30 @@ class KMeansRSImage(object):
             labels[idxs_specIncl] = kmeans.labels_
             distances[idxs_specIncl] = np.min(distmatrix_incl, axis=1)
 
-            distmatrix_specNotIncl = kmeans.transform(spectra_notIncl)
-            labels[idxs_specNotIncl] = np.argmin(distmatrix_specNotIncl, axis=1)
-            distances[idxs_specNotIncl] = np.min(distmatrix_specNotIncl, axis=1)
+            if self.sam_classassignment:
+                # override cluster labels with labels computed via SAM (distances have be recomputed then)
+                from gms_preprocessing.algorithms.classification import SAM_Classifier
+                print('Using SAM class assignment.')
+                SC = SAM_Classifier(kmeans.cluster_centers_, CPUs=self.CPUs)
+                im_sam_labels = SC.classify(self.im)
+                sam_labels = im_sam_labels.flatten()[self.goodSpecMask]
+                self._spectral_angles = SC.angles_deg.flatten()[self.goodSpecMask]
 
-            kmeans.labels_ = labels
+                # update distances at those positions where SAM assigns different class labels
+                distsPos2update = labels != sam_labels
+                distsPos2update[idxs_specNotIncl] = True
+                distances[distsPos2update] = \
+                    self.compute_euclidian_distance_for_labelled_spectra(
+                        self.spectra[distsPos2update, :], sam_labels[distsPos2update], kmeans.cluster_centers_)
+
+                kmeans.labels_ = sam_labels
+
+            else:
+                distmatrix_specNotIncl = kmeans.transform(spectra_notIncl)
+                labels[idxs_specNotIncl] = np.argmin(distmatrix_specNotIncl, axis=1)
+                distances[idxs_specNotIncl] = np.min(distmatrix_specNotIncl, axis=1)
+
+                kmeans.labels_ = labels
 
         else:
             if self.v:
@@ -148,16 +167,23 @@ class KMeansRSImage(object):
             kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
 
             distmatrix = kmeans.fit_transform(self.spectra)
+            kmeans_labels = kmeans.labels_
             distances = np.min(distmatrix, axis=1)
 
-        if self.sam_classassignment:
-            # override cluster labels with labels computed via SAM (distances have be recomputed then)
-            from gms_preprocessing.algorithms.classification import SAM_Classifier
-            print('Using SAM class assignment.')
-            SC = SAM_Classifier(kmeans.cluster_centers_, CPUs=self.CPUs)
-            sam_labels = SC.classify(self.im)
-            kmeans.labels_ = sam_labels.flatten()[self.goodSpecMask]
-            self._spectral_angles = SC.angles_deg.flatten()[self.goodSpecMask]
+            if self.sam_classassignment:
+                # override cluster labels with labels computed via SAM (distances have be recomputed then)
+                from gms_preprocessing.algorithms.classification import SAM_Classifier
+                print('Using SAM class assignment.')
+                SC = SAM_Classifier(kmeans.cluster_centers_, CPUs=self.CPUs)
+                im_sam_labels = SC.classify(self.im)
+                sam_labels = im_sam_labels.flatten()[self.goodSpecMask]
+                self._spectral_angles = SC.angles_deg.flatten()[self.goodSpecMask]
+
+                # update distances at those positions where SAM assigns different class labels
+                distsPos2update = kmeans_labels != sam_labels
+                distances[distsPos2update] = \
+                    self.compute_euclidian_distance_for_labelled_spectra(
+                        self.spectra[distsPos2update, :], sam_labels[distsPos2update], kmeans.cluster_centers_)
 
         self.clusters = kmeans
         self._spectral_distances = distances
@@ -171,6 +197,42 @@ class KMeansRSImage(object):
     def compute_spectral_distances(self):
         self._spectral_distances = np.min(self.clusters.transform(self.spectra), axis=1)
         return self.spectral_distances
+
+    @staticmethod
+    def compute_euclidian_distance_2D(spectra, endmembers):
+        n_samples, n_features = endmembers.shape
+
+        if not spectra.shape[1] == endmembers.shape[1]:
+            raise RuntimeError('Matrix dimensions are not aligned. Input spectra have %d bands but endmembers '
+                               'have %d.' % (spectra.shape[1], endmembers.shape[1]))
+
+        dists = np.zeros((spectra.shape[0], n_samples), np.float32)
+
+        # loop over all endmember spectra and compute spectral angle for each input spectrum
+        for n_sample in range(n_samples):
+            train_spectrum = endmembers[n_sample, :].astype(np.float)
+            diff = spectra - train_spectrum
+            dists[:, n_sample] = np.sqrt((diff ** 2).sum(axis=1))
+
+        return dists
+
+    @staticmethod
+    def compute_euclidian_distance_for_labelled_spectra(spectra, labels, endmembers):
+        if not spectra.shape[1] == endmembers.shape[1]:
+            raise RuntimeError('Matrix dimensions are not aligned. Input spectra have %d bands but endmembers '
+                               'have %d.' % (spectra.shape[1], endmembers.shape[1]))
+
+        dists = np.zeros((spectra.shape[0]), np.float32)
+
+        # loop over all endmember spectra and compute spectral angle for each input spectrum
+        for lbl in np.unique(labels):
+            train_spectrum = endmembers[lbl, :].astype(np.float)
+            mask_curlbl = labels == lbl
+            spectra_curlbl = spectra[mask_curlbl, :]
+            diff_curlbl = spectra_curlbl - train_spectrum
+            dists[mask_curlbl] = np.sqrt((diff_curlbl ** 2).sum(axis=1))
+
+        return dists
 
     def compute_spectral_angles(self):
         from gms_preprocessing.algorithms.classification import classify_image  # TODO get rid of this
@@ -232,7 +294,7 @@ class KMeansRSImage(object):
     def spectral_angles_with_nodata(self):
         if self._clusters is not None and self._spectral_angles_with_nodata is None:
             if self.n_spectra == (self.im.rows * self.im.cols):
-                self._spectral_angles_with_nodata = self._spectral_angles
+                self._spectral_angles_with_nodata = self.spectral_angles
             else:
                 angles = np.full_like(self.goodSpecMask, np.nan, dtype=np.float)
                 angles[self.goodSpecMask] = self.spectral_angles
