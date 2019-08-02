@@ -187,7 +187,7 @@ class Test_ClusterClassifier_Generator(unittest.TestCase):
 
     def test_create_classifiers_RFR(self):
         """Test creation of random forest regression classifiers."""
-        CCG = ClusterClassifier_Generator([refcube_l8, refcube_l5])
+        CCG = ClusterClassifier_Generator([refcube_l8, refcube_s2])
         CCG.create_classifiers(outDir=self.tmpOutdir.name, method='RFR', n_clusters=1,
                                **dict(n_jobs=-1, n_estimators=20, max_depth=10))
 

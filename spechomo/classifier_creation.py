@@ -634,12 +634,14 @@ class ClusterClassifier_Generator(object):
                         self.logger.debug('Creating %s classifier for cluster %s...' % (method, clusterlabel))
 
                         if n_clusters == 1:
-                            max_distance, max_angle = '100%', '100%'
-
-                        df_src_spectra_best, df_tgt_spectra_best = \
-                            self._extract_best_spectra_from_cluster(
-                                clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust,
-                                max_distance=max_distance, max_angle=max_angle)
+                            # max_distance, max_angle = '100%', '100%'
+                            df_src_spectra_best = df_src_spectra_allclust.sample(10000, random_state=0, replace=True)
+                            df_tgt_spectra_best = df_tgt_spectra_allclust.sample(10000, random_state=0, replace=True)
+                        else:
+                            df_src_spectra_best, df_tgt_spectra_best = \
+                                self._extract_best_spectra_from_cluster(
+                                    clusterlabel, df_src_spectra_allclust, df_tgt_spectra_allclust,
+                                    max_distance=max_distance, max_angle=max_angle)
 
                         # Set train and test variables for the classifier
                         src_spectra_curlabel = df_src_spectra_best.values[:, 3:]
