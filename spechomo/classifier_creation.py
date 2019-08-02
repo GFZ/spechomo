@@ -577,7 +577,8 @@ class ClusterClassifier_Generator(object):
             kwargs.update(dict(
                 n_jobs=kwargs.get('n_jobs', CPUs),
                 n_estimators=kwargs.get('n_estimators', options['classifiers']['RFR']['n_trees']),
-                max_depth=kwargs.get('max_depth', options['classifiers']['RFR']['max_depth'])
+                max_depth=kwargs.get('max_depth', options['classifiers']['RFR']['max_depth']),
+                max_features='log2'  # log2 is good for regression and 'srqt' is good for classification
             ))
 
         # build the classifier collections with separate classifiers for each cluster
