@@ -1,8 +1,8 @@
 classifiers:
     RFR:  # Random Forest
         n_trees: 50
-        max_depth: 3
-        max_features: 'log2' # good for RFR regression
+        max_depth: 5
+        max_features: 'auto' # works well according to out tests but 'log2' is also good for RFR regression
 
     trainspec_filtering:
         max_distance: '80%'
