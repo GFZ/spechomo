@@ -151,7 +151,7 @@ class ReferenceCube_Generator(object):
         # type: (str, str) -> list
         """Get the LayerBandsAssignment for the specified target sensor.
 
-        NOTE:   The returned bands list always contains all possible bands. Specific band seletions are later done
+        NOTE:   The returned bands list always contains all possible bands. Specific band selections are later done
                 using np.take().
 
         :param tgt_sat:     target satellite

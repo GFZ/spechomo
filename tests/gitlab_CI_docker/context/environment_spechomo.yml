@@ -40,6 +40,7 @@ dependencies:
   - pip:
     - dill
     - geoarray>=0.8.9
+    - specclassify>=0.2.0
     - git+https://gitext.gfz-potsdam.de/geomultisens/gms_preprocessing.git
     - nested_dict
     - pyyaml
