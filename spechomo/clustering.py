@@ -30,6 +30,7 @@ from geoarray import GeoArray
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 from sklearn.cluster import KMeans
+from specclassify import SAM_Classifier, classify_image
 
 from .utils import im2spectra
 
@@ -159,7 +160,6 @@ class KMeansRSImage(object):
 
             if self.sam_classassignment:
                 # override cluster labels with labels computed via SAM (distances have be recomputed then)
-                from gms_preprocessing.algorithms.classification import SAM_Classifier
                 print('Using SAM class assignment.')
                 SC = SAM_Classifier(kmeans.cluster_centers_, CPUs=self.CPUs)
                 im_sam_labels = SC.classify(self.im)
@@ -193,7 +193,6 @@ class KMeansRSImage(object):
 
             if self.sam_classassignment:
                 # override cluster labels with labels computed via SAM (distances have be recomputed then)
-                from gms_preprocessing.algorithms.classification import SAM_Classifier
                 print('Using SAM class assignment.')
                 SC = SAM_Classifier(kmeans.cluster_centers_, CPUs=self.CPUs)
                 im_sam_labels = SC.classify(self.im)
@@ -256,7 +255,6 @@ class KMeansRSImage(object):
         return dists
 
     def compute_spectral_angles(self):
-        from gms_preprocessing.algorithms.classification import classify_image  # TODO get rid of this
         spectral_angles = classify_image(self.im, self.clusters.cluster_centers_, list(range(self.n_clusters)),
                                          'SAM', in_nodataVal=self.im.nodata, cmap_nodataVal=-9999,
                                          tiledims=(400, 400), CPUs=self.CPUs, return_distance=True,
