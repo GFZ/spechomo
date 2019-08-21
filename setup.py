@@ -37,7 +37,7 @@ with open("spechomo/version.py") as version_file:
     exec(version_file.read(), version)
 
 requirements = ['numpy', 'matplotlib', 'pandas', 'dill', 'nested_dict', 'tqdm', 'scipy', 'scikit-learn', 'geoarray',
-                'seaborn', 'pyyaml', 'gms_preprocessing', 'tabulate']
+                'seaborn', 'pyyaml', 'tabulate', 'pyrsr']
 
 setup_requirements = []
 

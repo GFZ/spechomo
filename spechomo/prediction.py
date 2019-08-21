@@ -32,15 +32,13 @@ import traceback
 import time
 from scipy.interpolate import interp1d
 from geoarray import GeoArray  # noqa F401  # flake8 issue
+from specclassify import classify_image
+# from specclassify import kNN_MinimumDistance_Classifier
 
 from .classifier import Cluster_Learner
 from .exceptions import ClassifierNotAvailableError
 from .logging import SpecHomo_Logger
 from . import __path__
-
-# TODO dependencies to get rid of
-# from gms_preprocessing.algorithms.classification import classify_image
-# from gms_preprocessing.model.gms_object import GMS_object
 
 __author__ = 'Daniel Scheffler'
 
@@ -324,11 +322,9 @@ class RSImage_ClusterPredictor(object):
                     train_spectra = classifier.cluster_centers
                     train_labels = classifier.cluster_pixVals
 
-                from gms_preprocessing.algorithms.classification import classify_image  # TODO get rid of this
                 self.classif_map, self.distance_metrics = classify_image(image, train_spectra, train_labels, **kw_clf)
 
                 # compute spectral distance
-                # from gms_preprocessing.algorithms.classification import kNN_MinimumDistance_Classifier
                 # dist = kNN_MinimumDistance_Classifier.compute_euclidian_distance_3D(image, train_spectra)
                 # idxs = self.classif_map.reshape(-1, self.classif_map.shape[2])
                 # self.distance_metrics = \
@@ -361,11 +357,10 @@ class RSImage_ClusterPredictor(object):
 
         # NOTE: prediction is applied in 1000 x 1000 tiles to save memory (because classifier.predict returns float32)
         t0 = time.time()
-        from gms_preprocessing.model.gms_object import GMS_object  # TODO get rid of this
         out_nodataVal = out_nodataVal if out_nodataVal is not None else image.nodata
         image_predicted = GeoArray(np.empty((image.rows, image.cols, classifier.tgt_n_bands), dtype=image.dtype),
                                    geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
-                                   bandnames=GMS_object.LBA2bandnames(classifier.tgt_LBA))
+                                   bandnames=['B%s' % i if len(i) == 2 else 'B0%s' % i for i in classifier.tgt_LBA])
 
         if classifier.n_clusters > 1 and self.classif_map.ndim > 2:
             dist_min, dist_max = self.distance_metrics.min(), self.distance_metrics.max()

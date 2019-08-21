@@ -33,31 +33,31 @@ from scipy.interpolate import interp1d
 
 from .logging import SpecHomo_Logger
 
-# TODO dependencies to get rid of
 if TYPE_CHECKING:
-    from gms_preprocessing.io.input_reader import SRF  # noqa F401  # flake8 issue
+    from pyrsr import RSR  # noqa F401  # flake8 issue
 
 
 class SpectralResampler(object):
     """Class for spectral resampling of a single spectral signature (1D-array) or an image (3D-array)."""
 
-    def __init__(self, wvl_src, srf_tgt, logger=None):
-        # type: (np.ndarray, SRF, str) -> None
+    def __init__(self, wvl_src, rsr_tgt, logger=None):
+        # type: (np.ndarray, RSR, str) -> None
         """Get an instance of the SpectralResampler class.
 
         :param wvl_src:     center wavelength positions of the source spectrum
-        :param srf_tgt:     spectral response of the target instrument as an instance of io.Input_reader.SRF.
+        :param rsr_tgt:     relative spectral response of the target instrument as an instance of
+                            pyrsr.RelativeSpectralRespnse.
         """
         # privates
         self._wvl_1nm = None
-        self._srf_1nm = {}
+        self._rsr_1nm = {}
 
         wvl_src = np.array(wvl_src, dtype=np.float).flatten()
-        if srf_tgt.wvl_unit != 'nanometers':
-            srf_tgt.convert_wvl_unit()
+        if rsr_tgt.wvl_unit != 'nanometers':
+            rsr_tgt.convert_wvl_unit()
 
         self.wvl_src_nm = wvl_src if max(wvl_src) > 100 else wvl_src * 1000
-        self.srf_tgt = srf_tgt
+        self.rsr_tgt = rsr_tgt
         self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
 
     @property
@@ -68,18 +68,18 @@ class SpectralResampler(object):
         return self._wvl_1nm
 
     @property
-    def srf_1nm(self):
-        if not self._srf_1nm:
-            for band in self.srf_tgt.bands:
-                # resample srf to 1 nm
-                self._srf_1nm[band] = \
-                    sp.interpolate.interp1d(self.srf_tgt.srfs_wvl, self.srf_tgt.srfs[band],
+    def rsr_1nm(self):
+        if not self._rsr_1nm:
+            for band in self.rsr_tgt.bands:
+                # resample RSR to 1 nm
+                self._rsr_1nm[band] = \
+                    sp.interpolate.interp1d(self.rsr_tgt.rsrs_wvl, self.rsr_tgt.rsrs[band],
                                             bounds_error=False, fill_value=0, kind='linear')(self.wvl_1nm)
 
                 # validate
-                assert len(self._srf_1nm[band]) == len(self.wvl_1nm)
+                assert len(self._rsr_1nm[band]) == len(self.wvl_1nm)
 
-        return self._srf_1nm
+        return self._rsr_1nm
 
     def resample_signature(self, spectrum, scale_factor=10000, nodataVal=None, alg_nodata='radical', v=False):
         # type: (np.ndarray, int, Union[int, float], str, bool) -> np.ndarray
@@ -114,10 +114,10 @@ class SpectralResampler(object):
 
         if v:
             plt.figure()
-            for band in self.srf_tgt.bands:
-                plt.plot(self.wvl_1nm, self.srf_1nm[band] / max(self.srf_1nm[band]))
+            for band in self.rsr_tgt.bands:
+                plt.plot(self.wvl_1nm, self.rsr_1nm[band] / max(self.rsr_1nm[band]))
             plt.plot(self.wvl_src_nm, spectrum / scale_factor, '.')
-            plt.plot(self.srf_tgt.wvl, spectrum_rsp / scale_factor, 'x', color='r')
+            plt.plot(self.rsr_tgt.wvl, spectrum_rsp / scale_factor, 'x', color='r')
             plt.show()
 
         return spectrum_rsp
@@ -180,10 +180,10 @@ class SpectralResampler(object):
 
         image_cube = GeoArray(image_cube)
 
-        (R, C), B = image_cube.shape[:2], len(self.srf_tgt.bands)
+        (R, C), B = image_cube.shape[:2], len(self.rsr_tgt.bands)
         image_rsp = np.zeros((R, C, B), dtype=image_cube.dtype)
 
-        initargs = image_cube, self.srf_tgt, self.srf_1nm, self.wvl_src_nm, self.wvl_1nm
+        initargs = image_cube, self.rsr_tgt, self.rsr_1nm, self.wvl_src_nm, self.wvl_1nm
         if CPUs is None or CPUs > 1:
             with Pool(CPUs, initializer=_initializer_mp, initargs=initargs) as pool:
                 tiles_rsp = pool.starmap(_resample_tile_mp,
@@ -204,13 +204,13 @@ class SpectralResampler(object):
 _globs_mp = dict()
 
 
-def _initializer_mp(image_cube, srf_tgt, srf_1nm, wvl_src_nm, wvl_1nm):
-    # type: (np.ndarray, SRF, SRF, np.ndarray, np.ndarray) -> None
+def _initializer_mp(image_cube, rsr_tgt, rsr_1nm, wvl_src_nm, wvl_1nm):
+    # type: (np.ndarray, RSR, RSR, np.ndarray, np.ndarray) -> None
     global _globs_mp
     _globs_mp.update(dict(
         image_cube=image_cube,
-        srf_tgt=srf_tgt,
-        srf_1nm=srf_1nm,
+        rsr_tgt=rsr_tgt,
+        rsr_1nm=rsr_1nm,
         wvl_src_nm=wvl_src_nm,
         wvl_1nm=wvl_1nm,
     ))
@@ -223,15 +223,15 @@ def _resample_tile_mp(tilebounds, nodataVal=None, alg_nodata='radical'):
 
     # get global share variables
     tiledata = _globs_mp['image_cube'][rS: rE + 1, cS: cE + 1, :]  # type: Union[GeoArray, np.ndarray]
-    srf_tgt = _globs_mp['srf_tgt']
-    srf_1nm = _globs_mp['srf_1nm']
+    rsr_tgt = _globs_mp['rsr_tgt']
+    rsr_1nm = _globs_mp['rsr_1nm']
     wvl_src_nm = _globs_mp['wvl_src_nm']
     wvl_1nm = _globs_mp['wvl_1nm']
 
     if alg_nodata not in ['radical', 'conservative']:
         raise ValueError(alg_nodata)
 
-    tile_rsp = np.zeros((*tiledata.shape[:2], len(srf_tgt.bands)), dtype=tiledata.dtype)
+    tile_rsp = np.zeros((*tiledata.shape[:2], len(rsr_tgt.bands)), dtype=tiledata.dtype)
 
     if nodataVal is not None:
         if np.isfinite(nodataVal):
@@ -255,9 +255,9 @@ def _resample_tile_mp(tilebounds, nodataVal=None, alg_nodata='radical'):
 
         # compute resampled values for pixels without nodata
         tilespectra_1nm_nonan = tilespectra_1nm[~nan_in_spec, :]
-        for band_idx, band in enumerate(srf_tgt.bands):
+        for band_idx, band in enumerate(rsr_tgt.bands):
             # compute the resampled image cube (np.average computes the weighted mean value)
-            res = np.average(tilespectra_1nm_nonan, weights=srf_1nm[band], axis=1)
+            res = np.average(tilespectra_1nm_nonan, weights=rsr_1nm[band], axis=1)
             # NOTE: rounding here is important to prevent -9999. converted to -9998
             if not np.issubdtype(tile_rsp.dtype, np.floating):
                 res = np.around(res)
@@ -270,15 +270,15 @@ def _resample_tile_mp(tilebounds, nodataVal=None, alg_nodata='radical'):
         mask_withnan = mask_anynodata & ~mask_allnodata
         isnan_sub = isnan[nan_in_spec, :]
 
-        for band_idx, band in enumerate(srf_tgt.bands):
-            res_ma = np.ma.average(tilespectra_1nm_withnan_ma, axis=1, weights=srf_1nm[band])
+        for band_idx, band in enumerate(rsr_tgt.bands):
+            res_ma = np.ma.average(tilespectra_1nm_withnan_ma, axis=1, weights=rsr_1nm[band])
 
             # in case all 1nm bands for the current band are NaN, the resulting average will also be NaN => fill
             res = np.ma.filled(res_ma, nodataVal)
 
             if alg_nodata == 'radical':
-                # set those output values to nodata where the input bands within the target SRF contain any nodata
-                badspec = np.any(isnan_sub & (srf_1nm[band] > 0), axis=1)
+                # set those output values to nodata where the input bands within the target RSR contain any nodata
+                badspec = np.any(isnan_sub & (rsr_1nm[band] > 0), axis=1)
                 res[badspec] = nodataVal
 
             if not np.issubdtype(tile_rsp.dtype, np.floating):
@@ -291,9 +291,9 @@ def _resample_tile_mp(tilebounds, nodataVal=None, alg_nodata='radical'):
         tile_1nm = interp1d(wvl_src_nm, tiledata,
                             axis=2, bounds_error=False, fill_value=0, kind='linear')(wvl_1nm)
 
-        for band_idx, band in enumerate(srf_tgt.bands):
+        for band_idx, band in enumerate(rsr_tgt.bands):
             # compute the resampled image cube (np.average computes the weighted mean value)
-            res = np.average(tile_1nm, weights=srf_1nm[band], axis=2)
+            res = np.average(tile_1nm, weights=rsr_1nm[band], axis=2)
             # NOTE: rounding here is important to prevent -9999. converted to -9998
             tile_rsp[:, :, band_idx] = res if np.issubdtype(tile_rsp.dtype, np.floating) else np.around(res)
 

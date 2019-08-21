@@ -25,22 +25,10 @@ dependencies:
   - scikit-image
   - shapely
 
-  # gms_preprocessing  # FIXME remove as soon as gms_preprocessing is not a dependency anymore
-  - lxml
-  - pyhdf
-  - python-fmask
-
-  # sicor
-  - glymur
-  - pygrib
-  - cachetools
-  - h5py
-  - pytables
-
   - pip:
     - dill
     - geoarray>=0.8.9
-    - git+https://gitext.gfz-potsdam.de/geomultisens/gms_preprocessing.git
+    - pyrsr
     - nested_dict
     - pyyaml
     - scipy
