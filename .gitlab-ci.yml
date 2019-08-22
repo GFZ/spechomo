@@ -58,7 +58,7 @@ test_spechomo_install:
     - conda install -y -c conda-forge basemap gdal geopandas pyproj pyqt rasterio scikit-image shapely
 
     # install spechomo
-    - make install
+    - python setup.py install
     - cd ..
     - pwd
     - ls
