@@ -25,7 +25,7 @@ import os
 import re
 from glob import glob
 from multiprocessing import cpu_count
-from typing import List, Tuple, Union, Dict, TYPE_CHECKING  # noqa F401  # flake8 issue
+from typing import List, Tuple, Union, Dict  # noqa F401  # flake8 issue
 import logging  # noqa F401  # flake8 issue
 from itertools import product
 
@@ -40,18 +40,14 @@ from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import PolynomialFeatures
 from tqdm import tqdm
 from geoarray import GeoArray
+from pyrsr import RSR
+from pyrsr.sensorspecs import get_LayerBandsAssignment
 
 from .clustering import KMeansRSImage
 from .resampling import SpectralResampler
 from .training_data import RefCube
 from .logging import SpecHomo_Logger
 from .options import options
-
-# TODO dependencies to get rid of
-if TYPE_CHECKING:
-    from gms_preprocessing.model.gms_object import GMS_identifier
-    # from gms_preprocessing.model.metadata import get_LayerBandsAssignment, get_center_wavelengths_by_LBA
-    from gms_preprocessing.io.input_reader import SRF
 
 
 class ReferenceCube_Generator(object):
@@ -132,10 +128,13 @@ class ReferenceCube_Generator(object):
 
         return self._refcubes
 
-    def _get_tgt_GMS_identifier(self, tgt_sat, tgt_sen):
-        # type: (str, str) -> GMS_identifier
-        """Get a GMS identifier for the specified target sensor such that all possible bands are included (L1C)
+    @staticmethod
+    def _get_tgt_LayerBandsAssignment(tgt_sat, tgt_sen):
+        # type: (str, str) -> list
+        """Get the LayerBandsAssignment for the specified target sensor.
 
+        NOTE:   The returned bands list always contains all possible bands. Panchromatic bands or bands not available
+                after atmospheric correction are removed. Further band selections are later done using np.take().
         NOTE: We don't use L1A here because the signal of the additional bands at L1A is not predictable by spectral
               harmonization as these bands are not driven by surface albedo but by atmospheric conditions (945, 1373nm).
 
@@ -143,34 +142,18 @@ class ReferenceCube_Generator(object):
         :param tgt_sen:     target sensor
         :return:
         """
-        from gms_preprocessing.model.gms_object import GMS_identifier
-        return GMS_identifier(satellite=tgt_sat, sensor=tgt_sen, subsystem=None, image_type='RSD', dataset_ID=-9999,
-                              proc_level='L1C', logger=self.logger)  # use L1A to have all bands available
+        return get_LayerBandsAssignment(tgt_sat, tgt_sen, no_pan=False, sort_by_cwl=True, after_ac=True)
 
-    def _get_tgt_LayerBandsAssignment(self, tgt_sat, tgt_sen):
-        # type: (str, str) -> list
-        """Get the LayerBandsAssignment for the specified target sensor.
-
-        NOTE:   The returned bands list always contains all possible bands. Specific band selections are later done
-                using np.take().
+    @staticmethod
+    def _get_tgt_RSR_object(tgt_sat, tgt_sen):
+        # type: (str, str) -> RSR
+        """Get an RSR instance containing the spectral response functions for the target sensor.
 
         :param tgt_sat:     target satellite
         :param tgt_sen:     target sensor
         :return:
         """
-        from gms_preprocessing.model.metadata import get_LayerBandsAssignment
-        return get_LayerBandsAssignment(self._get_tgt_GMS_identifier(tgt_sat, tgt_sen), no_pan=False, sort_by_cwl=True)
-
-    def _get_tgt_SRF_object(self, tgt_sat, tgt_sen):
-        # type: (str, str) -> SRF
-        """Get an SRF instance containing the spectral response functions for for the specified target sensor.
-
-        :param tgt_sat:     target satellite
-        :param tgt_sen:     target sensor
-        :return:
-        """
-        from gms_preprocessing.io.input_reader import SRF
-        return SRF(self._get_tgt_GMS_identifier(tgt_sat, tgt_sen), no_pan=False)
+        return RSR(tgt_sat, tgt_sen, no_pan=False)
 
     def generate_reference_cubes(self, fmt_out='ENVI', try_read_dumped_clf=True, sam_classassignment=False,
                                  max_distance='80%', max_angle=6, nmin_unique_spectra=50, alg_nodata='radical',
@@ -233,7 +216,7 @@ class ReferenceCube_Generator(object):
                 unif_random_spectra_rsp = self.resample_spectra(
                     unif_random_spectra,
                     src_cwl=np.array(src_im.meta.band_meta['wavelength'], dtype=np.float).flatten(),
-                    tgt_srf=self._get_tgt_SRF_object(tgt_sat, tgt_sen),
+                    tgt_rsr=self._get_tgt_RSR_object(tgt_sat, tgt_sen),
                     nodataVal=src_im.nodata,
                     alg_nodata=alg_nodata)
 
@@ -305,11 +288,8 @@ class ReferenceCube_Generator(object):
             # first, perform spectral resampling to Sentinel-2 to reduce dimensionality (speedup)
             if downsamp_sat and downsamp_sen:
                 # NOTE: The KMeansRSImage class already reduces the input data to 1 million spectra by default
-                from gms_preprocessing.model.gms_object import GMS_identifier
-                from gms_preprocessing.io.input_reader import SRF
-                tgt_srf = SRF(GMS_identifier(satellite=downsamp_sat, sensor=downsamp_sen, subsystem=None,
-                                             image_type='RSD', dataset_ID=-9999, proc_level='L1A', logger=self.logger))
-                im2clust = self.resample_image_spectrally(im2clust, tgt_srf, progress=progress)  # output = int16
+                tgt_rsr = RSR(satellite=downsamp_sat, sensor=downsamp_sen, no_pan=True, no_thermal=True)
+                im2clust = self.resample_image_spectrally(im2clust, tgt_rsr, progress=progress)  # output = int16
 
             # compute KMeans clusters for the spectrally resampled image
             # NOTE: Nodata values are ignored during KMeans clustering.
@@ -345,13 +325,13 @@ class ReferenceCube_Generator(object):
 
         return random_samples
 
-    def resample_spectra(self, spectra, src_cwl, tgt_srf, nodataVal, alg_nodata='radical'):
-        # type: (Union[GeoArray, np.ndarray], Union[list, np.array], SRF, int, str) -> np.ndarray
+    def resample_spectra(self, spectra, src_cwl, tgt_rsr, nodataVal, alg_nodata='radical'):
+        # type: (Union[GeoArray, np.ndarray], Union[list, np.array], RSR, int, str) -> np.ndarray
         """Perform spectral resampling of the given image to match the given spectral response functions.
 
         :param spectra:     2D array (rows: spectral samples;  columns: spectral information / bands
         :param src_cwl:     central wavelength positions of input spectra
-        :param tgt_srf:     target spectral response functions to be used for spectral resampling
+        :param tgt_rsr:     target relative spectral response functions to be used for spectral resampling
         :param nodataVal:   nodata value of the given spectra to be ignored during resampling
         :param alg_nodata:  algorithm how to deal with pixels where the spectral bands of the source image
                             contain nodata within the spectral response of a target band
@@ -365,9 +345,9 @@ class ReferenceCube_Generator(object):
 
         # perform spectral resampling of input image to match spectral properties of target sensor
         self.logger.info('Performing spectral resampling to match spectral properties of %s %s...'
-                         % (tgt_srf.satellite, tgt_srf.sensor))
+                         % (tgt_rsr.satellite, tgt_rsr.sensor))
 
-        SR = SpectralResampler(src_cwl, tgt_srf)
+        SR = SpectralResampler(src_cwl, tgt_rsr)
         spectra_rsp = SR.resample_spectra(spectra,
                                           chunksize=200,
                                           nodataVal=nodataVal,
@@ -376,12 +356,12 @@ class ReferenceCube_Generator(object):
 
         return spectra_rsp
 
-    def resample_image_spectrally(self, src_im, tgt_srf, src_nodata=None, alg_nodata='radical', progress=False):
-        # type: (Union[str, GeoArray], SRF, Union[float, int], str, bool) -> Union[GeoArray, None]
+    def resample_image_spectrally(self, src_im, tgt_rsr, src_nodata=None, alg_nodata='radical', progress=False):
+        # type: (Union[str, GeoArray], RSR, Union[float, int], str, bool) -> Union[GeoArray, None]
         """Perform spectral resampling of the given image to match the given spectral response functions.
 
         :param src_im:      source image to be resampled
-        :param tgt_srf:     target spectral response functions to be used for spectral resampling
+        :param tgt_rsr:     target relative spectral response functions to be used for spectral resampling
         :param src_nodata:  source image nodata value
         :param alg_nodata:  algorithm how to deal with pixels where the spectral bands of the source image
                             contain nodata within the spectral response of a target band
@@ -406,15 +386,15 @@ class ReferenceCube_Generator(object):
 
         # perform spectral resampling of input image to match spectral properties of target sensor
         self.logger.info('Performing spectral resampling to match spectral properties of %s %s...'
-                         % (tgt_srf.satellite, tgt_srf.sensor))
-        SR = SpectralResampler(im_gA.cwl, tgt_srf)
+                         % (tgt_rsr.satellite, tgt_rsr.sensor))
+        SR = SpectralResampler(im_gA.cwl, tgt_rsr)
 
-        tgt_im = GeoArray(np.zeros((*im_gA.shape[:2], len(tgt_srf.bands)), dtype=np.int16),
+        tgt_im = GeoArray(np.zeros((*im_gA.shape[:2], len(tgt_rsr.bands)), dtype=np.int16),
                           geotransform=im_gA.gt,
                           projection=im_gA.prj,
                           nodata=im_gA.nodata)
-        tgt_im.meta.band_meta['wavelength'] = list(tgt_srf.wvl)
-        tgt_im.bandnames = ['B%s' % i if len(i) == 2 else 'B0%s' % i for i in tgt_srf.LayerBandsAssignment]
+        tgt_im.meta.band_meta['wavelength'] = list(tgt_rsr.wvl)
+        tgt_im.bandnames = ['B%s' % i if len(i) == 2 else 'B0%s' % i for i in tgt_rsr.LayerBandsAssignment]
 
         tiles = im_gA.tiles((1000, 1000))  # use tiles to save memory
         for ((rS, rE), (cS, cE)), tiledata in (tqdm(tiles) if progress else tiles):
@@ -450,20 +430,16 @@ class ClusterClassifier_Generator(object):
                              ['1', '2', '3', '4', '5', '6', '7'],
                              ['1', '2', '3', '4', '5', '6', '7'], ...]
         """
-        # get L1C bands (after AC)
+        # get bands (after AC)
         # NOTE: - signal of additional bands at L1A is not predictable by spectral harmonization because these bands
         #         are not driven by surface albedo but by atmospheric conditions (945, 1373 nm)
-        #       - Landsat-8 band 9 (PAN) is currently not supported by AC => L1C_withPan does not exist  # FIXME
-        from gms_preprocessing.model.gms_object import GMS_identifier
-        from gms_preprocessing.model.metadata import get_LayerBandsAssignment
-        L1C_GMSid = GMS_identifier(satellite=satellite, sensor=sensor, subsystem=None, image_type='RSD',
-                                   dataset_ID=-9999, proc_level='L1C', logger=None)
 
         LBAs = []
-        for lba in [get_LayerBandsAssignment(L1C_GMSid, no_pan=False, sort_by_cwl=True),  # L1C_withPan_cwlSorted
-                    get_LayerBandsAssignment(L1C_GMSid, no_pan=True, sort_by_cwl=True),  # L1C_noPan_cwlSorted
-                    get_LayerBandsAssignment(L1C_GMSid, no_pan=False, sort_by_cwl=False),  # L1C_withPan_alphabetical
-                    get_LayerBandsAssignment(L1C_GMSid, no_pan=True, sort_by_cwl=False),  # L1C_noPan_alphabetical
+        kw = dict(satellite=satellite, sensor=sensor, after_ac=True)
+        for lba in [get_LayerBandsAssignment(no_pan=False, sort_by_cwl=True, **kw),  # L1C_withPan_cwlSorted
+                    get_LayerBandsAssignment(no_pan=True, sort_by_cwl=True, **kw),  # L1C_noPan_cwlSorted
+                    get_LayerBandsAssignment(no_pan=False, sort_by_cwl=False, **kw),  # L1C_withPan_alphabetical
+                    get_LayerBandsAssignment(no_pan=True, sort_by_cwl=False, **kw),  # L1C_noPan_alphabetical
                     ]:
             if lba not in LBAs:
                 LBAs.append(lba)
@@ -605,10 +581,9 @@ class ClusterClassifier_Generator(object):
                                       % (method, '_'.join(src_LBA), '_'.join(tgt_LBA)))
 
                     # Get center wavelength positions
-                    # NOTE: they cannot be taken from RefCube instances because they always represent L1C LBAs
-                    from gms_preprocessing.model.metadata import get_center_wavelengths_by_LBA
-                    src_wavelengths = get_center_wavelengths_by_LBA(src_cube.satellite, src_cube.sensor, src_LBA)
-                    tgt_wavelengths = get_center_wavelengths_by_LBA(tgt_cube.satellite, tgt_cube.sensor, tgt_LBA)
+                    # NOTE: they cannot be taken from RefCube instances because they always represent after-AC-LBAs
+                    src_wavelengths = list(RSR(src_cube.satellite, src_cube.sensor, LayerBandsAssignment=src_LBA).wvl)
+                    tgt_wavelengths = list(RSR(tgt_cube.satellite, tgt_cube.sensor, LayerBandsAssignment=tgt_LBA).wvl)
 
                     # Get training data for source and target image according to the given LayerBandsAssignments
                     # e.g., source: Landsat 7 image in LBA 1__2__3__4__5__7 and target L8 in 1__2__3__4__5__6__7
@@ -690,11 +665,8 @@ class ClusterClassifier_Generator(object):
         """
         self.logger.info('Clustering %s %s reference cube (%s clusters)...'
                          % (src_cube.satellite, src_cube.sensor, n_clusters))
-        from gms_preprocessing.model.gms_object import GMS_identifier
-        from gms_preprocessing.model.metadata import get_LayerBandsAssignment
-        L1C_GMSid = GMS_identifier(satellite=src_cube.satellite, sensor=src_cube.sensor, subsystem=None,
-                                   image_type='RSD', dataset_ID=-9999, proc_level='L1C', logger=None)
-        LBA2clust = get_LayerBandsAssignment(L1C_GMSid, no_pan=True, sort_by_cwl=True)
+        LBA2clust = get_LayerBandsAssignment(src_cube.satellite, src_cube.sensor,
+                                             no_pan=True, sort_by_cwl=True, after_ac=True)
         src_data2clust = src_cube.get_band_combination(LBA2clust)
         km = KMeansRSImage(src_data2clust, n_clusters=n_clusters, sam_classassignment=sam_classassignment, CPUs=CPUs)
         km.compute_clusters()

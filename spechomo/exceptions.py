@@ -21,6 +21,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 class ClassifierNotAvailableError(RuntimeError):
     def __init__(self, spechomo_method, src_sat, src_sen, src_LBA, tgt_sat, tgt_sen, tgt_LBA, n_clusters):
         self.spechomo_method = spechomo_method

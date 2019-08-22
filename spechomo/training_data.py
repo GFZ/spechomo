@@ -34,11 +34,9 @@ from matplotlib import pyplot as plt
 from pandas import DataFrame
 from pandas.plotting import scatter_matrix
 from sklearn.model_selection import train_test_split
+from pyrsr import RSR
 
 from .utils import im2spectra
-
-# TODO dependencies to get rid of
-# from gms_preprocessing.model.metadata import get_center_wavelengths_by_LBA
 
 
 class TrainingData(object):
@@ -226,10 +224,8 @@ class RefCube(object):
     @property
     def wavelengths(self):
         if not self._wavelenths and self.satellite and self.sensor and self.LayerBandsAssignment:
-            from gms_preprocessing.model.metadata import get_center_wavelengths_by_LBA  # TODO get rid of this
-            self._wavelenths = get_center_wavelengths_by_LBA(satellite=self.satellite,
-                                                             sensor=self.sensor,
-                                                             LBA=self.LayerBandsAssignment)
+            self._wavelenths = list(RSR(self.satellite, self.sensor,
+                                        LayerBandsAssignment=self.LayerBandsAssignment).wvl)
 
         return self._wavelenths
 

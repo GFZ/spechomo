@@ -2,13 +2,13 @@
 
 context_dir="./context"
 dockerfile="spechomo_ci.docker"
-tag="spechomo_ci:0.0.1"
+tag="spechomo_ci:0.2.3"
 gitlab_runner="spechomo_gitlab_CI_runner"
 
 echo "#### Build runner docker image"
 sudo docker rmi ${tag}
 sudo docker build -f ${context_dir}/${dockerfile} -m 20G -t ${tag} ${context_dir}
-# sudo docker build -f ./context/spechomo_ci.docker -m 20G -t spechomo_ci:0.7.0 ./context --no-cache
+# sudo docker build -f ./context/spechomo_ci.docker -m 20G -t spechomo_ci:0.2.3 ./context --no-cache
 
 echo "#### Create gitlab-runner (daemon) container with tag; ${tag}"
 sudo docker stop ${gitlab_runner}

@@ -10,7 +10,7 @@ dependencies:
   - pandas
   - scikit-learn
 
-  # geoarray / py_tools_ds
+  # geoarray
   - basemap
   - bokeh
   - gdal
@@ -25,28 +25,17 @@ dependencies:
   - scikit-image
   - shapely
 
-  # gms_preprocessing  # FIXME remove as soon as gms_preprocessing is not a dependency anymore
-  - lxml
-  - pyhdf
-  - python-fmask
-
-  # sicor
-  - glymur
-  - pygrib
-  - cachetools
-  - h5py
-  - pytables
-
   - pip:
     - dill
     - geoarray>=0.8.9
     - specclassify>=0.2.0
-    - git+https://gitext.gfz-potsdam.de/geomultisens/gms_preprocessing.git
+    - pyrsr
     - nested_dict
     - pyyaml
     - scipy
     - seaborn
     - tqdm
+    - tabulate
 
     # test and doc dependencies
     - coverage

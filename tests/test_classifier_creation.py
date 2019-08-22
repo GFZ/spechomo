@@ -35,11 +35,10 @@ import tempfile
 import numpy as np
 import dill
 from geoarray import GeoArray
+from pyrsr import RSR
 
 from spechomo import __path__
 from spechomo.classifier_creation import ReferenceCube_Generator, RefCube, ClusterClassifier_Generator
-
-from gms_preprocessing.model.gms_object import GMS_identifier  # FIXME
 
 hyspec_data = os.path.join(__path__[0], '../tests/data/Bavaria_farmland_LMU_Hyspex_subset.bsq')
 refcube_l8 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp100.bsq')
@@ -93,15 +92,13 @@ class Test_ReferenceCube_Generator(unittest.TestCase):
         src_im = GeoArray(self.SHC.ims_ref[0])
         unif_random_spectra = self.SHC.cluster_image_and_get_uniform_spectra(src_im)
 
-        from gms_preprocessing.io.input_reader import SRF
-        tgt_srf = SRF(GMS_identifier(satellite='Sentinel-2A', sensor='MSI', subsystem='', image_type='RSD',
-                                     dataset_ID=-9999, proc_level='L1A', logger=None))
+        tgt_rsr = RSR(satellite='Sentinel-2A', sensor='MSI')
         unif_random_spectra_rsp = \
             self.SHC.resample_spectra(unif_random_spectra,
                                       src_cwl=np.array(src_im.meta.band_meta['wavelength'], dtype=np.float).flatten(),
-                                      tgt_srf=tgt_srf)
+                                      tgt_rsr=tgt_rsr)
         self.assertIsInstance(unif_random_spectra_rsp, np.ndarray)
-        self.assertEqual(unif_random_spectra_rsp.shape, (self.tgt_n_samples, len(tgt_srf.bands)))
+        self.assertEqual(unif_random_spectra_rsp.shape, (self.tgt_n_samples, len(tgt_rsr.bands)))
 
     def test_generate_reference_cube(self):
         refcubes = self.SHC.generate_reference_cubes()

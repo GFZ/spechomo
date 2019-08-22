@@ -57,22 +57,6 @@ test_spechomo_install:
     # install not pip-installable deps of geoarray /py_tools_ds
     - conda install -y -c conda-forge basemap gdal geopandas pyproj pyqt rasterio scikit-image shapely
 
-    # install not pip-installable deps of gms_preprocessing  # FIXME
-    - conda install -y -c conda-forge lxml pyhdf python-fmask
-    - rm -rf context/gms_preprocessing
-    - git clone https://gitext.gfz-potsdam.de/geomultisens/gms_preprocessing.git ./context/gms_preprocessing
-    - cd ./context/gms_preprocessing
-    - pip install -e .
-    - cd ../../
-
-    # install sicor  # FIXME
-    - conda install -y -q -c conda-forge glymur pygrib cachetools h5py pytables
-    - rm -rf context/sicor
-    - git clone https://gitext.gfz-potsdam.de/EnMAP/sicor.git ./context/sicor
-    - cd ./context/sicor
-    - make install
-    - cd ../../
-
     # install spechomo
     - make install
     - cd ..
