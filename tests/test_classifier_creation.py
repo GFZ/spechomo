@@ -96,7 +96,8 @@ class Test_ReferenceCube_Generator(unittest.TestCase):
         unif_random_spectra_rsp = \
             self.SHC.resample_spectra(unif_random_spectra,
                                       src_cwl=np.array(src_im.meta.band_meta['wavelength'], dtype=np.float).flatten(),
-                                      tgt_rsr=tgt_rsr)
+                                      tgt_rsr=tgt_rsr,
+                                      nodataVal=src_im.nodata)
         self.assertIsInstance(unif_random_spectra_rsp, np.ndarray)
         self.assertEqual(unif_random_spectra_rsp.shape, (self.tgt_n_samples, len(tgt_rsr.bands)))
 
