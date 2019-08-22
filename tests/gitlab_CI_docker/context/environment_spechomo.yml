@@ -10,7 +10,7 @@ dependencies:
   - pandas
   - scikit-learn
 
-  # geoarray / py_tools_ds
+  # geoarray
   - basemap
   - bokeh
   - gdal
@@ -34,6 +34,8 @@ dependencies:
     - scipy
     - seaborn
     - tqdm
+    - tabulate
+    - pyrsr
 
     # test and doc dependencies
     - coverage
