@@ -44,9 +44,12 @@ hyspec_data = os.path.join(__path__[0], '../tests/data/Bavaria_farmland_LMU_Hysp
 refcube_l8 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp100.bsq')
 refcube_l5 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-5__TM__nclust50__nsamp100.bsq')
 # TODO remove that
-# refcube_l7 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/refcube__Landsat-7__ETM+__nclust50__nsamp20000.bsq'
-refcube_l8 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/20k_SCA_nofilt_without_aviris/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp20000.bsq'
-refcube_s2 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/20k_SCA_nofilt_without_aviris/refcube__Sentinel-2A__MSI__nclust50__nsamp20000.bsq'
+# refcube_l7 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/' \
+#              'refcube__Landsat-7__ETM+__nclust50__nsamp20000.bsq'
+refcube_l8 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/20k_SCA_nofilt_without_aviris/' \
+             'refcube__Landsat-8__OLI_TIRS__nclust50__nsamp20000.bsq'
+refcube_s2 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/20k_SCA_nofilt_without_aviris/' \
+             'refcube__Sentinel-2A__MSI__nclust50__nsamp20000.bsq'
 
 
 class Test_ReferenceCube_Generator(unittest.TestCase):

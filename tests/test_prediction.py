@@ -52,7 +52,8 @@ class Test_SpectralHomogenizer(unittest.TestCase):
         # cls.testArr_L8 = GeoArray(np.random.randint(1, 10000, (50, 50, 7), dtype=np.int16))  # no band 9, no pan
         cls.testArr_L8 = GeoArray('/home/gfz-fe/scheffler/temp/SPECHOM_py/images_train/'
                                   # 'Landsat-8_OLI_TIRS__f141006t01p00r16_refl_preprocessed.bsq')
-                                  'Landsat-8_OLI_TIRS__f130502t01p00r09_refl_master_calibration_Aviris_preprocessed.bsq')
+                                  'Landsat-8_OLI_TIRS__f130502t01p00r09_refl_master_calibration_Aviris_'
+                                  'preprocessed.bsq')
         # cls.testArr_L8 = GeoArray('/home/gfz-fe/scheffler/temp/'
         #                           'Landsat-8__OLI_TIRS__LC81940242014072LGN00_L2B__250x250.bsq')  # no pan
         # cls.testArr_L8 = GeoArray('/home/gfz-fe/scheffler/temp/'
