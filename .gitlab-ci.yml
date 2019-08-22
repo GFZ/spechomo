@@ -10,8 +10,8 @@ stages:
 test_spechomo:
   stage: test
   script:
-    - source /root/miniconda3/bin/activate spechomo
-    - export GDAL_DATA=/root/miniconda3/envs/spechomo/share/gdal
+    - source /root/miniconda3/bin/activate ci_env
+    - export GDAL_DATA=/root/miniconda3/envs/ci_env/share/gdal
     - export PYTHONPATH=$PYTHONPATH:/root  # /root <- here are the sicor tables
 
     # run nosetests
@@ -31,8 +31,8 @@ test_spechomo:
 test_styles:
   stage: test
   script:
-    - source /root/miniconda3/bin/activate spechomo
-    - export GDAL_DATA=/root/miniconda3/envs/spechomo/share/gdal
+    - source /root/miniconda3/bin/activate ci_env
+    - export GDAL_DATA=/root/miniconda3/envs/ci_env/share/gdal
     - export PYTHONPATH=$PYTHONPATH:/root  # /root <- directory needed later
     - make lint
   artifacts:
