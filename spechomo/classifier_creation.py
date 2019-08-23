@@ -142,7 +142,8 @@ class ReferenceCube_Generator(object):
         :param tgt_sen:     target sensor
         :return:
         """
-        return get_LayerBandsAssignment(tgt_sat, tgt_sen, no_pan=False, sort_by_cwl=True, after_ac=True)
+        return get_LayerBandsAssignment(tgt_sat, tgt_sen,
+                                        no_pan=False, no_thermal=True, sort_by_cwl=True, after_ac=True)
 
     @staticmethod
     def _get_tgt_RSR_object(tgt_sat, tgt_sen):
@@ -418,6 +419,11 @@ class ClusterClassifier_Generator(object):
         self.refcubes = [RefCube(inRC) if isinstance(inRC, str) else inRC for inRC in list_refcubes]
         self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
 
+        # validation
+        shapes = list(set([RC.data.shape[:2] for RC in self.refcubes]))
+        if not len(shapes) == 1:
+            raise ValueError('Unequal dimensions of the given reference cubes: %s' % shapes)
+
     @staticmethod
     def _get_derived_LayerBandsAssignments(satellite, sensor):
         """Get a list of possible LayerBandsAssignments in which the spectral training data may be arranged.
@@ -435,7 +441,7 @@ class ClusterClassifier_Generator(object):
         #         are not driven by surface albedo but by atmospheric conditions (945, 1373 nm)
 
         LBAs = []
-        kw = dict(satellite=satellite, sensor=sensor, after_ac=True)
+        kw = dict(satellite=satellite, sensor=sensor, no_thermal=True, after_ac=True)
         for lba in [get_LayerBandsAssignment(no_pan=False, sort_by_cwl=True, **kw),  # L1C_withPan_cwlSorted
                     get_LayerBandsAssignment(no_pan=True, sort_by_cwl=True, **kw),  # L1C_noPan_cwlSorted
                     get_LayerBandsAssignment(no_pan=False, sort_by_cwl=False, **kw),  # L1C_withPan_alphabetical
@@ -666,7 +672,7 @@ class ClusterClassifier_Generator(object):
         self.logger.info('Clustering %s %s reference cube (%s clusters)...'
                          % (src_cube.satellite, src_cube.sensor, n_clusters))
         LBA2clust = get_LayerBandsAssignment(src_cube.satellite, src_cube.sensor,
-                                             no_pan=True, sort_by_cwl=True, after_ac=True)
+                                             no_pan=True, no_thermal=True, sort_by_cwl=True, after_ac=True)
         src_data2clust = src_cube.get_band_combination(LBA2clust)
         km = KMeansRSImage(src_data2clust, n_clusters=n_clusters, sam_classassignment=sam_classassignment, CPUs=CPUs)
         km.compute_clusters()
