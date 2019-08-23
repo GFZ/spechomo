@@ -154,7 +154,7 @@ class ReferenceCube_Generator(object):
         :param tgt_sen:     target sensor
         :return:
         """
-        return RSR(tgt_sat, tgt_sen, no_pan=False)
+        return RSR(tgt_sat, tgt_sen, no_pan=False, no_thermal=True, after_ac=True)
 
     def generate_reference_cubes(self, fmt_out='ENVI', try_read_dumped_clf=True, sam_classassignment=False,
                                  max_distance='80%', max_angle=6, nmin_unique_spectra=50, alg_nodata='radical',

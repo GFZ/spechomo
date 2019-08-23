@@ -54,7 +54,7 @@ class Test_SpectralResampler(unittest.TestCase):
         cls.geoArr.to_mem()
 
         # get RSR instance for Landsat-8
-        cls.rsr_l8 = RSR(satellite='Landsat-8', sensor='OLI_TIRS')
+        cls.rsr_l8 = RSR(satellite='Landsat-8', sensor='OLI_TIRS', no_thermal=True)
 
     def test_resample_signature(self):
         # Get a hyperspectral spectrum.
