@@ -78,7 +78,8 @@ class Test_ReferenceCube_Generator(unittest.TestCase):
                                           n_clusters=cls.n_clusters,
                                           tgt_n_samples=cls.tgt_n_samples,
                                           dir_clf_dump=cls.tmpOutdir.name,
-                                          v=False)
+                                          v=False,
+                                          CPUs=1)
 
     @classmethod
     def tearDownClass(cls):
