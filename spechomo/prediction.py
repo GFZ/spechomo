@@ -487,6 +487,7 @@ class RSImage_ClusterPredictor(object):
             self.logger.info('Inpainting error values for cluster #%s...' % pixVal)
 
             rmse_per_band_int = np.round(cluster_classifier.MLdict[pixVal].rmse_per_band, 0).astype(np.int16)
+            # FIXME: error computation does not work for kNN algorithms so far (self.classif_map is 3D instead of 2D)
             errors[self.classif_map[:] == pixVal] = rmse_per_band_int
 
         # TODO validate this equation
