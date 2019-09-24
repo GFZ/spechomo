@@ -1,7 +1,7 @@
 {
     "satellite": "Sentinel-2A",
     "sensor": "MSI",
-    "filepath": "/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/1000_conservrsp_SCA_SD100percSA90perc_without_aviris/refcube__Sentinel-2A__MSI__nclust50__nsamp1000.bsq",
+    "filepath": "/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/1000_conservrsp_SCA_SD100percSA90perc_without_aviris_v2/refcube__Sentinel-2A__MSI__nclust50__nsamp1000.bsq",
     "n_signatures": 1000,
     "n_images": 9,
     "n_clusters": 50,
@@ -31,7 +31,7 @@
         "12"
     ],
     "wavelengths": [
-        442.69658542320155,
+        442.6968299338814,
         492.4365766613167,
         559.8490554883631,
         664.6217529192425,

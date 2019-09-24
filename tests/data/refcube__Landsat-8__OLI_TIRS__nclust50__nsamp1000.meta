@@ -1,7 +1,7 @@
 {
     "satellite": "Landsat-8",
     "sensor": "OLI_TIRS",
-    "filepath": "/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/1000_conservrsp_SCA_SD100percSA90perc_without_aviris/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp1000.bsq",
+    "filepath": "/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/1000_conservrsp_SCA_SD100percSA90perc_without_aviris_v2/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp1000.bsq",
     "n_signatures": 1000,
     "n_images": 9,
     "n_clusters": 50,

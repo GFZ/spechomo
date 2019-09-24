@@ -1,6 +1,6 @@
 ENVI
 description = {
-/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/1000_conservrsp_SCA_SD100percSA90perc_without_aviris/refcube__Sentinel-2A__MSI__nclust50__nsamp1000.bsq}
+/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/1000_conservrsp_SCA_SD100percSA90perc_without_aviris_v2/refcube__Sentinel-2A__MSI__nclust50__nsamp1000.bsq}
 samples = 9
 lines   = 1000
 bands   = 11
@@ -23,7 +23,7 @@ Band 8A,
 Band 11,
 Band 12}
 data ignore value = -9999
-wavelength = { 442.696585,
+wavelength = { 442.696830,
 492.436577,
 559.849055,
 664.621753,
