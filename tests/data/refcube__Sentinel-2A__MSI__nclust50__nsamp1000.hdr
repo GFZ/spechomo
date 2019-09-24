@@ -1,0 +1,36 @@
+ENVI
+description = {
+/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/1000_conservrsp_SCA_SD100percSA90perc_without_aviris/refcube__Sentinel-2A__MSI__nclust50__nsamp1000.bsq}
+samples = 9
+lines   = 1000
+bands   = 11
+header offset = 0
+file type = ENVI Standard
+data type = 2
+interleave = bsq
+byte order = 0
+map info = {Arbitrary, 1, 1, 0, 0, 1, 1, 0, North}
+band names = {
+Band 1,
+Band 2,
+Band 3,
+Band 4,
+Band 5,
+Band 6,
+Band 7,
+Band 8,
+Band 8A,
+Band 11,
+Band 12}
+data ignore value = -9999
+wavelength = { 442.696585,
+492.436577,
+559.849055,
+664.621753,
+704.114936,
+740.491821,
+782.752917,
+832.794280,
+864.711194,
+1613.659407,
+2202.365929 }

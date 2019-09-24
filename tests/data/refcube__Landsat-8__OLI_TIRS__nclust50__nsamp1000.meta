@@ -1,0 +1,38 @@
+{
+    "satellite": "Landsat-8",
+    "sensor": "OLI_TIRS",
+    "filepath": "/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/1000_conservrsp_SCA_SD100percSA90perc_without_aviris/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp1000.bsq",
+    "n_signatures": 1000,
+    "n_images": 9,
+    "n_clusters": 50,
+    "n_signatures_per_cluster": 20,
+    "col_imName_dict": {
+        "0": "Balaton_lake_clouds_rural_Apex_preprocessed",
+        "1": "Bavaria_farmland_LMU_Hyspex_preprocessed",
+        "2": "Bruessels_urban_forest_preprocessed",
+        "3": "Costa_rica_Hymap_preprocessed",
+        "4": "Mullewa_Hymap_preprocessed",
+        "5": "SouthAfrica_Arundale_bbr3_selsmo_Hymap_preprocessed",
+        "6": "canada_arctic_derek_Hymap_preprocessed",
+        "7": "isabena_spain_Hyspex_preprocessed",
+        "8": "karlsruhe_forest_urban_Hymap_preprocessed"
+    },
+    "LayerBandsAssignment": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+    ],
+    "wavelengths": [
+        442.98224775051847,
+        482.588859897524,
+        561.3343388183614,
+        654.6083061550163,
+        864.5710894862697,
+        1609.0905414222361,
+        2201.2491425335716
+    ]
+}

@@ -1,0 +1,36 @@
+{
+    "satellite": "Landsat-5",
+    "sensor": "TM",
+    "filepath": "/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/1000_conservrsp_SCA_SD100percSA90perc_without_aviris/refcube__Landsat-5__TM__nclust50__nsamp1000.bsq",
+    "n_signatures": 1000,
+    "n_images": 9,
+    "n_clusters": 50,
+    "n_signatures_per_cluster": 20,
+    "col_imName_dict": {
+        "0": "Balaton_lake_clouds_rural_Apex_preprocessed",
+        "1": "Bavaria_farmland_LMU_Hyspex_preprocessed",
+        "2": "Bruessels_urban_forest_preprocessed",
+        "3": "Costa_rica_Hymap_preprocessed",
+        "4": "Mullewa_Hymap_preprocessed",
+        "5": "SouthAfrica_Arundale_bbr3_selsmo_Hymap_preprocessed",
+        "6": "canada_arctic_derek_Hymap_preprocessed",
+        "7": "isabena_spain_Hyspex_preprocessed",
+        "8": "karlsruhe_forest_urban_Hymap_preprocessed"
+    },
+    "LayerBandsAssignment": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "7"
+    ],
+    "wavelengths": [
+        486.3040230788619,
+        570.573929528977,
+        660.6006383175552,
+        838.1527928000105,
+        1677.1810403754857,
+        2217.235404203163
+    ]
+}

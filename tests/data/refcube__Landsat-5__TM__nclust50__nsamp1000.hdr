@@ -1,0 +1,26 @@
+ENVI
+description = {
+/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/1000_conservrsp_SCA_SD100percSA90perc_without_aviris/refcube__Landsat-5__TM__nclust50__nsamp1000.bsq}
+samples = 9
+lines   = 1000
+bands   = 6
+header offset = 0
+file type = ENVI Standard
+data type = 2
+interleave = bsq
+byte order = 0
+map info = {Arbitrary, 1, 1, 0, 0, 1, 1, 0, North}
+band names = {
+Band 1,
+Band 2,
+Band 3,
+Band 4,
+Band 5,
+Band 7}
+data ignore value = -9999
+wavelength = { 486.304023,
+570.573930,
+660.600638,
+838.152793,
+1677.181040,
+2217.235404 }
