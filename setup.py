@@ -39,7 +39,7 @@ with open("spechomo/version.py") as version_file:
 requirements = ['numpy', 'matplotlib', 'pandas', 'dill', 'nested_dict', 'tqdm', 'scipy', 'scikit-learn', 'geoarray',
                 'seaborn', 'pyyaml', 'tabulate', 'specclassify>=0.2.0', 'pyrsr']
 
-setup_requirements = []
+setup_requirements = ['setuptools-git']  # needed for package_data version controlled by GIT
 
 test_requirements = ['coverage', 'nose', 'nose-htmloutput', 'rednose']
 
@@ -64,8 +64,9 @@ setup(
     license="GNU General Public License v3",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
-    package_data={'': ['spechomo/options_default.yaml']},
-    keywords='spechomo',
+    package_data={'spechomo': ['options_default.yaml',
+                               'resources/**/**/*']},
+    keywords=['spechomo', 'spectral homogenization', 'sensor fusion', 'remote sensing'],
     name='spechomo',
     packages=find_packages(include=['spechomo'], exclude=['tests']),
     setup_requires=setup_requirements,
