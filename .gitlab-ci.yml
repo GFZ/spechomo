@@ -52,7 +52,7 @@ test_spechomo_install:
     - source activate spechomo_test
 
     # install some dependencies that cause trouble when installed via pip
-    - conda install -y -c conda-forge matplotlib numpy pandas scikit-learn
+    - conda install -y -c conda-forge matplotlib numpy pandas scikit-learn=0.19.1
 
     # install not pip-installable deps of geoarray /py_tools_ds
     - conda install -y -c conda-forge basemap gdal geopandas pyproj pyqt rasterio scikit-image shapely pyresample
