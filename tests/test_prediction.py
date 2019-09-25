@@ -86,7 +86,6 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
             tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True,
-            # classif_alg='kNN_SAM',  # FIXME: error computation does not work for kNN algorithms so far
             classif_alg='SAM',
             nodataVal=-9999
         )
@@ -119,6 +118,20 @@ class Test_SpectralHomogenizer(unittest.TestCase):
         self.assertIsInstance(errors, np.ndarray)
         self.assertEqual(errors.shape, (50, 50, 11))
         self.assertEqual(errors.dtype, np.int16)
+
+    def test_predict_by_machine_learner__LR_kNN_SAM_L8_S2(self):
+        """Test linear regression using kNN_SAM from Landsat-8 to Sentinel-2A."""
+        with self.assertRaises(NotImplementedError):
+            self.SpH.predict_by_machine_learner(
+                self.testArr_L8,
+                method='LR', n_clusters=50,
+                classif_alg='kNN_SAM',
+                src_satellite='Landsat-8', src_sensor='OLI_TIRS',
+                src_LBA=['1', '2', '3', '4', '5', '6', '7'],
+                tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
+                tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
+                compute_errors=True
+            )
 
     @unittest.SkipTest  # FIXME: RR classifiers are missing in resources
     def test_predict_by_machine_learner__RR_L8_S2(self):
