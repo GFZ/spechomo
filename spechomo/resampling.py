@@ -257,10 +257,13 @@ def _resample_tile_mp(tilebounds, nodataVal=None, alg_nodata='radical'):
         tilespectra_1nm_nonan = tilespectra_1nm[~nan_in_spec, :]
         for band_idx, band in enumerate(rsr_tgt.bands):
             # compute the resampled image cube (np.average computes the weighted mean value)
-            res = np.average(tilespectra_1nm_nonan, weights=rsr_1nm[band], axis=1)
-            # NOTE: rounding here is important to prevent -9999. converted to -9998
-            if not np.issubdtype(tile_rsp.dtype, np.floating):
-                res = np.around(res)
+            if rsr_1nm[band].sum() != 0:
+                res = np.average(tilespectra_1nm_nonan, weights=rsr_1nm[band], axis=1)
+                # NOTE: rounding here is important to prevent -9999. converted to -9998
+                if not np.issubdtype(tile_rsp.dtype, np.floating):
+                    res = np.around(res)
+            else:
+                res = nodataVal
 
             tile_rsp[~mask_anynodata, band_idx] = res
 
