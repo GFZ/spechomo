@@ -13,7 +13,6 @@ test_spechomo:
     - source /root/miniconda3/bin/activate ci_env
     - export GDAL_DATA=/root/miniconda3/envs/ci_env/share/gdal
     - export PYTHONPATH=$PYTHONPATH:/root  # /root <- here are the sicor tables
-    - conda install -c conda-forge -y scikit-learn=0.19.1  # FIXME: to avoid AttributeError: 'PolynomialFeatures' object has no attribute 'order'
 
     # run nosetests
     - make nosetests  # test are called here
