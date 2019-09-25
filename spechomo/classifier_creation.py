@@ -787,9 +787,8 @@ def get_filename_classifier_collection(method, src_satellite, src_sensor, n_clus
     if method == 'RR':
         method += '_alpha1.0'  # TODO add to config
     elif method == 'RFR':
-        # assert 'n_estimators' in cls_kwinit
-        # method += '_trees%s' % cls_kwinit['n_estimators']  # we statically use 50 trees for Random Forest Regression
-        method += '_trees50'  # FIXME   # we statically use 50 trees for Random Forest Regression
+        assert 'n_estimators' in cls_kwinit
+        method += '_trees%s' % cls_kwinit['n_estimators']
 
     return '__'.join(['%s_clust%s' % (method, n_clusters), src_satellite, src_sensor]) + '.dill'
 

@@ -72,8 +72,8 @@ class Cluster_Learner(object):
 
     @classmethod
     def from_disk(cls, classifier_rootDir, method, n_clusters,
-                  src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA):
-        # type: (str, str, int, str, str, list, str, str, list) -> Cluster_Learner
+                  src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA, n_estimators=50):
+        # type: (str, str, int, str, str, list, str, str, list, int) -> Cluster_Learner
         """Read a previously saved ClusterLearner from disk and return a ClusterLearner instance.
 
         Describe the classifier specifications with the given arguments.
@@ -91,58 +91,63 @@ class Cluster_Learner(object):
         :param tgt_satellite:       target satellite, e.g., 'Landsat-8'
         :param tgt_sensor:          target sensor, e.g., 'OLI_TIRS'
         :param tgt_LBA:             target LayerBandsAssignment
+        :param n_estimators:        number of estimators (only used in case of method=='RFR'
         :return:                    classifier instance loaded from disk
         """
         # get path of classifier zip archive
-        path_classifier_zip = os.path.join(classifier_rootDir, '%s_classifiers.zip' % method)
         args = (method, src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
+        kw_clfinit = dict(n_estimators=n_estimators)
 
-        if os.path.isfile(path_classifier_zip):
+        if os.path.isfile(os.path.join(classifier_rootDir, '%s_classifiers.zip' % method)):
             # get cluster specific classifiers and store them in a ClassifierCollection dictionary
             dict_clust_MLinstances = cls._read_ClassifierCollection_from_zipFile(
-                path_classifier_zip, *args, n_clusters=n_clusters)
+                classifier_rootDir, *args, n_clusters=n_clusters, **kw_clfinit)
 
             # get the global classifier and add it as cluster label '-1'
             global_clf = cls._read_ClassifierCollection_from_zipFile(
-                path_classifier_zip, *args, n_clusters=1)[0]
+                classifier_rootDir, *args, n_clusters=1, **kw_clfinit)[0]
 
         elif os.path.isdir(classifier_rootDir):
             # get cluster specific classifiers and store them in a ClassifierCollection dictionary
-            fName_clf_clustN = get_filename_classifier_collection(method, src_satellite, src_sensor,
-                                                                  n_clusters=n_clusters)
             dict_clust_MLinstances = cls._read_ClassifierCollection_from_unzippedFile(
-                os.path.join(classifier_rootDir, fName_clf_clustN), *args, n_clusters=n_clusters)
+                classifier_rootDir, *args, n_clusters=n_clusters, **kw_clfinit)
 
             # get the global classifier and add it as cluster label '-1'
-            fName_clf_clust1 = get_filename_classifier_collection(method, src_satellite, src_sensor, n_clusters=1)
             global_clf = cls._read_ClassifierCollection_from_unzippedFile(
-                os.path.join(classifier_rootDir, fName_clf_clust1), *args, n_clusters=1)[0]
+                classifier_rootDir, *args, n_clusters=1, **kw_clfinit)[0]
 
         else:
-            raise FileNotFoundError("No '%s' classifiers available at %s." % (method, path_classifier_zip))
+            raise FileNotFoundError("No '%s' classifiers available at %s." % (method, classifier_rootDir))
 
         # create an instance of ClusterLearner based on the ClassifierCollection dictionary
         return Cluster_Learner(dict_clust_MLinstances, global_clf)
 
     @staticmethod
-    def _read_ClassifierCollection_from_zipFile(path_classifier_zip, method, src_satellite, src_sensor,
-                                                src_LBA, tgt_satellite, tgt_sensor, tgt_LBA, n_clusters):
-        # type: (str, str, str, str, list, str, str, list, int) -> ClassifierCollection
+    def _read_ClassifierCollection_from_zipFile(classifier_rootDir, method, src_satellite, src_sensor,
+                                                src_LBA, tgt_satellite, tgt_sensor, tgt_LBA, n_clusters,
+                                                **kw_clfinit):
+        # type: (str, str, str, str, list, str, str, list, int, dict) -> ClassifierCollection
+
+        path_classifier_zip = os.path.join(classifier_rootDir, '%s_classifiers.zip' % method)
 
         # read requested classifier from zip archive and create a ClassifierCollection
         with zipfile.ZipFile(path_classifier_zip, "r") as zf, tempfile.TemporaryDirectory() as td:
-            fName_clf = get_filename_classifier_collection(method, src_satellite, src_sensor, n_clusters=n_clusters)
+            fName_clf = get_filename_classifier_collection(method, src_satellite, src_sensor, n_clusters=n_clusters,
+                                                           **kw_clfinit)
             zf.extract(fName_clf, td)
-            path_clf = os.path.join(td, fName_clf)
 
             return Cluster_Learner._read_ClassifierCollection_from_unzippedFile(
-                path_clf, method, src_satellite, src_sensor, src_LBA,
+                td, method, src_satellite, src_sensor, src_LBA,
                 tgt_satellite, tgt_sensor, tgt_LBA, n_clusters)
 
     @staticmethod
-    def _read_ClassifierCollection_from_unzippedFile(path_classifier, method, src_satellite, src_sensor, src_LBA,
-                                                     tgt_satellite, tgt_sensor, tgt_LBA, n_clusters):
-        # type: (str, str, str, str, list, str, str, list, int) -> ClassifierCollection
+    def _read_ClassifierCollection_from_unzippedFile(classifier_rootDir, method, src_satellite, src_sensor, src_LBA,
+                                                     tgt_satellite, tgt_sensor, tgt_LBA, n_clusters, **kw_clfinit):
+        # type: (str, str, str, str, list, str, str, list, int, dict) -> ClassifierCollection
+
+        fName_clf_clustN = get_filename_classifier_collection(method, src_satellite, src_sensor,
+                                                              n_clusters=n_clusters, **kw_clfinit)
+        path_classifier = os.path.join(classifier_rootDir, fName_clf_clustN)
 
         # read requested classifier from zip archive and create a ClassifierCollection
         try:
