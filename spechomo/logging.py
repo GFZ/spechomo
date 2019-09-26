@@ -117,7 +117,7 @@ class SpecHomo_Logger(logging.Logger):
         return self.__dict__
 
     def __setstate__(self, ObjDict):
-        """Defines how the attributes of SpecHomo_Logger are unpickled."""
+        """Define how the attributes of SpecHomo_Logger are unpickled."""
         self.__init__(ObjDict['name_logfile'], fmt_suffix=ObjDict['fmt_suffix'], path_logfile=ObjDict['path_logfile'],
                       log_level=ObjDict['log_level'], append=True)
         ObjDict = self.__dict__
@@ -130,6 +130,7 @@ class SpecHomo_Logger(logging.Logger):
         NOTE:
             - set self.captured_stream:
                 self.captured_stream = 'any string'
+
         """
         if not self._captured_stream:
             self._captured_stream = self.streamObj.getvalue()

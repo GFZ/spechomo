@@ -17,6 +17,8 @@ test_spechomo:
     # run nosetests
     - make nosetests  # test are called here
     # create the docs
+    - pip install sphinx_rtd_theme  # Read-the-docs theme for SPHINX documentation
+    - pip install sphinx-autodoc-typehints
     - make docs
   artifacts:
     paths:
@@ -55,7 +57,7 @@ test_spechomo_install:
     - conda install -y -c conda-forge matplotlib numpy pandas scikit-learn=0.19.1
 
     # install not pip-installable deps of geoarray /py_tools_ds
-    - conda install -y -c conda-forge basemap gdal geopandas pyproj pyqt rasterio scikit-image shapely pyresample
+    - conda install -y -c conda-forge basemap gdal geopandas pyproj pyqt rasterio scikit-image shapely pyresample>=1.11.0
 
     # install spechomo
     - python setup.py install

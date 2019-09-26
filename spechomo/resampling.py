@@ -134,8 +134,8 @@ class SpectralResampler(object):
                             contain nodata within the spectral response of a target band
                             'radical':      set output band to nodata
                             'conservative': use existing spectral information and ignore nodata
-                                                (might alter the outpur spectral information,
-                                                 e.g., at spectral absorption bands)
+                                            (might alter the outpur spectral information,
+                                             e.g., at spectral absorption bands)
         :param CPUs:        CPUs to use for processing
         """
         # input validation

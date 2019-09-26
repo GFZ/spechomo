@@ -1,6 +1,6 @@
-=====
-Usage
-=====
+==================
+Usage instructions
+==================
 
 To use spechomo in a project::
 

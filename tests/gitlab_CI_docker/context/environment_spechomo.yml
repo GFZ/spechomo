@@ -24,6 +24,7 @@ dependencies:
   - rasterio
   - scikit-image
   - shapely
+  - pyresample>=1.11.0
 
   - pip:
     - dill

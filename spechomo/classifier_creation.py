@@ -104,8 +104,7 @@ class ReferenceCube_Generator(object):
     @property
     def refcubes(self):
         # type: () -> Dict[Tuple[str, str]: RefCube]
-        """Return a dictionary holding instances of RefCube for each target satellite / sensor of self.tgt_sat_sen_list.
-        """
+        """Return a dict holding instances of RefCube for each target satellite / sensor of self.tgt_sat_sen_list."""
         if not self._refcubes:
 
             # fill self._ref_cubes with GeoArray instances of already existing reference cubes read from disk
@@ -164,9 +163,9 @@ class ReferenceCube_Generator(object):
 
         Workflow:
         1. Clustering/classification of hyperspectral images and selection of a given number of random signatures
-            (a. Spectral downsamling to lower spectral resolution (speedup))
-            b. KMeans clustering
-            c. Selection of the same number of signatures from each cluster to avoid unequal amount of training data.
+           (a. Spectral downsamling to lower spectral resolution (speedup))
+           b. KMeans clustering
+           c. Selection of the same number of signatures from each cluster to avoid unequal amount of training data.
         2. Spectral resampling of the selected hyperspectral signatures (for each input image)
         3. Add resampled spectra to reference cubes for each target sensor and write cubes to disk
 
@@ -178,11 +177,11 @@ class ReferenceCube_Generator(object):
         :param max_distance:    spectra with a larger spectral distance than the given value will be excluded from
                                 random sampling.
                                 - if given as string like '20%', the maximum spectral distance is computed as 20%
-                                  percentile within each cluster
+                                percentile within each cluster
         :param max_angle:       spectra with a larger spectral angle than the given value will be excluded from
                                 random sampling.
                                 - if given as string like '20%', the maximum spectral angle is computed as 20%
-                                  percentile within each cluster
+                                percentile within each cluster
         :param nmin_unique_spectra:   in case a cluster has less than the given number,
                                       do not include it in the reference cube (default: 50)
         :param alg_nodata:      algorithm how to deal with pixels where the spectral bands of the source image
@@ -191,8 +190,8 @@ class ReferenceCube_Generator(object):
                                     'conservative': use existing spectral information and ignore nodata
                                                     (might alter the outpur spectral information,
                                                      e.g., at spectral absorption bands)
-        :param progress:            show progress bar (default: True)
-        :return:                    np.array: [tgt_n_samples x images x spectral bands of the target sensor]
+        :param progress:        show progress bar (default: True)
+        :return:                np.array: [tgt_n_samples x images x spectral bands of the target sensor]
         """
         for im in self.ims_ref:  # type: Union[str, GeoArray]
             # TODO implement check if current image is already included in the refcube -> skip in that case
@@ -253,11 +252,11 @@ class ReferenceCube_Generator(object):
         :param max_distance:    spectra with a larger spectral distance than the given value will be excluded from
                                 random sampling.
                                 - if given as string like '20%', the maximum spectral distance is computed as 20%
-                                  percentile within each cluster
+                                percentile within each cluster
         :param max_angle:       spectra with a larger spectral angle than the given value will be excluded from
                                 random sampling.
                                 - if given as string like '20%', the maximum spectral angle is computed as 20%
-                                  percentile within each cluster
+                                percentile within each cluster
         :param nmin_unique_spectra:   in case a cluster has less than the given number,
                                       do not include it in the reference cube (default: 50)
         :param progress:        whether to show progress bars or not
@@ -338,8 +337,8 @@ class ReferenceCube_Generator(object):
                             contain nodata within the spectral response of a target band
                             'radical':      set output band to nodata
                             'conservative': use existing spectral information and ignore nodata
-                                                (might alter the outpur spectral information,
-                                                 e.g., at spectral absorption bands)
+                                            (might alter the outpur spectral information,
+                                             e.g., at spectral absorption bands)
         :return:
         """
         spectra = GeoArray(spectra)
@@ -367,9 +366,8 @@ class ReferenceCube_Generator(object):
         :param alg_nodata:  algorithm how to deal with pixels where the spectral bands of the source image
                             contain nodata within the spectral response of a target band
                             'radical':      set output band to nodata
-                            'conservative': use existing spectral information and ignore nodata
-                                                (might alter the outpur spectral information,
-                                                 e.g., at spectral absorption bands)
+                            'conservative': use existing spectral information and ignore nodata (might alter the output
+                                            spectral information, e.g., at spectral absorption bands)
         :param progress:    show progress bar (default: false)
         :return:
         """
@@ -409,6 +407,7 @@ class ReferenceCube_Generator(object):
 
 class ClusterClassifier_Generator(object):
     """Class for creating collections of machine learning classifiers that can be used for spectral homogenization."""
+
     def __init__(self, list_refcubes, logger=None):
         # type: (List[Union[str, RefCube]], logging.Logger) -> None
         """Get an instance of Classifier_Generator.
@@ -542,11 +541,9 @@ class ClusterClassifier_Generator(object):
                                     True: use the minimal spectral angle to assign classes to cluster centers
         :param CPUs:        number of CPUs to be used for KMeans clustering
         :param max_distance:    maximum spectral distance allowed during filtering of training spectra
-                                - if given as string, e.g., '80%' means that the worst 20 % of the input spectra are
-                                  excluded)
+                                - if given as string, e.g., '80%' excludes the worst 20 % of the input spectra
         :param max_angle:       maximum spectral angle allowed during filtering of training spectra
-                                 - if given as string, e.g., '80%' means that the worst 20 % of the input spectra are
-                                   excluded)
+                                - if given as string, e.g., '80%' excludes the worst 20 % of the input spectra
         :param kwargs:      keyword arguments to be passed to machine learner
         """
         # validate and set defaults
@@ -655,7 +652,7 @@ class ClusterClassifier_Generator(object):
 
     def _get_cluster_labels_for_source_refcube(self, src_cube, n_clusters, CPUs, sam_classassignment=False,
                                                return_spectral_distances=False, return_spectral_angles=False):
-        """Get cluster labels for each source cube separately
+        """Get cluster labels for each source cube separately.
 
         NOTE: - We use the GMS L1C bands (without atmospheric bands and PAN-band) for clustering.
               - clustering is only performed on the source cube because the source sensor spectral information
