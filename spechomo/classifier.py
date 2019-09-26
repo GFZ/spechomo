@@ -43,8 +43,10 @@ from .utils import im2spectra, spectra2im
 class Cluster_Learner(object):
     """
     A class that holds the machine learning classifiers for multiple spectral clusters as well as a global classifier.
+
     These classifiers can be applied to an input sensor image by using the predict method.
     """
+
     def __init__(self, dict_clust_MLinstances, global_classifier):
         # type: (Union[dict, ClassifierCollection], any) -> None
         """Get an instance of Cluster_Learner.
@@ -386,7 +388,7 @@ class ClassifierCollection(object):
             self.content = dill.load(inF)
 
     def __repr__(self):
-        """Returns representation of ClassifierCollection.
+        """Return the representation of ClassifierCollection.
 
         :return: e.g., "{'1__2__3__4__5__7': {('Landsat-5', 'TM'): {'1__2__3__4__5__7':
                         LinearRegression(copy_X=True, fit_intercept=True, n_jobs=1, normalize=False)}, ..."
@@ -394,4 +396,5 @@ class ClassifierCollection(object):
         return pformat(self.content)
 
     def __getitem__(self, item):
+        """Get a specific item of the ClassifierCollection."""
         return self.content[item]

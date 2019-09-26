@@ -47,6 +47,7 @@ classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
 
 class SpectralHomogenizer(object):
     """Class for applying spectral homogenization by applying an interpolation or machine learning approach."""
+
     def __init__(self, classifier_rootDir='', logger=None, CPUs=None):
         """Get instance of SpectralHomogenizer.
 
@@ -199,6 +200,7 @@ class SpectralHomogenizer(object):
 
 class RSImage_ClusterPredictor(object):
     """Predictor class applying the predict() function of a machine learning classifier described by the given args."""
+
     def __init__(self, method='LR', n_clusters=50, classif_alg='MinDist', classifier_rootDir='',
                  CPUs=1, logger=None, **kw_clf_init):
         # type: (str, int, str, str, Union[None, int], logging.Logger, dict) -> None
@@ -283,9 +285,9 @@ class RSImage_ClusterPredictor(object):
                                         threshold are labelled as unclassified
                                         (only usable for 'MinDist', 'SAM' and 'SID')
                                         - may be given as float, integer or string to label a certain distance
-                                          percentile
+                                        percentile
                                         - if given as string, it must match the format, e.g., '10%' for labelling the
-                                          worst 10 % of the distances as unclassified
+                                        worst 10 % of the distances as unclassified
         :param unclassified_pixVal:     pixel value to be used in the classification map for unclassified pixels
                                         (default: -1)
         :return:                3D array representing the predicted spectral image cube

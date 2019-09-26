@@ -41,6 +41,7 @@ from .utils import im2spectra
 
 class TrainingData(object):
     """Class for analyzing statistical relations between a pair of machine learning training data cubes."""
+
     def __init__(self, im_X, im_Y, test_size):
         # type: (Union[GeoArray, np.ndarray], Union[GeoArray, np.ndarray], Union[float, int]) -> None
         """Get instance of TrainingData.
@@ -150,6 +151,7 @@ class TrainingData(object):
 
 class RefCube(object):
     """Data model class for reference cubes holding the training data for later fitted machine learning classifiers."""
+
     def __init__(self, filepath='', satellite='', sensor='', LayerBandsAssignment=None):
         # type: (str, str, str, list) -> None
         """Get instance of RefCube.

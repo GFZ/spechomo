@@ -41,6 +41,7 @@ class KMeansRSImage(object):
     NOTE: Based on the nodata value of the input GeoArray those pixels that have nodata values in some bands are
           ignored when computing the cluster coefficients. Nodata values would affect clustering result otherwise.
     """
+
     def __init__(self, im, n_clusters, sam_classassignment=False, CPUs=1, v=False):
         # type: (GeoArray, int, bool, Union[None, int], bool) -> None
 
@@ -393,7 +394,7 @@ class KMeansRSImage(object):
     def get_random_spectra_from_each_cluster(self, samplesize=50, max_distance=None, max_angle=None,
                                              nmin_unique_spectra=50):
         # type: (int, Union[int, float, str], Union[int, float, str], int) -> dict
-        """Returns a given number of spectra randomly selected within each cluster.
+        """Return a given number of spectra randomly selected within each cluster.
 
         E.g., 50 spectra belonging to cluster 1, 50 spectra belonging to cluster 2 and so on.
 
@@ -401,11 +402,11 @@ class KMeansRSImage(object):
         :param max_distance:    spectra with a larger spectral distance than the given value will be excluded from
                                 random sampling.
                                 - if given as string like '20%', the maximum spectral distance is computed as 20%
-                                  percentile within each cluster
+                                percentile within each cluster
         :param max_angle:       spectra with a larger spectral angle than the given value will be excluded from
                                 random sampling.
                                 - if given as string like '20%', the maximum spectral angle is computed as 20%
-                                  percentile within each cluster
+                                percentile within each cluster
         :param nmin_unique_spectra:   in case a cluster has less than the given number, do not use its spectra
                                       (return missing values)
         :return:
@@ -467,7 +468,7 @@ class KMeansRSImage(object):
 
     def get_purest_spectra_from_each_cluster(self, samplesize=50):
         # type: (int) -> dict
-        """Returns a given number of spectra directly surrounding the center of each cluster.
+        """Return a given number of spectra directly surrounding the center of each cluster.
 
         E.g., 50 spectra belonging to cluster 1, 50 spectra belonging to cluster 2 and so on.
 
