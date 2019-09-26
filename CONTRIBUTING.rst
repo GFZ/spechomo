@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/danschef/spechomo/issues.
+Report bugs at https://gitext.gfz-potsdam.de/geomultisens/spechomo/issues
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/danschef/spechomo/issues.
+The best way to send feedback is to file an issue at https://gitext.gfz-potsdam.de/geomultisens/spechomo/issues.
 
 If you are proposing a feature:
 
@@ -53,6 +53,12 @@ If you are proposing a feature:
 * Keep the scope as narrow as possible, to make it easier to implement.
 * Remember that this is a volunteer-driven project, and that contributions
   are welcome :)
+
+You may also join our chat here: |Gitter|
+
+.. |Gitter| image:: https://badges.gitter.im/Join%20Chat.svg
+    :target: https://gitter.im/spechomo/community#
+    :alt: https://gitter.im/spechomo/community#
 
 Get Started!
 ------------
@@ -62,34 +68,44 @@ Ready to contribute? Here's how to set up `spechomo` for local development.
 1. Fork the `spechomo` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@github.com:your_name_here/spechomo.git
+   .. code-block:: bash
+
+      $ git clone git@github.com:your_name_here/spechomo.git
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
-    $ mkvirtualenv spechomo
-    $ cd spechomo/
-    $ python setup.py develop
+   .. code-block:: bash
+
+      $ mkvirtualenv spechomo
+      $ cd spechomo/
+      $ python setup.py develop
 
 4. Create a branch for local development::
 
-    $ git checkout -b name-of-your-bugfix-or-feature
+   .. code-block:: bash
+
+      $ git checkout -b name-of-your-bugfix-or-feature
 
    Now you can make your changes locally.
 
 5. When you're done making changes, check that your changes pass flake8 and the
    tests, including testing other Python versions with tox::
 
-    $ flake8 spechomo tests
-    $ python setup.py test or py.test
-    $ tox
+   .. code-block:: bash
+
+      $ flake8 spechomo tests
+      $ python setup.py test or py.test
+      $ tox
 
    To get flake8 and tox, just pip install them into your virtualenv.
 
 6. Commit your changes and push your branch to GitHub::
 
-    $ git add .
-    $ git commit -m "Your detailed description of your changes."
-    $ git push origin name-of-your-bugfix-or-feature
+   .. code-block:: bash
+
+      $ git add .
+      $ git commit -m "Your detailed description of your changes."
+      $ git push origin name-of-your-bugfix-or-feature
 
 7. Submit a pull request through the GitHub website.
 
@@ -111,8 +127,9 @@ Tips
 
 To run a subset of tests::
 
+.. code-block:: bash
 
-    $ python -m unittest tests.test_spechomo
+   $ python -m unittest tests.test_spechomo
 
 Deploying
 ---------

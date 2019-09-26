@@ -1,14 +1,14 @@
-Welcome to spechomo's documentation!
-======================================
+spechomo documentation
+======================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   readme
+   about
    installation
    usage
-   modules
+   api_cli_reference
    contributing
    authors
    history
