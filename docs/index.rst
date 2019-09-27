@@ -10,7 +10,7 @@ spechomo documentation
    usage
    api_cli_reference
    contributing
-   authors
+   credits
    history
 
 Indices and tables

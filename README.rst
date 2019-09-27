@@ -61,7 +61,7 @@ transformation with the same prediction coefficients for all gray values of a sp
 **between individual spectral characteristics of different land-cover types** by using specifically trained prediction
 coefficients for various spectral clusters. This increases the accuracy of the predicted spectral information.
 Apart from that, SpecHomo can not only be used to homogenize already similar spectral definitions - it also **allows to**
-**predict unilaterally missing bands**.
+**predict unilaterally missing bands** such as the red edge bands that are not present in Landsat-8 data.
 
 **Prediction accuracies and effects to subsequent products** such as spectral indices or classifications have been
 evaluated in the above mentioned paper at the example of Sentinel-2 spectral information predicted from Landsat-8.
