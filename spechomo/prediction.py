@@ -510,8 +510,8 @@ class RSImage_ClusterPredictor(object):
         im_predicted = im_predicted if isinstance(im_predicted, GeoArray) else GeoArray(im_predicted, nodata=nodataVal)
         im_predicted.nodata = nodataVal if nodataVal is not None else im_predicted.nodata  # might be auto-computed here
 
-        for cls in cluster_classifier:
-            if not len(cls.rmse_per_band) == GeoArray(im_predicted).bands:
+        for clf in cluster_classifier:
+            if not len(clf.rmse_per_band) == GeoArray(im_predicted).bands:
                 raise ValueError('The given classifier contains error statistics incompatible to the shape of the '
                                  'image.')
         if self.classif_map is None:
@@ -531,7 +531,8 @@ class RSImage_ClusterPredictor(object):
 
             self.logger.info('Inpainting error values for cluster #%s...' % pixVal)
 
-            rmse_per_band_int = np.round(cluster_classifier.MLdict[pixVal].rmse_per_band, 0).astype(np.int16)
+            clf2use = cluster_classifier.MLdict[pixVal] if pixVal != -1 else cluster_classifier.global_clf
+            rmse_per_band_int = np.round(clf2use.rmse_per_band, 0).astype(np.int16)
             errors[self.classif_map[:] == pixVal] = rmse_per_band_int
 
         # TODO validate this equation
