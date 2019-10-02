@@ -98,3 +98,4 @@ pages:
     expire_in: 30 days
   only:
     - master
+    - feature/add_docs

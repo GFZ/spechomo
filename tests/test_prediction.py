@@ -87,7 +87,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True,
             classif_alg='SAM',
-            nodataVal=-9999
+            src_nodataVal=-9999
         )
 
         self.assertIsInstance(predarr, GeoArray)
@@ -185,7 +185,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True,
             # compute_errors=False,
-            nodataVal=-9999)
+            src_nodataVal=-9999)
 
         self.assertIsInstance(predarr, GeoArray)
         self.assertEqual(predarr.shape, (50, 50, 11))
@@ -209,7 +209,7 @@ class Test_SpectralHomogenizer(unittest.TestCase):
             tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
             compute_errors=True,
             # compute_errors=False,
-            nodataVal=-9999)
+            src_nodataVal=-9999)
 
         self.assertIsInstance(predarr, GeoArray)
         self.assertEqual(predarr.shape, (50, 50, 11))
@@ -241,7 +241,7 @@ class Test_RSImage_ClusterPredictor(unittest.TestCase):
             im_src = spectra2im(self.clf_L8.cluster_centers, 1, self.n_clusters)
 
             # predict
-            im_homo = self.CP_SAMcla.predict(im_src, self.clf_L8, unclassified_threshold=4)
+            im_homo = self.CP_SAMcla.predict(im_src, self.clf_L8, global_clf_threshold=4)
 
             # classifier should predict almost the target sensor center spectra
             if clf_alg not in ['kNN_MinDist', 'kNN_SAM', 'kNN_FEDSA']:
