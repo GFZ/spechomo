@@ -28,8 +28,8 @@ import dill
 from multiprocessing import Pool
 from typing import Union, List  # noqa F401  # flake8 issue
 
-import numpy as np
-from geoarray import GeoArray
+import numpy as np  # noqa F401  # flake8 issue
+from geoarray import GeoArray  # noqa F401  # flake8 issue
 import pandas as pd
 from tempfile import TemporaryDirectory
 from natsort import natsorted
