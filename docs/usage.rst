@@ -16,6 +16,7 @@ data.
     :maxdepth: 4
 
     usage/input_data_requirements.rst
+    usage/available_transformations.rst
     usage/homogenization.rst
     usage/classifier_creation.rst
 
