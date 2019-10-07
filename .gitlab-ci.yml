@@ -15,6 +15,7 @@ test_spechomo:
     - export PYTHONPATH=$PYTHONPATH:/root  # /root <- here are the sicor tables
 
     # run nosetests
+    - pip install natsort # TODO: remove as soon as CI image is rebuilt
     - make nosetests  # test are called here
     # create the docs
     - pip install sphinx_rtd_theme  # Read-the-docs theme for SPHINX documentation

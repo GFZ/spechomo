@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # spechomo, Spectral homogenization of multispectral satellite data
@@ -21,13 +22,22 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import yaml
+"""
+test_utils
+----------
 
-from spechomo import __path__
+Tests for spechomo.utils
+"""
+
+import unittest
+from pandas import DataFrame
+
+from spechomo.utils import list_available_transformations
 
 
-with open(os.path.join(__path__[0], 'options_default.yaml'), 'r') as stream:
-    options = yaml.load(stream, Loader=yaml.Loader)
+class Test_Utils(unittest.TestCase):
+    def test_list_available_transformations(self):
+        trafoslist = list_available_transformations()
 
-    options['classifiers']['rootdir'] = os.path.join(__path__[0], 'resources', 'classifiers')
+        self.assertIsInstance(trafoslist, DataFrame)
+        self.assertTrue(len(trafoslist) != 0)

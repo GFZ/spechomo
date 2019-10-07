@@ -37,7 +37,7 @@ with open("spechomo/version.py") as version_file:
     exec(version_file.read(), version)
 
 requirements = ['numpy', 'matplotlib', 'pandas', 'dill', 'nested_dict', 'tqdm', 'scipy', 'scikit-learn==0.19.1',
-                'geoarray', 'seaborn', 'pyyaml', 'tabulate', 'specclassify>=0.2.0', 'pyrsr']
+                'geoarray', 'seaborn', 'pyyaml', 'tabulate', 'specclassify>=0.2.0', 'pyrsr', 'natsort']
 
 setup_requirements = ['setuptools-git']  # needed for package_data version controlled by GIT
 

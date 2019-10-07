@@ -39,11 +39,11 @@ from .classifier import Cluster_Learner
 from .exceptions import ClassifierNotAvailableError
 from .logging import SpecHomo_Logger
 from .options import options
-from . import __path__
+
 
 __author__ = 'Daniel Scheffler'
 
-classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
+classifier_rootdir = options['classifiers']['rootdir']
 
 
 class SpectralHomogenizer(object):
@@ -101,6 +101,9 @@ class SpectralHomogenizer(object):
         # type: (Union[np.ndarray, GeoArray], str, str, str, list, str, str, list, int, str, int, Union[str, int, float], int, int, bool, bool, dict) -> tuple  # noqa
         """Predict spectral bands of target sensor by applying a machine learning approach.
 
+        NOTE:   You may use the function spechomo.utils.list_available_transformations() to get a list of available
+                transformations. You may also copy the input parameters for this method from the output there.
+
         :param arrcube:             input image array for target sensor spectral band prediction (rows x cols x bands)
         :param method:              machine learning approach to be used for spectral bands prediction
                                     'LR': Linear Regression
@@ -121,10 +124,14 @@ class SpectralHomogenizer(object):
                                     only one machine learning classifier is used for prediction.
         :param classif_alg:         Multispectral classification algorithm to be used to determine the spectral cluster
                                     each pixel belongs to.
-                                    'MinDist': Minimum Distance (Nearest Centroid) Classification
-                                    'kNN': k-Nearest-Neighbor Classification
-                                    'SAM': Spectral Angle Mapping
+                                    'MinDist': Minimum Distance (Nearest Centroid)
+                                    'kNN': k-nearest-neighbour
+                                    'kNN_MinDist': k-nearest-neighbour Minimum Distance (Nearest Centroid)
+                                    'SAM': spectral angle mapping
+                                    'kNN_SAM': k-nearest-neighbour spectral angle mapping
                                     'SID': spectral information divergence
+                                    'FEDSA': fused euclidian distance / spectral angle
+                                    'kNN_FEDSA': k-nearest-neighbour fused euclidian distance / spectral angle
         :param kNN_n_neighbors:     The number of neighbors to be considered in case 'classif_alg' is set to 'kNN'.
                                     Otherwise, this parameter is ignored.
         :param global_clf_threshold:  If given, all pixels where the computed similarity metric (set by 'classif_alg')
@@ -268,7 +275,7 @@ class RSImage_ClusterPredictor(object):
         """
         self.method = method
         self.n_clusters = n_clusters
-        self.classifier_rootDir = os.path.abspath(classifier_rootDir)
+        self.classifier_rootDir = os.path.abspath(classifier_rootDir) if classifier_rootDir else classifier_rootdir
         self.classif_map = None
         self.classif_map_fractions = None
         self.distance_metrics = None
