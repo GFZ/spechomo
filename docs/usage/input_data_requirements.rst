@@ -13,7 +13,7 @@ http://www.gdal.org/formats_list.html
 Compatible sensors
 ~~~~~~~~~~~~~~~~~~
 
-Satellite data acquired by following sensors may be used as source or target sensor:
+Satellite data acquired by the following sensors may be used as source or target sensor:
 
 * Landsat-5 TM
 * Landsat-7 ETM+
