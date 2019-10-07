@@ -1,19 +1,19 @@
 Predicting spectral information / multi-sensor homogenization
 -------------------------------------------------------------
 
-
 To execute the spectral homogenization, i.e., to transform the spectral information from one sensor into the spectral
 domain of another one, SpecHomo provides the :class:`SpectralHomogenizer<spechomo.prediction.SpectralHomogenizer>`
 class. Please see the linked content for a full documentation of this class.
 
 For the sake of simplicity, the usage of this class is described below, at the **example of Landsat-8 data, **
 **spectrally adapted to Sentinel-2A**. Transformations between various other sensors are possible, see
-`here <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html>`__.
+`here <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html
+#which-sensor-transformations-are-available>`__.
 
 First, load the Landsat-8 `surface reflectance`_ image that you want to transform to the spectral domain of Sentinel-2A
 (we use the `geoarray`_ library for this - it is installed with SpecHomo):
 
-.. code-block::
+.. code-block:: python
 
     from geoarray import GeoArray
 
@@ -33,7 +33,7 @@ First, load the Landsat-8 `surface reflectance`_ image that you want to transfor
 Now run the homogenization by using the :class:`SpectralHomogenizer<spechomo.prediction.SpectralHomogenizer>` class as
 follows:
 
-.. code-block::
+.. code-block:: python
 
     from spechomo import SpectralHomogenizer
 
@@ -67,7 +67,8 @@ follows:
       :meth:`predict_by_machine_learner<spechomo.prediction.SpectralHomogenizer.predict_by_machine_learner>` method
       from the :func:`list_available_transformations<spechomo.utils.list_available_transformations>`
       function as described
-      `here <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html>`__.
+      `here <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html
+      #which-sensor-transformations-are-available>`__.
     * You may also save the homogenization results to other GDAL compatible image formats
       (see :meth:`geoarray.GeoArray.save` for details).
     * Further explanation on input parameters like `method`, `n_clusters`, `classif_alg` or `global_clf_threshold` is

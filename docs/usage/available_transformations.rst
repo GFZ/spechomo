@@ -1,5 +1,21 @@
+Available sensor transformations
+--------------------------------
+
+The classifiers included in the SpecHomo package
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The SpecHomo package provides a set of classifiers that can be used for spectral homogenization of various sensor
+combinations (see `here <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/usage/
+available_transformations.html#which-sensor-transformations-are-available>`__). These classifiers have been trained
+based on simulated multispectral remote sensing images created by spectral convolution from hyperspectral airborne
+datasets. These hyperspectral datasets were chosen with the intention to include as many different land-cover types
+as possible in order to maximize spectral variability. This makes these classifiers suitable for many application
+fields. Details on the underlying datasets and the used algorithms to create the classifiers can be found
+in `Scheffler et al. 2019 <LINK>`__.
+
+
 Which sensor transformations are available?
--------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 SpecHomo enables you to perform spectral harmonization for various sensors - in different combinations and with
 different band compositions. To get a list of all the available transformations, you may use the function
