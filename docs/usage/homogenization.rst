@@ -5,9 +5,9 @@ To execute the spectral homogenization, i.e., to transform the spectral informat
 domain of another one, SpecHomo provides the :class:`SpectralHomogenizer<spechomo.prediction.SpectralHomogenizer>`
 class. Please see the linked content for a full documentation of this class.
 
-For the sake of simplicity, the usage of this class is described below, at the **example of Landsat-8 data, **
-**spectrally adapted to Sentinel-2A**. Transformations between various other sensors are possible, see
-`here <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html
+For the sake of simplicity, the usage of this class is described below, at the
+**example of Landsat-8 data, spectrally adapted to Sentinel-2A**. Transformations between various other sensors are
+possible, see `here <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html
 #which-sensor-transformations-are-available>`__.
 
 First, load the Landsat-8 `surface reflectance`_ image that you want to transform to the spectral domain of Sentinel-2A
