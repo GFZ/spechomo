@@ -38,11 +38,12 @@ from specclassify import classify_image
 from .classifier import Cluster_Learner
 from .exceptions import ClassifierNotAvailableError
 from .logging import SpecHomo_Logger
-from . import __path__
+from .options import options
+
 
 __author__ = 'Daniel Scheffler'
 
-classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
+classifier_rootdir = options['classifiers']['rootdir']
 
 
 class SpectralHomogenizer(object):
@@ -94,9 +95,14 @@ class SpectralHomogenizer(object):
 
     def predict_by_machine_learner(self, arrcube, method, src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor,
                                    tgt_LBA, n_clusters=50, classif_alg='MinDist', kNN_n_neighbors=10,
-                                   nodataVal=None, compute_errors=False, bandwise_errors=True, **fallback_argskwargs):
-        # type: (Union[np.ndarray, GeoArray], str, str, str, list, str, str, list, int, str, int, int, ...) -> tuple
+                                   global_clf_threshold=options['classifiers']['prediction']['global_clf_threshold'],
+                                   src_nodataVal=None, out_nodataVal=None, compute_errors=False, bandwise_errors=True,
+                                   **fallback_argskwargs):
+        # type: (Union[np.ndarray, GeoArray], str, str, str, list, str, str, list, int, str, int, Union[str, int, float], int, int, bool, bool, dict) -> tuple  # noqa
         """Predict spectral bands of target sensor by applying a machine learning approach.
+
+        NOTE:   You may use the function spechomo.utils.list_available_transformations() to get a list of available
+                transformations. You may also copy the input parameters for this method from the output there.
 
         :param arrcube:             input image array for target sensor spectral band prediction (rows x cols x bands)
         :param method:              machine learning approach to be used for spectral bands prediction
@@ -106,10 +112,10 @@ class SpectralHomogenizer(object):
                                     'RFR':  Random Forest Regression  (50 trees; does not allow spectral sub-clustering)
         :param src_satellite:       source satellite, e.g., 'Landsat-8'
         :param src_sensor:          source sensor, e.g., 'OLI_TIRS'
-        :param src_LBA:             source LayerBandsAssignment
+        :param src_LBA:             source LayerBandsAssignment  # TODO document this
         :param tgt_satellite:       target satellite, e.g., 'Landsat-8'
         :param tgt_sensor:          target sensor, e.g., 'OLI_TIRS'
-        :param tgt_LBA:             target LayerBandsAssignment
+        :param tgt_LBA:             target LayerBandsAssignment  # TODO document this
         :param n_clusters:          Number of spectral clusters to be used during LR/ RR/ QR homogenization.
                                     E.g., 50 means that the image to be converted to the spectral target sensor
                                     is clustered into 50 spectral clusters and one separate machine learner per
@@ -118,13 +124,26 @@ class SpectralHomogenizer(object):
                                     only one machine learning classifier is used for prediction.
         :param classif_alg:         Multispectral classification algorithm to be used to determine the spectral cluster
                                     each pixel belongs to.
-                                    'MinDist': Minimum Distance (Nearest Centroid) Classification
-                                    'kNN': k-Nearest-Neighbor Classification
-                                    'SAM': Spectral Angle Mapping
+                                    'MinDist': Minimum Distance (Nearest Centroid)
+                                    'kNN': k-nearest-neighbour
+                                    'kNN_MinDist': k-nearest-neighbour Minimum Distance (Nearest Centroid)
+                                    'SAM': spectral angle mapping
+                                    'kNN_SAM': k-nearest-neighbour spectral angle mapping
                                     'SID': spectral information divergence
+                                    'FEDSA': fused euclidian distance / spectral angle
+                                    'kNN_FEDSA': k-nearest-neighbour fused euclidian distance / spectral angle
         :param kNN_n_neighbors:     The number of neighbors to be considered in case 'classif_alg' is set to 'kNN'.
                                     Otherwise, this parameter is ignored.
-        :param nodataVal:           no data value
+        :param global_clf_threshold:  If given, all pixels where the computed similarity metric (set by 'classif_alg')
+                                      exceeds the given threshold are predicted using the global classifier (based on a
+                                      single transformation per band).
+                                      - only usable for 'MinDist', 'SAM' and 'SID'
+                                      - may be given as float, integer or string to label a certain distance percentile
+                                      - if given as string, it must match the format, e.g., '10%' for labelling the
+                                      worst 10 % of the distances as unclassified
+        :param src_nodataVal:       no data value of source image (arrcube)
+                                    - if no nodata value is set, it is tried to be auto-computed from arrcube
+        :param out_nodataVal:       no data value of predicted image
         :param compute_errors:      whether to compute pixel- / bandwise model errors for estimated pixel values
                                     (default: false)
         :param bandwise_errors      whether to compute error information for each band separately (True - default)
@@ -138,12 +157,13 @@ class SpectralHomogenizer(object):
                   classifier_rootDir=self.classifier_rootDir,
                   n_clusters=n_clusters,
                   classif_alg=classif_alg,
-                  CPUs=self.CPUs)
+                  CPUs=self.CPUs,
+                  logger=self.logger)
 
         if classif_alg.startswith('kNN'):
             kw['n_neighbors'] = kNN_n_neighbors
 
-        PR = RSImage_ClusterPredictor(**kw)
+        RSI_CP = RSImage_ClusterPredictor(**kw)
 
         ######################
         # get the classifier #
@@ -152,7 +172,7 @@ class SpectralHomogenizer(object):
         cls = None
         exc = Exception()
         try:
-            cls = PR.get_classifier(src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
+            cls = RSI_CP.get_classifier(src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
 
         except FileNotFoundError as e:
             self.logger.warning('No machine learning classifier available that fulfills the specifications of the '
@@ -174,16 +194,27 @@ class SpectralHomogenizer(object):
         if cls:
             self.logger.info('Performing spectral homogenization using %s. Target is %s %s %s.'
                              % (method, tgt_satellite, tgt_sensor, tgt_LBA))
-            im_homo = PR.predict(arrcube, classifier=cls, in_nodataVal=nodataVal, cmap_nodataVal=nodataVal)
+            im_homo = RSI_CP.predict(arrcube,
+                                     classifier=cls,
+                                     in_nodataVal=src_nodataVal,
+                                     cmap_nodataVal=src_nodataVal,
+                                     out_nodataVal=out_nodataVal,
+                                     global_clf_threshold=global_clf_threshold)
+
             if compute_errors:
-                errors = PR.compute_prediction_errors(im_homo, cls, nodataVal=nodataVal, cmap_nodataVal=nodataVal)
+                errors = RSI_CP.compute_prediction_errors(im_homo, cls,
+                                                          nodataVal=src_nodataVal,
+                                                          cmap_nodataVal=src_nodataVal)
 
                 if not bandwise_errors:
                     errors = np.median(errors, axis=2).astype(errors.dtype)
 
         elif fallback_argskwargs:
             # fallback: use linear interpolation and set errors to an array of zeros
-            im_homo = self.interpolate_cube(arrcube, *fallback_argskwargs['args'], **fallback_argskwargs['kwargs'])
+            im_homo = self.interpolate_cube(arrcube,
+                                            *fallback_argskwargs['args'],
+                                            **fallback_argskwargs['kwargs'])
+
             if compute_errors:
                 self.logger.warning("Spectral homogenization algorithm had to be performed by linear interpolation "
                                     "(fallback). Unable to compute any accuracy information from that.")
@@ -194,6 +225,14 @@ class SpectralHomogenizer(object):
 
         else:
             raise exc
+
+        # add metadata
+        im_homo.metadata.band_meta['wavelength'] = cls.tgt_wavelengths
+        im_homo.classif_map = RSI_CP.classif_map
+        im_homo.distance_metrics = RSI_CP.distance_metrics
+
+        # handle negative values in the predicted image => set these pixels to nodata
+        # im_homo = set_negVals_to_nodata(im_homo, out_nodataVal)
 
         return im_homo, errors
 
@@ -221,16 +260,22 @@ class RSImage_ClusterPredictor(object):
                                     (to define which cluster each pixel belongs to)
                                     'MinDist': Minimum Distance (Nearest Centroid)
                                     'kNN': k-nearest-neighbour
+                                    'kNN_MinDist': k-nearest-neighbour Minimum Distance (Nearest Centroid)
                                     'SAM': spectral angle mapping
+                                    'kNN_SAM': k-nearest-neighbour spectral angle mapping
                                     'SID': spectral information divergence
+                                    'FEDSA': fused euclidian distance / spectral angle
+                                    'kNN_FEDSA': k-nearest-neighbour fused euclidian distance / spectral angle
         :param classifier_rootDir:  root directory where machine learning classifiers are stored.
         :param CPUs:                number of CPUs to use (default: 1)
         :param logger:              instance of logging.Logger()
-        :param kw_clf_init          keyword arguments to be passed to classifier init functions if possible
+        :param kw_clf_init          keyword arguments to be passed to classifier init functions if possible,
+                                    e.g., 'n_neighbours' sets the number of neighbours to be considered in kNN
+                                    classification algorithms (set by 'classif_alg')
         """
         self.method = method
         self.n_clusters = n_clusters
-        self.classifier_rootDir = os.path.abspath(classifier_rootDir)
+        self.classifier_rootDir = os.path.abspath(classifier_rootDir) if classifier_rootDir else classifier_rootdir
         self.classif_map = None
         self.classif_map_fractions = None
         self.distance_metrics = None
@@ -267,7 +312,7 @@ class RSImage_ClusterPredictor(object):
                                          src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
 
     def predict(self, image, classifier, in_nodataVal=None, out_nodataVal=None, cmap_nodataVal=None,
-                unclassified_threshold=None, unclassified_pixVal=-1):
+                global_clf_threshold=None, unclassified_pixVal=-1):
         # type: (Union[np.ndarray, GeoArray], Cluster_Learner, float, float, float, Union[str, int, float], int) -> GeoArray  # noqa
         """Apply the prediction function of the given specifier to the given remote sensing image.
 
@@ -281,13 +326,13 @@ class RSImage_ClusterPredictor(object):
                                 (copied from the input image if not given)
         :param cmap_nodataVal:  no data value for the classification map
                                 in case more than one sub-classes are used for prediction
-        :param unclassified_threshold:  if given, all pixels where the computed distance metric exceeds the given
-                                        threshold are labelled as unclassified
-                                        (only usable for 'MinDist', 'SAM' and 'SID')
-                                        - may be given as float, integer or string to label a certain distance
-                                        percentile
-                                        - if given as string, it must match the format, e.g., '10%' for labelling the
-                                        worst 10 % of the distances as unclassified
+        :param global_clf_threshold:  If given, all pixels where the computed similarity metric (set by 'classif_alg')
+                                      exceeds the given threshold are predicted using the global classifier (based on a
+                                      single transformation per band).
+                                      - not usable for 'kNN'
+                                      - may be given as float, integer or string to label a certain distance percentile
+                                      - if given as string, it must match the format, e.g., '10%' for labelling the
+                                      worst 10 % of the distances as unclassified
         :param unclassified_pixVal:     pixel value to be used in the classification map for unclassified pixels
                                         (default: -1)
         :return:                3D array representing the predicted spectral image cube
@@ -313,7 +358,7 @@ class RSImage_ClusterPredictor(object):
                               **self.kw_clf_init)
 
                 if self.classif_alg in ['MinDist', 'kNN_MinDist', 'SAM', 'kNN_SAM', 'SID', 'FEDSA', 'kNN_FEDSA']:
-                    kw_clf.update(dict(unclassified_threshold=unclassified_threshold,
+                    kw_clf.update(dict(unclassified_threshold=global_clf_threshold,
                                        unclassified_pixVal=unclassified_pixVal))
 
                 if self.classif_alg == 'RF':
@@ -472,14 +517,15 @@ class RSImage_ClusterPredictor(object):
         im_predicted = im_predicted if isinstance(im_predicted, GeoArray) else GeoArray(im_predicted, nodata=nodataVal)
         im_predicted.nodata = nodataVal if nodataVal is not None else im_predicted.nodata  # might be auto-computed here
 
-        for cls in cluster_classifier:
-            if not len(cls.rmse_per_band) == GeoArray(im_predicted).bands:
+        for clf in cluster_classifier:
+            if not len(clf.rmse_per_band) == GeoArray(im_predicted).bands:
                 raise ValueError('The given classifier contains error statistics incompatible to the shape of the '
                                  'image.')
         if self.classif_map is None:
             raise RuntimeError('self.classif_map must be generated by running self.predict() beforehand.')
 
         if self.classif_map.ndim == 3:
+            # FIXME: error computation does not work for kNN algorithms so far (self.classif_map is 3D instead of 2D)
             raise NotImplementedError('Error computation for 3-dimensional classification maps (e.g., due to kNN '
                                       'classification algorithms) is not yet implemented.')
 
@@ -492,8 +538,8 @@ class RSImage_ClusterPredictor(object):
 
             self.logger.info('Inpainting error values for cluster #%s...' % pixVal)
 
-            rmse_per_band_int = np.round(cluster_classifier.MLdict[pixVal].rmse_per_band, 0).astype(np.int16)
-            # FIXME: error computation does not work for kNN algorithms so far (self.classif_map is 3D instead of 2D)
+            clf2use = cluster_classifier.MLdict[pixVal] if pixVal != -1 else cluster_classifier.global_clf
+            rmse_per_band_int = np.round(clf2use.rmse_per_band, 0).astype(np.int16)
             errors[self.classif_map[:] == pixVal] = rmse_per_band_int
 
         # TODO validate this equation

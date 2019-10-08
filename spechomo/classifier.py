@@ -397,4 +397,8 @@ class ClassifierCollection(object):
 
     def __getitem__(self, item):
         """Get a specific item of the ClassifierCollection."""
-        return self.content[item]
+        try:
+            return self.content[item]
+        except KeyError:
+            raise(KeyError("The classifier has no key '%s'. Available keys are: %s"
+                           % (item, repr(self))))
