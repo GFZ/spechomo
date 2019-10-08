@@ -2,6 +2,13 @@
 History
 =======
 
+0.4.0 (2019-10-07)
+------------------
+
+* Added Sphinx documentation
+* Improved usability by adding functions to explore available spectral tansformations
+
+
 0.3.0 (2019-09-25)
 ------------------
 
