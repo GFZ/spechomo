@@ -19,7 +19,7 @@ that you want to include into your own classifiers.
 
 **These hyperspectral datasets must fulfil the following requirements:**
 
-* GDAL compatible file format (find a list `here<http://www.gdal.org/formats_list.html>`__)
+* GDAL compatible file format (find a list `here <http://www.gdal.org/formats_list.html>`__)
 * surface reflectance, scaled between 1 and 10000 (10000 represents 100% reflectance)
 * metadata contain a no data value and wavelength positions of all included bands in nanometers
 * high signal-to-noise ratio
