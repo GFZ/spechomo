@@ -227,7 +227,8 @@ class Test_RSImage_ClusterPredictor(unittest.TestCase):
                                                   classif_alg='SAM',
                                                   classifier_rootDir=os.path.join(testdata_rootdir, 'classifiers',
                                                                                   'SAMclassassignment'),
-                                                  **dict(n_neighbours=5))
+                                                  # **dict(n_neighbors=5)  # only compatible with kNN classif algs
+                                                  )
         self.clf_L8 = self.CP_SAMcla.get_classifier(src_satellite='Landsat-8', src_sensor='OLI_TIRS',
                                                     src_LBA=['1', '2', '3', '4', '5', '6', '7'],
                                                     tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
