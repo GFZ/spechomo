@@ -17,11 +17,8 @@ dependencies:
     # - geos>3.7.0   # pinning should not be needed anymore - https://github.com/conda-forge/basemap-feedstock/issues/43
   - geopandas
   - holoviews
-  - ipython
   - conda-forge::libgdal  # force to use conda-forge for libgdal to avoid package version incompatiblies due to mixed channels
   - pyproj
-  - pyqt
-  - rasterio
   - scikit-image
   - shapely
 
