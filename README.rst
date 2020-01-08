@@ -30,7 +30,7 @@ Status
      :alt: Updates
 
 
-.. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/build.svg
+.. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/pipeline.svg
         :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/commits/master
 .. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/coverage.svg
         :target: http://geomultisens.gitext.gfz-potsdam.de/spechomo/coverage/
