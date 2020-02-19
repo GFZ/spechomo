@@ -58,7 +58,7 @@ test_spechomo_install:
 
     # update conda and python
     - conda update -n base -c defaults conda
-#    - conda update -c conda-forge python
+    - conda update -c conda-forge python
 
     # install some dependencies that cause trouble when installed via pip
     - conda install -y -c conda-forge matplotlib numpy pandas scikit-learn=0.19.1
