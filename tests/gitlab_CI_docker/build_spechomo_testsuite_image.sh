@@ -2,7 +2,7 @@
 
 context_dir="./context"
 dockerfile="spechomo_ci.docker"
-tag="spechomo_ci:0.2.4"
+tag="spechomo_ci:0.4.2"
 gitlab_runner="spechomo_gitlab_CI_runner"
 
 echo "#### Build runner docker image"
