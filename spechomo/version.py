@@ -1,7 +1,7 @@
 
 # spechomo, Spectral homogenization of multispectral satellite data
 #
-# Copyright (C) 2019  Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz-potsdam.de)
+# Copyright (C) 2020  Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz-potsdam.de)
 #
 # This software was developed within the context of the GeoMultiSens project funded
 # by the German Federal Ministry of Education and Research

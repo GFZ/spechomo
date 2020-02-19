@@ -3,7 +3,7 @@
 
 # spechomo, Spectral homogenization of multispectral satellite data
 #
-# Copyright (C) 2019  Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz-potsdam.de)
+# Copyright (C) 2020  Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz-potsdam.de)
 #
 # This software was developed within the context of the GeoMultiSens project funded
 # by the German Federal Ministry of Education and Research
@@ -39,7 +39,7 @@ with open("spechomo/version.py") as version_file:
 requirements = ['numpy', 'matplotlib', 'pandas', 'dill', 'nested_dict', 'tqdm', 'scipy', 'scikit-learn==0.19.1',
                 'geoarray', 'seaborn', 'pyyaml', 'tabulate', 'specclassify>=0.2.0', 'pyrsr', 'natsort']
 
-setup_requirements = ['setuptools-git']  # needed for package_data version controlled by GIT
+setup_requirements = ['setuptools-git']  # needed for package_data version-controlled by GIT
 
 test_requirements = ['coverage', 'nose', 'nose-htmloutput', 'rednose']
 
@@ -47,7 +47,7 @@ setup(
     author="Daniel Scheffler",
     author_email='daniel.scheffler@gfz-potsdam.de',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 2 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
@@ -72,7 +72,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/danschef/spechomo',
+    url='https://gitext.gfz-potsdam.de/geomultisens/spechomo',
     version=version['__version__'],
     zip_safe=False,
 )
