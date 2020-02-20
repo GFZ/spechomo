@@ -47,7 +47,7 @@ setup(
     author="Daniel Scheffler",
     author_email='daniel.scheffler@gfz-potsdam.de',
     classifiers=[
-        'Development Status :: 2 - Beta',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
