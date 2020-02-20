@@ -20,7 +20,7 @@ Using conda_, the recommended approach is:
 
    .. code-block:: bash
 
-    $ conda install -c conda-forge matplotlib numpy pandas scikit-learn=0.19.1 basemap gdal geopandas<0.6.3 pyproj scikit-image shapely
+    $ conda install -c conda-forge matplotlib numpy pandas "scikit-learn=0.19.1" basemap gdal "geopandas<0.6.3" pyproj scikit-image shapely
 
 
 3. Then install spechomo using the pip installer:
