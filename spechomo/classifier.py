@@ -27,6 +27,7 @@ import zipfile
 from collections import OrderedDict
 from pprint import pformat
 from typing import Union, List  # noqa F401  # flake8 issue
+import json
 
 from tqdm import tqdm
 import dill
@@ -380,6 +381,17 @@ class Cluster_Learner(object):
             print(overall_stats)
             print(tabulate(band_stats, headers=band_stats.columns))
             print()
+
+    def save_to_json(self, filepath):
+        dict2save = dict(
+            cluster_centers=self.cluster_centers.tolist(),
+
+        )
+
+        # Creat json and save to file
+        json_txt = json.dumps(dict2save, indent=4)
+        with open(filepath, 'w') as file:
+            file.write(json_txt)
 
 
 class ClassifierCollection(object):

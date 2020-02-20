@@ -30,7 +30,7 @@ Tests for spechomo.classifier
 """
 
 import os
-from unittest import TestCase
+from unittest import TestCase, SkipTest
 
 from spechomo.classifier import Cluster_Learner
 from spechomo import __path__
@@ -60,3 +60,7 @@ class Test_ClusterClassifier(TestCase):
 
     def test_collect_stats(self):
         self.clf._collect_stats(cluster_label=1)
+
+    @SkipTest
+    def test_save_to_json(self):
+        self.clf.save_to_json()
