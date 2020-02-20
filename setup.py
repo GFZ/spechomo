@@ -76,5 +76,3 @@ setup(
     version=version['__version__'],
     zip_safe=False,
 )
-import jsonpickle
-jsonpickle.encode()
