@@ -40,6 +40,10 @@ Status
         :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/blob/master/LICENSE
 .. image:: https://img.shields.io/pypi/pyversions/spechomo.svg
         :target: https://img.shields.io/pypi/pyversions/spechomo.svg
+.. image:: https://img.shields.io/pypi/dm/spechomo.svg
+        :target: https://pypi.python.org/pypi/spechomo
+.. image:: https://zenodo.org/badge/241405333.svg
+   :target: https://zenodo.org/badge/latestdoi/241405333
 
 See also the latest coverage_ report and the nosetests_ HTML report.
 
