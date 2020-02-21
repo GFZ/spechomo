@@ -113,7 +113,7 @@ pages:
 deploy_pypi:
   stage: deploy
   dependencies:
-    - test_arosics
+    - test_spechomo
   script:
     - source /root/miniconda3/bin/activate
     - source activate ci_env
