@@ -3,7 +3,7 @@
 
 # spechomo, Spectral homogenization of multispectral satellite data
 #
-# Copyright (C) 2019  Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz-potsdam.de)
+# Copyright (C) 2020  Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz-potsdam.de)
 #
 # This software was developed within the context of the GeoMultiSens project funded
 # by the German Federal Ministry of Education and Research
@@ -12,7 +12,10 @@
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
+# later version. Please note the following exception: `spechomo` depends on tqdm,
+# which is distributed under the Mozilla Public Licence (MPL) v2.0 except for the
+# files "tqdm/_tqdm.py", "setup.py", "README.rst", "MANIFEST.in" and ".gitignore".
+# Details can be found here: https://github.com/tqdm/tqdm/blob/master/LICENCE.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -39,7 +42,7 @@ with open("spechomo/version.py") as version_file:
 requirements = ['numpy', 'matplotlib', 'pandas', 'dill', 'nested_dict', 'tqdm', 'scipy', 'scikit-learn==0.19.1',
                 'geoarray', 'seaborn', 'pyyaml', 'tabulate', 'specclassify>=0.2.0', 'pyrsr', 'natsort']
 
-setup_requirements = ['setuptools-git']  # needed for package_data version controlled by GIT
+setup_requirements = ['setuptools-git']  # needed for package_data version-controlled by GIT
 
 test_requirements = ['coverage', 'nose', 'nose-htmloutput', 'rednose']
 
@@ -47,7 +50,7 @@ setup(
     author="Daniel Scheffler",
     author_email='daniel.scheffler@gfz-potsdam.de',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
@@ -72,7 +75,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/danschef/spechomo',
+    url='https://gitext.gfz-potsdam.de/geomultisens/spechomo',
     version=version['__version__'],
     zip_safe=False,
 )

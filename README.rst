@@ -4,10 +4,10 @@ SpecHomo - Spectral homogenization of multispectral satellite data
 
 * Free software: GNU General Public License v3
 * **Documentation:** http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/
-* The (open-access) **paper** corresponding to this software repository has been submitted to
-  Remote Sensing of Environment:
-  Scheffler D, Segl K, Frantz D. Spectral Adjustment and Red Edge Prediction of Landsat-8 to Sentinel-2 using
-  land-cover specific regressors.
+* The **paper** corresponding to this software repository has been accepted by
+  Remote Sensing of Environment but is not yet published:
+  Scheffler D., Frantz D., Segl K. (2020). Spectral harmonization and red edge prediction of Landsat-8 to Sentinel-2
+  using land cover optimized multivariate regressors. Remote Sens. Environ. (accepted)
 * Submit feedback by filing an issue `here <https://gitext.gfz-potsdam.de/geomultisens/spechomo/issues>`__
   or join our chat here: |Gitter|
 
