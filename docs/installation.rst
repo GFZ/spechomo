@@ -27,7 +27,9 @@ Using conda_, the recommended approach is:
 
    .. code-block:: bash
 
-    $ pip install spechomo
+    $ git clone https://gitext.gfz-potsdam.de/geomultisens/spechomo.git
+    $ cd spechomo
+    $ pip install .
 
 
 This is the preferred method to install spechomo, as it will always install the most recent stable release.

@@ -34,13 +34,13 @@ Status
         :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/commits/master
 .. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/coverage.svg
         :target: http://geomultisens.gitext.gfz-potsdam.de/spechomo/coverage/
-.. image:: https://img.shields.io/pypi/v/spechomo.svg
+.. .. image:: https://img.shields.io/pypi/v/spechomo.svg
         :target: https://pypi.python.org/pypi/spechomo
-.. image:: https://img.shields.io/pypi/l/spechomo.svg
+.. .. image:: https://img.shields.io/pypi/l/spechomo.svg
         :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/blob/master/LICENSE
-.. image:: https://img.shields.io/pypi/pyversions/spechomo.svg
+.. .. image:: https://img.shields.io/pypi/pyversions/spechomo.svg
         :target: https://img.shields.io/pypi/pyversions/spechomo.svg
-.. image:: https://img.shields.io/pypi/dm/spechomo.svg
+.. .. image:: https://img.shields.io/pypi/dm/spechomo.svg
         :target: https://pypi.python.org/pypi/spechomo
 .. image:: https://zenodo.org/badge/241405333.svg
    :target: https://zenodo.org/badge/latestdoi/241405333
