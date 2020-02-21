@@ -15,7 +15,6 @@ test_spechomo:
     - export PYTHONPATH=$PYTHONPATH:/root  # /root <- directory needed later
 
     # run nosetests
-    - pip install natsort # TODO: remove as soon as CI image is rebuilt
     - make nosetests  # test are called here
     # create the docs
     - pip install sphinx_rtd_theme  # Read-the-docs theme for SPHINX documentation
@@ -109,3 +108,19 @@ pages:
   only:
     - master
     - feature/add_docs
+
+
+deploy_pypi:
+  stage: deploy
+  dependencies:
+    - test_arosics
+  script:
+    - source /root/miniconda3/bin/activate
+    - source activate ci_env
+    - pip install -U twine
+    - python setup.py sdist
+    - twine upload dist/*  # requires creds as environment variables
+  only:
+    - /^v\d+\.\d+\.\d+([abc]\d*)?$/  # PEP-440 compliant version (tags)
+  except:
+    - dev
