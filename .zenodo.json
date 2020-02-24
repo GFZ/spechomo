@@ -1,0 +1,32 @@
+{
+    "title": "SpecHomo",
+    "description": "A Python package for spectral homogenization of multispectral satellite data.",
+    "license": "GPL-3.0+",
+    "upload_type": "software",
+    "keywords": [
+        "Spectral harmonization",
+        "Remote sensing",
+        "Satellite image harmonization",
+        "Analysis ready data"
+    ],
+    "creators": [
+        {
+            "name": "Daniel Scheffler",
+            "affiliation": "Helmholtz Centre Potsdam German Research Centre for Geosciences GFZ, Section 1.4 - Remote Sensing and Geoinformatics",
+            "orcid": "0000-0003-4106-8928",
+            "type": "Researcher"
+        }
+    ],
+    "related_identifiers": [
+        {
+            "scheme": "url",
+            "identifier": "https://gitext.gfz-potsdam.de/geomultisens/spechomo",
+            "relation": "isSupplementTo"
+        },
+        {
+            "scheme": "doi",
+            "identifier": "10.5281/zenodo.3678713",
+            "relation": "isVersionOf"
+        }
+    ]
+}
