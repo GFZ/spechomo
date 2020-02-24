@@ -8,6 +8,8 @@ SpecHomo - Spectral homogenization of multispectral satellite data
   Remote Sensing of Environment but is not yet published:
   Scheffler D., Frantz D., Segl K. (2020). Spectral harmonization and red edge prediction of Landsat-8 to Sentinel-2
   using land cover optimized multivariate regressors. Remote Sens. Environ. (accepted)
+* Information on how to **cite the SpecHomo Python package** can be found in the
+  `CITATION <https://gitext.gfz-potsdam.de/geomultisens/spechomo/-/blob/master/CITATION>`__ file.
 * Submit feedback by filing an issue `here <https://gitext.gfz-potsdam.de/geomultisens/spechomo/issues>`__
   or join our chat here: |Gitter|
 
