@@ -2,6 +2,13 @@
 History
 =======
 
+0.6.0 (coming soon)
+-------------------
+
+* Added functionality to export existing .dill classifiers to JSON format to make them also usable in different
+  programming environments.
+
+
 0.5.0 (2020-02-20)
 ------------------
 
