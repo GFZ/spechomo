@@ -45,9 +45,14 @@ class Test_Utils(unittest.TestCase):
 
     def test_export_classifiers_as_JSON(self):
         with TemporaryDirectory() as td:
-            export_classifiers_as_JSON(export_rootDir=td, method='QR', src_sat='Landsat-8', tgt_sat='Sentinel-2A',
+            export_classifiers_as_JSON(export_rootDir=td, method='LR', src_sat='Landsat-8', tgt_sat='Sentinel-2A',
                                        n_clusters=5)
 
         with self.assertWarns(RuntimeWarning):
             export_classifiers_as_JSON(export_rootDir=td, method='LR', src_sat='Landsat-8', tgt_sat='Sentinel-2A',
                                        n_clusters=-5)
+
+        # QR is currently not supported
+        with self.assertRaises(RuntimeError):
+            export_classifiers_as_JSON(export_rootDir=td, method='QR', src_sat='Landsat-8', tgt_sat='Sentinel-2A',
+                                       n_clusters=5)
