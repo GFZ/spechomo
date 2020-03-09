@@ -81,3 +81,9 @@ Here is an example based on the above created reference cubes for Sentinel-2A an
 The classifiers are saved as *.dill files. You may explore them later using the
 :func:`list_available_transformations<spechomo.utils.list_available_transformations>` function as described
 `here <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html>`__.
+
+.. note::
+
+    You may convert the saved classifiers to JSON format, e.g., for using them in different programming environments.
+    To do so, use the :func:`export_classifiers_as_JSON<spechomo.utils.export_classifiers_as_JSON>` function. However,
+    this will currently only work for linear regression (LR) classifiers.
