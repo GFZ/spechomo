@@ -33,6 +33,7 @@ Tests for spechomo.classifier
 """
 
 import os
+import json
 from unittest import TestCase
 
 from spechomo.classifier import Cluster_Learner
@@ -63,3 +64,22 @@ class Test_ClusterClassifier(TestCase):
 
     def test_collect_stats(self):
         self.clf._collect_stats(cluster_label=1)
+
+    def test_to_jsonable_dict(self):
+        jsonable_dict = self.clf.to_jsonable_dict()
+        outstr = json.dumps(jsonable_dict, sort_keys=True, indent=4)
+        self.assertIsInstance(outstr, str)
+
+    # def test_save_to_json(self):
+    #     with TemporaryDirectory() as tmpDir:
+    #         self.clf.save_to_json(os.path.join(tmpDir, 'clf.json'))
+
+
+# class Test_ClassifierCollection(TestCase):
+#     def setUp(self) -> None:
+#         self.CC = ClassifierCollection('/home/gfz-fe/scheffler/temp/SPECHOM_py/classifiers/'
+#                                        '20k_nofilt_noaviris__SCADist100SAM4/LR_clust2__Sentinel-2A__MSI.dill')
+#
+#     def test_save_to_json(self):
+#         with TemporaryDirectory() as tmpDir:
+#             self.CC.save_to_json(os.path.join(tmpDir, 'CC.json'))

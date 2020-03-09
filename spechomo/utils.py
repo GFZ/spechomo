@@ -30,12 +30,15 @@ from zipfile import ZipFile
 import dill
 from multiprocessing import Pool
 from typing import Union, List  # noqa F401  # flake8 issue
+import json
+import warnings
 
 import numpy as np  # noqa F401  # flake8 issue
 from geoarray import GeoArray  # noqa F401  # flake8 issue
 import pandas as pd
 from tempfile import TemporaryDirectory
 from natsort import natsorted
+from tqdm import tqdm
 
 from .options import options
 
@@ -151,3 +154,63 @@ def explore_classifer_dillfile(path_dillFile):
                                        nclust]
 
     return df
+
+
+def export_classifiers_as_JSON(export_rootDir,
+                               classifier_rootDir=options['classifiers']['rootdir'],
+                               method=None,
+                               src_sat=None, src_sen=None, src_LBA=None,
+                               tgt_sat=None, tgt_sen=None, tgt_LBA=None,
+                               n_clusters=None):
+    # type: (str, str, str, str, str, List[str], str, str, List[str], int) -> None
+    """Export spectral harmonization classifiers as JSON files that match the provided filtering criteria.
+
+    NOTE: So far, this function will only work for LR classifiers.
+
+    :param export_rootDir:      directory where to save the exported JSON files
+    :param classifier_rootDir:  directory containing classifiers for homogenization, either as .zip archives or
+                                as .dill files
+    :param method:              filter by the machine learning approach to be used for spectral bands prediction
+    :param src_sat:             filter by source satellite, e.g., 'Landsat-8'
+    :param src_sen:             filter by source sensor, e.g., 'OLI_TIRS'
+    :param src_LBA:             filter by source bands list
+    :param tgt_sat:             filter by target satellite, e.g., 'Landsat-8'
+    :param tgt_sen:             filter by target sensor, e.g., 'OLI_TIRS'
+    :param tgt_LBA:             filter by target bands list
+    :param n_clusters:          filter by the number of spectral clusters to be used during LR/ RR/ QR
+                                homogenization
+    :return:
+    """
+    from .classifier import Cluster_Learner
+
+    # get matching classifiers
+    df_trafos = list_available_transformations(classifier_rootDir=classifier_rootDir,
+                                               method=method,
+                                               src_sat=src_sat, src_sen=src_sen, src_LBA=src_LBA,
+                                               tgt_sat=tgt_sat, tgt_sen=tgt_sen, tgt_LBA=tgt_LBA,
+                                               n_clusters=n_clusters)
+
+    if len(df_trafos):
+        # export each matching transformation to a JSON file
+        for i, trafo in tqdm(df_trafos.iterrows(), total=len(df_trafos)):
+
+            CL = Cluster_Learner.from_disk(
+                classifier_rootDir=classifier_rootDir,
+                method=trafo.method,
+                n_clusters=trafo.n_clusters,
+                src_satellite=trafo.src_sat, src_sensor=trafo.src_sen, src_LBA=trafo.src_LBA,
+                tgt_satellite=trafo.tgt_sat, tgt_sensor=trafo.tgt_sen, tgt_LBA=trafo.tgt_LBA)
+
+            path_out = os.path.join(export_rootDir,
+                                    trafo.method,
+                                    "src__%s__%s__%s" % (trafo.src_sat, trafo.src_sen, '_'.join(trafo.src_LBA)),
+                                    "to__%s__%s__%s" % (trafo.tgt_sat, trafo.tgt_sen, '_'.join(trafo.tgt_LBA)),
+                                    "%s__clust%d.json" % (trafo.method, trafo.n_clusters)
+                                    )
+            os.makedirs(os.path.dirname(path_out), exist_ok=True)
+
+            with open(path_out, 'w') as outF:
+                json.dump(CL.to_jsonable_dict(), outF, indent=4, sort_keys=True)
+
+    else:
+        warnings.warn('No classifiers found matching the provided filter criteria. Nothing exported.', RuntimeWarning)

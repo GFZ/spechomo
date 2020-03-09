@@ -30,6 +30,8 @@ import zipfile
 from collections import OrderedDict
 from pprint import pformat
 from typing import Union, List  # noqa F401  # flake8 issue
+import json
+import builtins
 
 from tqdm import tqdm
 import dill
@@ -37,6 +39,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 from geoarray import GeoArray  # noqa F401  # flake8 issue
+from sklearn.linear_model import LinearRegression
 
 from .classifier_creation import get_filename_classifier_collection, get_machine_learner
 from .exceptions import ClassifierNotAvailableError
@@ -384,6 +387,46 @@ class Cluster_Learner(object):
             print(tabulate(band_stats, headers=band_stats.columns))
             print()
 
+    def to_jsonable_dict(self):
+        """Create a dictionary containing a JSONable replicate of the current Cluster_Learner instance."""
+        common_meta_keys = ['src_satellite', 'src_sensor', 'tgt_satellite', 'tgt_sensor', 'src_LBA', 'tgt_LBA',
+                            'src_n_bands', 'tgt_n_bands', 'src_wavelengths', 'tgt_wavelengths', 'n_clusters']
+        jsonable_dict = dict()
+        decode_types_dict = dict()
+
+        # get jsonable dict for global classifier and add decoding type hints
+        jsonable_dict['classifier_global'] =\
+            classifier_to_jsonable_dict(self.global_clf, skipkeys=common_meta_keys, include_typesdict=True)
+        decode_types_dict['classifiers_all'] = jsonable_dict['classifier_global']['__decode_types']
+        del jsonable_dict['classifier_global']['__decode_types']
+
+        # get jsonable dicts for each classifier of self.MLdict and add corresponding decoding type hints
+        jsonable_dict['classifiers_optimized'] =\
+            {i: classifier_to_jsonable_dict(clf, skipkeys=common_meta_keys)
+             for i, clf in self.MLdict.items()}
+
+        # add common metadata and corresponding decoding type hints
+        for k in common_meta_keys:
+            jsonable_dict[k], decode_type = get_jsonable_value(getattr(self, k), return_typesdict=True)
+
+            if decode_type:
+                decode_types_dict[k] = decode_type
+
+        jsonable_dict['__decode_types'] = decode_types_dict
+
+        return jsonable_dict
+
+    # def save_to_json(self, filepath):
+    #     dict2save = dict(
+    #         cluster_centers=self.cluster_centers.tolist(),
+    #
+    #     )
+    #
+    #     # Create json and save to file
+    #     json_txt = json.dumps(dict2save, indent=4)
+    #     with open(filepath, 'w') as file:
+    #         file.write(json_txt)
+
 
 class ClassifierCollection(object):
     def __init__(self, path_dillFile):
@@ -405,3 +448,100 @@ class ClassifierCollection(object):
         except KeyError:
             raise(KeyError("The classifier has no key '%s'. Available keys are: %s"
                            % (item, repr(self))))
+
+    # def save_to_json(self, filepath):
+    #     a = 1
+    #     pass
+
+
+def get_jsonable_value(in_value, return_typesdict=False):
+    if isinstance(in_value, np.ndarray):
+        outval = in_value.tolist()
+    elif isinstance(in_value, list):
+        outval = np.array(in_value).tolist()
+        # json.dumps(outval)
+    else:
+        outval = in_value
+
+    # FIXME: In case of quadratic regression, there are some attributes that are not directly JSONable in this manner.
+
+    # create a dictionary containing the data types needed for JSON decoding
+    typesdict = dict()
+    if return_typesdict and not isinstance(in_value, (str, int, float, bool)) and in_value is not None:
+        typesdict['type'] = type(in_value).__name__
+
+        if isinstance(in_value, np.ndarray):
+            typesdict['dtype'] = in_value.dtype.name
+
+        if isinstance(in_value, list):
+            typesdict['dtype'] = type(in_value[0]).__name__
+
+            if not len(set(type(vv).__name__ for vv in in_value)) == 1:
+                raise RuntimeError('Lists containing different data types of list elements cannot be made '
+                                   'jsonable without losses.')
+
+    if return_typesdict:
+        return outval, typesdict
+    else:
+        return outval
+
+
+def classifier_to_jsonable_dict(clf, skipkeys: list = None, include_typesdict=False):
+    if isinstance(clf, LinearRegression):
+        jsonable_dict = dict(clftype='LR')
+        typesdict = dict()
+
+        for k, v in clf.__dict__.items():
+            if skipkeys and k in skipkeys:
+                continue
+
+            if include_typesdict:
+                jsonable_dict[k], typesdict[k] = get_jsonable_value(v, return_typesdict=True)
+            else:
+                jsonable_dict[k] = get_jsonable_value(v)
+
+            # if valtype is np.ndarray:
+            #     jsonable_dict[k] = dict(val=v.tolist(),
+            #                        dtype=v.dtype.name)
+            # elif valtype is list:
+            #     jsonable_dict[k] = dict(val=np.array(v).tolist())
+            # else:
+            #     jsonable_dict[k] = dict(val=v)
+            #
+            # jsonable_dict[k]['valtype'] = valtype.__name__
+
+    else:  # Ridge, Pipeline, RandomForestRegressor:
+        # TODO
+        raise NotImplementedError('At the moment, only LR classifiers can be serialized to JSON format.')
+
+    if include_typesdict:
+        jsonable_dict['__decode_types'] = {k: v for k, v in typesdict.items() if v}
+
+    return jsonable_dict
+
+
+def classifier_from_json_str(json_str):
+    """Create a spectral harmonization classifier from a JSON string (JSON de-serialization).
+
+    :param json_str:    the JSON string to be used for de-serialization
+    :return:
+    """
+    in_dict = json.loads(json_str)
+
+    if in_dict['clftype']['val'] == 'LR':
+        clf = LinearRegression()
+    else:
+        raise NotImplementedError("Unknown object type '%s'." % in_dict['objecttype'])
+
+    for k, v in in_dict.items():
+        try:
+            val2set = getattr(builtins, v['valtype'])(v['val'])
+        except (AttributeError, KeyError):
+            if v['valtype'] == 'ndarray':
+                val2set = np.array(v['val']).astype(np.dtype(v['dtype']))
+            else:
+                raise TypeError("Unexpected object type '%s'." % v['valtype'])
+
+        setattr(clf, k, val2set)
+
+    return clf
