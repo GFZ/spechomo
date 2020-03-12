@@ -11,7 +11,7 @@ based on simulated multispectral remote sensing images created by spectral convo
 datasets. These hyperspectral datasets were chosen with the intention to include as many different land-cover types
 as possible in order to maximize spectral variability. This makes these classifiers suitable for many application
 fields. Details on the underlying datasets and the used algorithms to create the classifiers can be found
-in `Scheffler et al. 2019 <LINK>`__.
+in `Scheffler et al. 2020 <https://doi.org/10.1016/j.rse.2020.111723>`__.
 
 
 Which sensor transformations are available?

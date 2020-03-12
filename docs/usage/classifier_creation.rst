@@ -5,7 +5,7 @@ Although SpecHomo already includes a lot of classifiers for spectral harmonizati
 applications to train your own.
 
 The way to create some SpecHomo-compatible classifiers is described below. Details on the underlying algorithms can be
-found in `Scheffler et al. 2019 <LINK>`__.
+found in `Scheffler et al. 2020 <https://doi.org/10.1016/j.rse.2020.111723>`__.
 
 1. Build up a spectral database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

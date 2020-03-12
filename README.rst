@@ -4,10 +4,11 @@ SpecHomo - Spectral homogenization of multispectral satellite data
 
 * Free software: GNU General Public License v3
 * **Documentation:** http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/
-* The **paper** corresponding to this software repository has been accepted by
-  Remote Sensing of Environment but is not yet published:
+* The **paper** corresponding to this software repository can be found here:
+  `Scheffler et al. 2020 <https://doi.org/10.1016/j.rse.2020.111723>`__ (cite as:
   Scheffler D., Frantz D., Segl K. (2020). Spectral harmonization and red edge prediction of Landsat-8 to Sentinel-2
-  using land cover optimized multivariate regressors. Remote Sens. Environ. (accepted)
+  using land cover optimized multivariate regressors. Remote Sens. Environ. 241, 111723.
+  https://doi.org/10.1016/j.rse.2020.111723)
 * Information on how to **cite the SpecHomo Python package** can be found in the
   `CITATION <https://gitext.gfz-potsdam.de/geomultisens/spechomo/-/blob/master/CITATION>`__ file.
 * Submit feedback by filing an issue `here <https://gitext.gfz-potsdam.de/geomultisens/spechomo/issues>`__
@@ -36,6 +37,8 @@ Status
         :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/commits/master
 .. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/coverage.svg
         :target: http://geomultisens.gitext.gfz-potsdam.de/spechomo/coverage/
+.. image:: https://img.shields.io/static/v1?label=Documentation&message=GitLab%20Pages&color=orange
+        :target: http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/
 .. .. image:: https://img.shields.io/pypi/v/spechomo.svg
         :target: https://pypi.python.org/pypi/spechomo
 .. .. image:: https://img.shields.io/pypi/l/spechomo.svg

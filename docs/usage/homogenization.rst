@@ -72,9 +72,9 @@ follows:
     * You may also save the homogenization results to other GDAL compatible image formats
       (see :meth:`geoarray.GeoArray.save` for details).
     * Further explanation on input parameters like `method`, `n_clusters`, `classif_alg` or `global_clf_threshold` is
-      given `here <spechomo.prediction.SpectralHomogenizer.predict_by_machine_learner>`__. See
-      `Scheffler et al. 2019 <LINK>`__ for a thorough evaluation of the different homogenization algorithms
-      available in the SpecHomo library.
+      given in the :meth:`predict_by_machine_learner<spechomo.prediction.SpectralHomogenizer.predict_by_machine_learner>`
+      method documentation. See `Scheffler et al. 2020 <https://doi.org/10.1016/j.rse.2020.111723>`__ for a thorough
+      evaluation of the different homogenization algorithms available in the SpecHomo library.
 
 
 .. _`surface reflectance`: http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/usage/input_data_requirements.html#surface-reflectance

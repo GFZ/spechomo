@@ -31,7 +31,7 @@ Surface reflectance
 For homogenization using the classifiers included in the SpecHomo repository, the input images must contain surface
 reflectance data. This is because these classifiers have been trained with surface reflectance data to avoid gray value
 differences due to different acquisition/illumination conditions or atmospheric states. See
-`Scheffler et al. 2019 <LINK>`__ for more information.
+`Scheffler et al. 2020 <https://doi.org/10.1016/j.rse.2020.111723>`__ for more information.
 
 
 Required image metadata
