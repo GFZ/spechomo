@@ -24,12 +24,12 @@
         },
         {
             "scheme": "url",
-            "identifier": "http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/",
+            "identifier": "http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc",
             "relation": "isDocumentedBy"
         },
         {
             "scheme": "url",
-            "identifier": "https://doi.org/10.1016/j.rse.2020.111723",
+            "identifier": "https://www.sciencedirect.com/science/article/pii/S0034425720300924?via%3Dihub",
             "relation": "isCitedBy"
         }
     ]
