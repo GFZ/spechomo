@@ -7,6 +7,8 @@ History
 
 * Added functionality to export existing .dill classifiers to JSON format to make them also usable in different
   programming environments.
+* The documentation now contains links to the published version of the research paper corresponding to SpecHomo.
+* Changed Zenodo title and description.
 
 
 0.5.0 (2020-02-20)

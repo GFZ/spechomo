@@ -56,7 +56,7 @@ See also the latest coverage_ report and the nosetests_ HTML report.
 Feature overview
 ----------------
 
-SpecHomo is a **python package for spectral homogenization of multispectral satellite data**, i.e., for the transformation
+SpecHomo is a **Python package for spectral homogenization of multispectral satellite data**, i.e., for the transformation
 of the spectral information of one sensor into the spectral domain of another one. This simplifies workflows, increases
 the reliability of subsequently derived multi-sensor products and may also enable the generation of new products that
 are not possible with the initial spectral definition.
