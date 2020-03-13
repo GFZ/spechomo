@@ -13,8 +13,7 @@
         {
             "name": "Scheffler, Daniel",
             "affiliation": "Helmholtz Centre Potsdam German Research Centre for Geosciences GFZ, Section 1.4 - Remote Sensing and Geoinformatics",
-            "orcid": "0000-0003-4106-8928",
-            "type": "Researcher"
+            "orcid": "0000-0003-4106-8928"
         }
     ],
     "related_identifiers": [
@@ -24,9 +23,14 @@
             "relation": "isSupplementTo"
         },
         {
-            "scheme": "doi",
-            "identifier": "10.5281/zenodo.3678713",
-            "relation": "isVersionOf"
+            "scheme": "url",
+            "identifier": "http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/",
+            "relation": "isDocumentedBy"
+        },
+        {
+            "scheme": "url",
+            "identifier": "https://doi.org/10.1016/j.rse.2020.111723",
+            "relation": "isCitedBy"
         }
     ]
 }
