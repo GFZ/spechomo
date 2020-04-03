@@ -142,7 +142,11 @@ class Cluster_Learner(object):
         with zipfile.ZipFile(path_classifier_zip, "r") as zf, tempfile.TemporaryDirectory() as td:
             fName_clf = get_filename_classifier_collection(method, src_satellite, src_sensor, n_clusters=n_clusters,
                                                            **kw_clfinit)
-            zf.extract(fName_clf, td)
+            try:
+                zf.extract(fName_clf, td)
+            except KeyError:
+                raise FileNotFoundError("No classifiers for %s %s with %d clusters contained in %s."
+                                        % (src_satellite, src_sensor, n_clusters, path_classifier_zip))
 
             return Cluster_Learner._read_ClassifierCollection_from_unzippedFile(
                 td, method, src_satellite, src_sensor, src_LBA,

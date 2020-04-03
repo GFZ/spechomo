@@ -2,13 +2,15 @@
 History
 =======
 
-0.6.0 (coming soon)
--------------------
+0.6.0 (2020-04-04)
+------------------
 
 * Added functionality to export existing .dill classifiers to JSON format to make them also usable in different
   programming environments.
 * The documentation now contains links to the published version of the research paper corresponding to SpecHomo.
 * Changed Zenodo title and description.
+* Fixed fallback algorithm in SpectralHomogenizer.predict_by_machine_learner() and added corresponding tests.
+* SpectralHomogenizer.interpolate_cube() now returns a GeoArray instead of a numpy array.
 
 
 0.5.0 (2020-02-20)

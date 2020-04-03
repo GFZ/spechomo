@@ -69,13 +69,13 @@ class Test_SpectralHomogenizer(unittest.TestCase):
 
     def test_interpolate_cube_linear(self):
         outarr = self.SpH.interpolate_cube(self.testArr_L8, self.cwl_L8, [500., 700., 1300.], kind='linear')
-        self.assertIsInstance(outarr, np.ndarray)
+        self.assertIsInstance(outarr, GeoArray)
         self.assertEqual(outarr.shape, (50, 50, 3))
         self.assertEqual(outarr.dtype, np.int16)
 
     def test_interpolate_cube_quadratic(self):
         outarr = self.SpH.interpolate_cube(self.testArr_L8, self.cwl_L8, [500., 700., 1300.], kind='quadratic')
-        self.assertIsInstance(outarr, np.ndarray)
+        self.assertIsInstance(outarr, GeoArray)
         self.assertEqual(outarr.shape, (50, 50, 3))
         self.assertEqual(outarr.dtype, np.int16)
 
@@ -221,6 +221,53 @@ class Test_SpectralHomogenizer(unittest.TestCase):
         self.assertIsInstance(errors, np.ndarray)
         self.assertEqual(errors.shape, (50, 50, 11))
         self.assertEqual(errors.dtype, np.int16)
+
+    def test_predict_by_machine_learner__classifierFileNotFound(self):
+        """Test if an error is raised when the classifier file is not found."""
+        self.SpH.logger.setLevel('CRITICAL')
+
+        try:
+            # no fallback_argsKwargs provided -> should raise an error
+            with self.assertRaises(BaseException):
+                self.SpH.predict_by_machine_learner(
+                    self.testArr_L8,
+                    method='LR',
+                    src_satellite='unknown_sat', src_sensor='unknown_sensor', src_LBA=['1'],
+                    tgt_satellite='unknown_sat', tgt_sensor='unknown_sensor', tgt_LBA=['1'],
+                )
+        finally:
+            self.SpH.logger.setLevel('INFO')
+
+    def test_predict_by_machine_learner__fallbackAlgorithm(self):
+        """Test fallback algorithm in case prediction fails."""
+        self.SpH.logger.setLevel('CRITICAL')
+
+        try:
+            for bandwise_errors in [True, False]:
+                predarr, errors = self.SpH.predict_by_machine_learner(
+                    self.testArr_L8,
+                    method='LR',
+                    src_satellite='Landsat-8', src_sensor='OLI_TIRS',
+                    src_LBA=['1', '2', '3', '4', '5', '6', 'NA'],  # not existing LBA
+                    tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
+                    tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
+                    compute_errors=True,
+                    bandwise_errors=bandwise_errors,
+                    fallback_argskwargs=dict(arrcube=self.testArr_L8,
+                                             source_CWLs=[1, 2, 3, 4, 5, 6, 7],
+                                             target_CWLs=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                                             kind='linear')
+                )
+                self.assertIsInstance(predarr, GeoArray)
+                self.assertEqual(predarr.shape, (50, 50, 11))
+                self.assertTrue(predarr.dtype in [np.int16, np.int32])
+
+                self.assertIsInstance(errors, np.ndarray)
+                self.assertEqual(errors.shape, (50, 50, 11) if bandwise_errors else (50, 50))
+                self.assertEqual(errors.dtype, np.int16)
+
+        finally:
+            self.SpH.logger.setLevel('INFO')
 
 
 class Test_RSImage_ClusterPredictor(unittest.TestCase):

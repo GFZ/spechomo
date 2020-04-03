@@ -63,7 +63,7 @@ class SpectralHomogenizer(object):
         self.CPUs = CPUs or cpu_count()
 
     def interpolate_cube(self, arrcube, source_CWLs, target_CWLs, kind='linear'):
-        # type: (Union[np.ndarray, GeoArray], list, list, str) -> np.ndarray
+        # type: (Union[np.ndarray, GeoArray], list, list, str) -> GeoArray
         """Spectrally interpolate the spectral bands of a remote sensing image to new band positions.
 
         :param arrcube:     array to be spectrally interpolated
@@ -94,13 +94,13 @@ class SpectralHomogenizer(object):
 
         assert outarr.shape == tuple([*arrcube.shape[:2], len(target_CWLs)])
 
-        return outarr
+        return GeoArray(outarr)
 
     def predict_by_machine_learner(self, arrcube, method, src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor,
                                    tgt_LBA, n_clusters=50, classif_alg='MinDist', kNN_n_neighbors=10,
                                    global_clf_threshold=options['classifiers']['prediction']['global_clf_threshold'],
                                    src_nodataVal=None, out_nodataVal=None, compute_errors=False, bandwise_errors=True,
-                                   **fallback_argskwargs):
+                                   fallback_argskwargs=None):
         # type: (Union[np.ndarray, GeoArray], str, str, str, list, str, str, list, int, str, int, Union[str, int, float], int, int, bool, bool, dict) -> tuple  # noqa
         """Predict spectral bands of target sensor by applying a machine learning approach.
 
@@ -151,7 +151,8 @@ class SpectralHomogenizer(object):
                                     (default: false)
         :param bandwise_errors      whether to compute error information for each band separately (True - default)
                                     or to average errors over bands using median (False) (ignored in case of fallback)
-        :param fallback_argskwargs: arguments and keyword arguments for fallback algorithm ({'args':{}, 'kwargs': {}}
+        :param fallback_argskwargs: arguments and keyword arguments to be passed to the fallback algorithm
+                                    SpectralHomogenizer.interpolate_cube() in case harmonization fails
         :return:                    predicted array (rows x columns x bands)
         :rtype:                     Tuple[np.ndarray, Union[np.ndarray, None]]
         """
@@ -184,8 +185,8 @@ class SpectralHomogenizer(object):
             exc = e
 
         except ClassifierNotAvailableError as e:
-            self.logger.error('\nAn error occurred during spectral homogenization using machine learning. '
-                              'Falling back to linear interpolation. Error message was: ')
+            self.logger.error('\nAn error occurred during spectral homogenization using the %s classifier. '
+                              'Falling back to linear interpolation. Error message was: ' % method)
             self.logger.error(traceback.format_exc())
             exc = e
 
@@ -202,7 +203,7 @@ class SpectralHomogenizer(object):
                                      in_nodataVal=src_nodataVal,
                                      cmap_nodataVal=src_nodataVal,
                                      out_nodataVal=out_nodataVal,
-                                     global_clf_threshold=global_clf_threshold)
+                                     global_clf_threshold=global_clf_threshold)  # type: GeoArray
 
             if compute_errors:
                 errors = RSI_CP.compute_prediction_errors(im_homo, cls,
@@ -214,14 +215,12 @@ class SpectralHomogenizer(object):
 
         elif fallback_argskwargs:
             # fallback: use linear interpolation and set errors to an array of zeros
-            im_homo = self.interpolate_cube(arrcube,
-                                            *fallback_argskwargs['args'],
-                                            **fallback_argskwargs['kwargs'])
+            im_homo = self.interpolate_cube(**fallback_argskwargs)  # type: GeoArray
 
             if compute_errors:
                 self.logger.warning("Spectral homogenization algorithm had to be performed by linear interpolation "
                                     "(fallback). Unable to compute any accuracy information from that.")
-                if not bandwise_errors:
+                if bandwise_errors:
                     errors = np.zeros_like(im_homo, dtype=np.int16)
                 else:
                     errors = np.zeros(im_homo.shape[:2], dtype=np.int16)
@@ -230,7 +229,7 @@ class SpectralHomogenizer(object):
             raise exc
 
         # add metadata
-        im_homo.metadata.band_meta['wavelength'] = cls.tgt_wavelengths
+        im_homo.metadata.band_meta['wavelength'] = cls.tgt_wavelengths if cls else fallback_argskwargs['target_CWLs']
         im_homo.classif_map = RSI_CP.classif_map
         im_homo.distance_metrics = RSI_CP.distance_metrics
 
