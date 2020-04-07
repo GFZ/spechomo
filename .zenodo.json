@@ -16,21 +16,34 @@
             "orcid": "0000-0003-4106-8928"
         }
     ],
+    "references": [
+        "Scheffler D., Frantz D., Segl K. (2020). Spectral harmonization and red edge prediction of Landsat-8 to Sentinel-2 using land cover optimized multivariate regressors. Remote Sens. Environ. 241, 111723. doi:https://doi.org/10.1016/j.rse.2020.111723"
+    ],
     "related_identifiers": [
         {
             "scheme": "url",
             "identifier": "https://gitext.gfz-potsdam.de/geomultisens/spechomo",
-            "relation": "isSupplementTo"
+            "relation": "isSupplementTo",
+            "resource_type": "software"
         },
         {
             "scheme": "url",
             "identifier": "http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc",
-            "relation": "isDocumentedBy"
+            "relation": "isDocumentedBy",
+            "resource_type": "publication-softwaredocumentation"
         },
         {
             "scheme": "url",
             "identifier": "https://www.sciencedirect.com/science/article/pii/S0034425720300924?via%3Dihub",
-            "relation": "isCitedBy"
+            "relation": "isCitedBy",
+            "resource_type": "publication-article"
+        }
+    ],
+        "grants": [
+        {
+            "code": "01 IS 14 010 A-C",
+            "funder": "German Federal Ministry of Education and Research",
+            "title": "GeoMultiSens"
         }
     ]
 }
