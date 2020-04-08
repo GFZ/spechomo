@@ -12,7 +12,7 @@ Using conda_, the recommended approach is:
 
    .. code-block:: bash
 
-    $ conda create --name spechomo python=3
+    $ conda create -c conda-forge --name spechomo python=3
     $ source activate spechomo
 
 
@@ -27,9 +27,7 @@ Using conda_, the recommended approach is:
 
    .. code-block:: bash
 
-    $ git clone https://gitext.gfz-potsdam.de/geomultisens/spechomo.git
-    $ cd spechomo
-    $ pip install .
+    $ pip install git+https://gitext.gfz-potsdam.de/geomultisens/spechomo.git
 
 
 This is the preferred method to install spechomo, as it will always install the most recent stable release.

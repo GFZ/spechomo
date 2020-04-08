@@ -11,11 +11,10 @@ test_spechomo:
   stage: test
   script:
     - source /root/miniconda3/bin/activate ci_env
-    - export GDAL_DATA=/root/miniconda3/envs/ci_env/share/gdal
-    - export PYTHONPATH=$PYTHONPATH:/root  # /root <- directory needed later
 
     # run nosetests
     - make nosetests  # test are called here
+
     # create the docs
     - pip install sphinx_rtd_theme  # Read-the-docs theme for SPHINX documentation
     - pip install sphinx-autodoc-typehints
@@ -52,15 +51,12 @@ test_spechomo_install:
     - source /root/miniconda3/bin/activate
     - conda update conda
 #    - conda install conda-build
-    - conda create -y -q --name spechomo_test python=3
+    - conda create -y -q -conda-forge --name spechomo_test python=3
     - source activate spechomo_test
 
     # update conda and python
 #    - conda update -n base -c defaults conda
 #    - conda update -c conda-forge python
-
-    # avoid package incompatibilities
-    - conda config --set channel_priority strict  # otherwise gdal or libgdal may be installed from defaults channel
 
     # install some dependencies that cause trouble when installed via pip
     - conda install -y -c conda-forge matplotlib numpy pandas "scikit-learn=0.19.1"
@@ -90,12 +86,16 @@ pages:
     - mkdir -p public/doc
     - mkdir -p public/coverage
     - mkdir -p public/nosetests_reports
+
     # Copy over the docs
     - cp -r docs/_build/html/* public/doc/
+
     # Copy over the coverage reports
     - cp -r htmlcov/* public/coverage/
+
     # Copy over the nosetests reports
     - cp nosetests.* public/nosetests_reports/
+
     # Check if everything is working great
     - ls -al public
     - ls -al public/doc
