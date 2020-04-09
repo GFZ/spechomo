@@ -2,14 +2,20 @@
 History
 =======
 
+0.6.4 (2020-04-09)
+------------------
+
+* Fixed test_spechomo_install CI job.
+
+
 0.6.3 (2020-04-09)
--------------------
+------------------
 
 * Fixed create_github_release CI job.
 
 
 0.6.2 (2020-04-09)
--------------------
+------------------
 
 * Releases in the GitHub-Mirror-Repository are now created automatically
   (added create_release_from_gitlab_ci.sh and create_github_release CI job).
