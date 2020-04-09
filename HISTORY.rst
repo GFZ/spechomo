@@ -2,6 +2,14 @@
 History
 =======
 
+0.6.2 (2020-04-09)
+-------------------
+
+* Releases in the GitHub-Mirror-Repository are now created automatically
+  (added create_release_from_gitlab_ci.sh and create_github_release CI job).
+* Added GitHub issue template.
+
+
 0.6.1 (2020-04-07)
 ------------------
 
