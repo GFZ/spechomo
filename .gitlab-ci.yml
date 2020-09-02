@@ -32,7 +32,7 @@ test_spechomo:
 test_styles:
   stage: test
   script:
-    - source /root/miniconda3/bin/activate ci_envr
+    - source /root/miniconda3/bin/activate ci_env
     - make lint
   artifacts:
     paths:
