@@ -73,6 +73,9 @@ class ReferenceCube_Generator(object):
         :param CPUs:            number CPUs to use for computation
         :param dir_clf_dump:    directory where to store the serialized KMeans classifier
         """
+        if not filelist_refs:
+            raise ValueError('The given list of reference images is empty.')
+
         # args + kwargs
         self.ims_ref = [filelist_refs, ] if isinstance(filelist_refs, str) else filelist_refs
         self.tgt_sat_sen_list = tgt_sat_sen_list or [
@@ -415,9 +418,12 @@ class ClusterClassifier_Generator(object):
         # type: (List[Union[str, RefCube]], logging.Logger) -> None
         """Get an instance of Classifier_Generator.
 
-        :param list_refcubes:   list of RefCube instances for which the classifiers are to be created.
+        :param list_refcubes:   list of RefCube instances or paths for which the classifiers are to be created.
         :param logger:          instance of logging.Logger()
         """
+        if not list_refcubes:
+            raise ValueError('The given list of RefCube instances or paths is empty.')
+
         self.refcubes = [RefCube(inRC) if isinstance(inRC, str) else inRC for inRC in list_refcubes]
         self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
 
@@ -526,7 +532,7 @@ class ClusterClassifier_Generator(object):
 
         return ML
 
-    def create_classifiers(self, outDir, method='LR', n_clusters=50, sam_classassignment=False, CPUs=24,
+    def create_classifiers(self, outDir, method='LR', n_clusters=50, sam_classassignment=False, CPUs=None,
                            max_distance=options['classifiers']['trainspec_filtering']['max_distance'],
                            max_angle=options['classifiers']['trainspec_filtering']['max_angle'],
                            **kwargs):
@@ -550,6 +556,9 @@ class ClusterClassifier_Generator(object):
         :param kwargs:      keyword arguments to be passed to machine learner
         """
         # validate and set defaults
+        if not os.path.isdir(outDir):
+            os.makedirs(outDir)
+
         if method == 'RFR':
             if n_clusters > 1:
                 self.logger.warning("The spectral homogenization method 'Random Forest Regression' does not allow "
@@ -571,7 +580,8 @@ class ClusterClassifier_Generator(object):
             clusterlabels_src_cube, spectral_distances, spectral_angles = \
                 self._get_cluster_labels_for_source_refcube(src_cube, n_clusters, CPUs,
                                                             sam_classassignment=sam_classassignment,
-                                                            return_spectral_distances=True, return_spectral_angles=True)
+                                                            return_spectral_distances=True,
+                                                            return_spectral_angles=True)
 
             for tgt_cube in self.refcubes:
                 if (src_cube.satellite, src_cube.sensor) == (tgt_cube.satellite, tgt_cube.sensor):

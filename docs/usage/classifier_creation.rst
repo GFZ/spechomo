@@ -45,7 +45,7 @@ images:
                                   tgt_sat_sen_list=[
                                       ('Sentinel-2A', 'MSI'),
                                       ('Landsat-8', 'OLI_TIRS')
-                                  ]
+                                  ],
                                   tgt_n_samples=10000)
 
     # run reference cube generation

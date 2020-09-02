@@ -32,9 +32,7 @@ test_spechomo:
 test_styles:
   stage: test
   script:
-    - source /root/miniconda3/bin/activate ci_env
-    - export GDAL_DATA=/root/miniconda3/envs/ci_env/share/gdal
-    - export PYTHONPATH=$PYTHONPATH:/root  # /root <- directory needed later
+    - source /root/miniconda3/bin/activate ci_envr
     - make lint
   artifacts:
     paths:
@@ -55,14 +53,14 @@ test_spechomo_install:
     - source activate spechomo_test
 
     # update conda and python
-#    - conda update -n base -c defaults conda
+#    - conda update -n base -c conda-forge conda
 #    - conda update -c conda-forge python
 
     # install some dependencies that cause trouble when installed via pip
     - conda install -y -c conda-forge matplotlib numpy pandas "scikit-learn=0.19.1"
 
     # install not pip-installable deps of geoarray/py_tools_ds
-    - conda install -y -c conda-forge basemap gdal "geopandas<0.6.3" pyproj scikit-image shapely
+    - conda install -y -c conda-forge basemap gdal geopandas pyproj scikit-image shapely
 
     # install spechomo
     - python setup.py install

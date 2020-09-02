@@ -1,10 +1,11 @@
 name: spechomo
 
 channels: &id1
-  - http://conda.anaconda.org/conda-forge
+  - conda-forge
 
 dependencies:
   - python=3.*.*
+  - pip
   - matplotlib
   - numpy
   - pandas
@@ -14,10 +15,8 @@ dependencies:
   - basemap
   - bokeh
   - gdal
-    # - geos>3.7.0   # pinning should not be needed anymore - https://github.com/conda-forge/basemap-feedstock/issues/43
-  - geopandas<0.6.3  # 0.6.3 and above requires pyproj>2.2.0 which is currently not compatible to the remaining dependencies
+  - geopandas
   - holoviews
-  - conda-forge::libgdal  # force to use conda-forge for libgdal to avoid package version incompatiblies due to mixed channels
   - pyproj
   - scikit-image
   - shapely
