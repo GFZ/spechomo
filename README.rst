@@ -3,7 +3,7 @@ SpecHomo - Spectral homogenization of multispectral satellite data
 ==================================================================
 
 * Free software: GNU General Public License v3
-* **Documentation:** http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/
+* **Documentation:** https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/
 * The **paper** corresponding to this software repository can be found here:
   `Scheffler et al. 2020 <https://doi.org/10.1016/j.rse.2020.111723>`__ (cite as:
   Scheffler D., Frantz D., Segl K. (2020). Spectral harmonization and red edge prediction of Landsat-8 to Sentinel-2
@@ -36,9 +36,9 @@ Status
 .. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/pipeline.svg
         :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/commits/master
 .. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/coverage.svg
-        :target: http://geomultisens.gitext.gfz-potsdam.de/spechomo/coverage/
+        :target: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/coverage/
 .. image:: https://img.shields.io/static/v1?label=Documentation&message=GitLab%20Pages&color=orange
-        :target: http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/
+        :target: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/
 .. .. image:: https://img.shields.io/pypi/v/spechomo.svg
         :target: https://pypi.python.org/pypi/spechomo
 .. .. image:: https://img.shields.io/pypi/l/spechomo.svg
@@ -94,7 +94,7 @@ may also train your own homogenization classifiers specifically optimized to you
 the needed functionality for that.
 
 For further details on how to use SpecHomo check out the
-`documentation <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/>`__!
+`documentation <https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/>`__!
 
 Credits
 -------
@@ -106,5 +106,5 @@ This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypack
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-.. _coverage: http://geomultisens.gitext.gfz-potsdam.de/spechomo/coverage/
-.. _nosetests: http://geomultisens.gitext.gfz-potsdam.de/spechomo/nosetests_reports/nosetests.html
+.. _coverage: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/coverage/
+.. _nosetests: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/nosetests_reports/nosetests.html

@@ -28,7 +28,7 @@
         },
         {
             "scheme": "url",
-            "identifier": "http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc",
+            "identifier": "https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc",
             "relation": "isDocumentedBy",
             "resource_type": "publication-softwaredocumentation"
         },

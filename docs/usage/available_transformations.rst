@@ -5,7 +5,7 @@ The classifiers included in the SpecHomo package
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The SpecHomo package provides a set of classifiers that can be used for spectral homogenization of various sensor
-combinations (see `here <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/usage/
+combinations (see `here <https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/usage/
 available_transformations.html#which-sensor-transformations-are-available>`__). These classifiers have been trained
 based on simulated multispectral remote sensing images created by spectral convolution from hyperspectral airborne
 datasets. These hyperspectral datasets were chosen with the intention to include as many different land-cover types
