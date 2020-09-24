@@ -666,7 +666,8 @@ class ClusterClassifier_Generator(object):
                                                            n_clusters=n_clusters, **kwargs)
 
             with open(os.path.join(outDir, fName_cls), 'wb') as outF:
-                dill.dump(cls_collection.to_dict(), outF, protocol=dill.HIGHEST_PROTOCOL)
+                dill.dump(cls_collection.to_dict(), outF,
+                          protocol=dill.HIGHEST_PROTOCOL - 1)  # ensures some downwards compatibility
 
     def _get_cluster_labels_for_source_refcube(self, src_cube, n_clusters, CPUs, sam_classassignment=False,
                                                return_spectral_distances=False, return_spectral_angles=False):

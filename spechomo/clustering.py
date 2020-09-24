@@ -26,6 +26,7 @@
 
 from multiprocessing import cpu_count
 from typing import Union, TYPE_CHECKING  # noqa F401  # flake8 issue
+import os
 
 if TYPE_CHECKING:
     from sklearn.cluster import KMeans
@@ -143,75 +144,89 @@ class KMeansRSImage(object):
         :return:
         """
         from sklearn.cluster import KMeans  # avoids static TLS ImportError here
+        from sklearn import __version__ as skver
 
-        # data reduction in case we have too many spectra
-        if self.spectra.shape[0] > nmax_spectra:
-            if self.v:
-                print('Reducing data...')
-            idxs_specIncl = np.random.RandomState(seed=0).choice(range(self.n_spectra), nmax_spectra)
-            idxs_specNotIncl = np.array(range(self.n_spectra))[~np.in1d(range(self.n_spectra), idxs_specIncl)]
-            spectra_incl = self.spectra[idxs_specIncl, :]
-            spectra_notIncl = self.spectra[idxs_specNotIncl, :]
+        _old_environ = dict(os.environ)
 
-            if self.v:
-                print('Fitting KMeans...')
-            kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
-            distmatrix_incl = kmeans.fit_transform(spectra_incl)
+        try:
+            kwargs_kmeans = dict(n_clusters=self.n_clusters, random_state=0, verbose=self.v)
+            # scikit-learn>0.23 uses all cores by default; number is adjustable via OMP_NUM_THREADS
+            if float('%s.%s' % tuple(skver.split('.')[:2])) < 0.23:
+                kwargs_kmeans['n_jobs'] = self.CPUs
+            else:
+                os.environ['OMP_NUM_THREADS '] = str(self.CPUs)
 
-            if self.v:
-                print('Computing full resolution labels...')
-            labels = np.zeros((self.n_spectra,), dtype=kmeans.labels_.dtype)
-            distances = np.zeros((self.n_spectra,), dtype=distmatrix_incl.dtype)
+            # data reduction in case we have too many spectra
+            if self.spectra.shape[0] > nmax_spectra:
+                if self.v:
+                    print('Reducing data...')
+                idxs_specIncl = np.random.RandomState(seed=0).choice(range(self.n_spectra), nmax_spectra)
+                idxs_specNotIncl = np.array(range(self.n_spectra))[~np.in1d(range(self.n_spectra), idxs_specIncl)]
+                spectra_incl = self.spectra[idxs_specIncl, :]
+                spectra_notIncl = self.spectra[idxs_specNotIncl, :]
 
-            labels[idxs_specIncl] = kmeans.labels_
-            distances[idxs_specIncl] = np.min(distmatrix_incl, axis=1)
+                if self.v:
+                    print('Fitting KMeans...')
+                kmeans = KMeans(**kwargs_kmeans)
+                distmatrix_incl = kmeans.fit_transform(spectra_incl)
 
-            if self.sam_classassignment:
-                # override cluster labels with labels computed via SAM (distances have be recomputed then)
-                print('Using SAM class assignment.')
-                SC = SAM_Classifier(kmeans.cluster_centers_, CPUs=self.CPUs)
-                im_sam_labels = SC.classify(self.im)
-                sam_labels = im_sam_labels.flatten()[self.goodSpecMask]
-                self._spectral_angles = SC.angles_deg.flatten()[self.goodSpecMask]
+                if self.v:
+                    print('Computing full resolution labels...')
+                labels = np.zeros((self.n_spectra,), dtype=kmeans.labels_.dtype)
+                distances = np.zeros((self.n_spectra,), dtype=distmatrix_incl.dtype)
 
-                # update distances at those positions where SAM assigns different class labels
-                distsPos2update = labels != sam_labels
-                distsPos2update[idxs_specNotIncl] = True
-                distances[distsPos2update] = \
-                    self.compute_euclidian_distance_for_labelled_spectra(
-                        self.spectra[distsPos2update, :], sam_labels[distsPos2update], kmeans.cluster_centers_)
+                labels[idxs_specIncl] = kmeans.labels_
+                distances[idxs_specIncl] = np.min(distmatrix_incl, axis=1)
 
-                kmeans.labels_ = sam_labels
+                if self.sam_classassignment:
+                    # override cluster labels with labels computed via SAM (distances have be recomputed then)
+                    print('Using SAM class assignment.')
+                    SC = SAM_Classifier(kmeans.cluster_centers_, CPUs=self.CPUs)
+                    im_sam_labels = SC.classify(self.im)
+                    sam_labels = im_sam_labels.flatten()[self.goodSpecMask]
+                    self._spectral_angles = SC.angles_deg.flatten()[self.goodSpecMask]
+
+                    # update distances at those positions where SAM assigns different class labels
+                    distsPos2update = labels != sam_labels
+                    distsPos2update[idxs_specNotIncl] = True
+                    distances[distsPos2update] = \
+                        self.compute_euclidian_distance_for_labelled_spectra(
+                            self.spectra[distsPos2update, :], sam_labels[distsPos2update], kmeans.cluster_centers_)
+
+                    kmeans.labels_ = sam_labels
+
+                else:
+                    distmatrix_specNotIncl = kmeans.transform(spectra_notIncl)
+                    labels[idxs_specNotIncl] = np.argmin(distmatrix_specNotIncl, axis=1)
+                    distances[idxs_specNotIncl] = np.min(distmatrix_specNotIncl, axis=1)
+
+                    kmeans.labels_ = labels
 
             else:
-                distmatrix_specNotIncl = kmeans.transform(spectra_notIncl)
-                labels[idxs_specNotIncl] = np.argmin(distmatrix_specNotIncl, axis=1)
-                distances[idxs_specNotIncl] = np.min(distmatrix_specNotIncl, axis=1)
+                if self.v:
+                    print('Fitting KMeans...')
+                kmeans = KMeans(**kwargs_kmeans)
 
-                kmeans.labels_ = labels
+                distmatrix = kmeans.fit_transform(self.spectra)
+                kmeans_labels = kmeans.labels_
+                distances = np.min(distmatrix, axis=1)
 
-        else:
-            if self.v:
-                print('Fitting KMeans...')
-            kmeans = KMeans(n_clusters=self.n_clusters, random_state=0, n_jobs=self.CPUs, verbose=self.v)
+                if self.sam_classassignment:
+                    # override cluster labels with labels computed via SAM (distances have be recomputed then)
+                    print('Using SAM class assignment.')
+                    SC = SAM_Classifier(kmeans.cluster_centers_, CPUs=self.CPUs)
+                    im_sam_labels = SC.classify(self.im)
+                    sam_labels = im_sam_labels.flatten()[self.goodSpecMask]
+                    self._spectral_angles = SC.angles_deg.flatten()[self.goodSpecMask]
 
-            distmatrix = kmeans.fit_transform(self.spectra)
-            kmeans_labels = kmeans.labels_
-            distances = np.min(distmatrix, axis=1)
-
-            if self.sam_classassignment:
-                # override cluster labels with labels computed via SAM (distances have be recomputed then)
-                print('Using SAM class assignment.')
-                SC = SAM_Classifier(kmeans.cluster_centers_, CPUs=self.CPUs)
-                im_sam_labels = SC.classify(self.im)
-                sam_labels = im_sam_labels.flatten()[self.goodSpecMask]
-                self._spectral_angles = SC.angles_deg.flatten()[self.goodSpecMask]
-
-                # update distances at those positions where SAM assigns different class labels
-                distsPos2update = kmeans_labels != sam_labels
-                distances[distsPos2update] = \
-                    self.compute_euclidian_distance_for_labelled_spectra(
-                        self.spectra[distsPos2update, :], sam_labels[distsPos2update], kmeans.cluster_centers_)
+                    # update distances at those positions where SAM assigns different class labels
+                    distsPos2update = kmeans_labels != sam_labels
+                    distances[distsPos2update] = \
+                        self.compute_euclidian_distance_for_labelled_spectra(
+                            self.spectra[distsPos2update, :], sam_labels[distsPos2update], kmeans.cluster_centers_)
+        finally:
+            os.environ.clear()
+            os.environ.update(_old_environ)
 
         self.clusters = kmeans
         self._spectral_distances = distances

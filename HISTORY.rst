@@ -2,6 +2,13 @@
 History
 =======
 
+0.6.7 (2020-09-24)
+------------------
+
+* Fixed a DeprecationWarning in case of scikit-learn>=0.23.
+* Dumped regressors now use the second highest dill protocol in order to have some downwards compatibility.
+
+
 0.6.6 (2020-09-24)
 ------------------
 
