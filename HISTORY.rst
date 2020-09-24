@@ -2,6 +2,12 @@
 History
 =======
 
+0.6.6 (2020-09-24)
+------------------
+
+* Moved imports of scikit-learn to function/class level to avoid static TLS ImportError. Updated version info.
+
+
 0.6.5 (2020-09-15)
 ------------------
 
