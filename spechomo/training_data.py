@@ -36,7 +36,6 @@ from geoarray import GeoArray
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 from pandas.plotting import scatter_matrix
-from sklearn.model_selection import train_test_split
 from pyrsr import RSR
 
 from .utils import im2spectra
@@ -53,6 +52,8 @@ class TrainingData(object):
         :param im_Y:        input image Y
         :param test_size:   test size (proportion as float between 0 and 1) or absolute value as integer
         """
+        from sklearn.model_selection import train_test_split  # avoids static TLS error here
+
         self.im_X = GeoArray(im_X)
         self.im_Y = GeoArray(im_Y)
 
@@ -148,7 +149,7 @@ class TrainingData(object):
         z = gaussian_kde(xy)(xy)
 
         plt.figure(figsize=(15, 15))
-        plt.scatter(x, y, c=z, s=30, edgecolor='')
+        plt.scatter(x, y, c=z, s=30, edgecolor='none')
         plt.show()
 
 

@@ -35,7 +35,6 @@ Tests for spechomo.clustering.KMeansRSImage
 import unittest
 import os
 import numpy as np
-from sklearn.cluster import KMeans
 
 from geoarray import GeoArray  # noqa E402 module level import not at top of file
 
@@ -60,6 +59,7 @@ class Test_KMeansRSImage(unittest.TestCase):
         os.environ['MPLBACKEND'] = 'Template'  # disables matplotlib figure popups # NOTE: import geoarray sets 'Agg'
 
     def test_compute_clusters(self):
+        from sklearn.cluster import KMeans  # avoids static TLS error here
         self.kmeans.compute_clusters(nmax_spectra=1e5)
         self.assertIsInstance(self.kmeans.clusters, KMeans)
 

@@ -28,7 +28,7 @@ import os
 import re
 from glob import glob
 from multiprocessing import cpu_count
-from typing import List, Tuple, Union, Dict  # noqa F401  # flake8 issue
+from typing import List, Tuple, Union, Dict, TYPE_CHECKING  # noqa F401  # flake8 issue
 import logging  # noqa F401  # flake8 issue
 from itertools import product
 
@@ -36,15 +36,16 @@ import dill
 import numpy as np
 from nested_dict import nested_dict
 from pandas import DataFrame
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline, make_pipeline
-from sklearn.preprocessing import PolynomialFeatures
 from tqdm import tqdm
 from geoarray import GeoArray
 from pyrsr import RSR
 from pyrsr.sensorspecs import get_LayerBandsAssignment
+
+if TYPE_CHECKING:
+    # avoid the sklearn imports on module level to get rid of static TLS ImportError
+    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.linear_model import LinearRegression, Ridge
+    from sklearn.pipeline import Pipeline
 
 from .clustering import KMeansRSImage
 from .resampling import SpectralResampler
@@ -476,6 +477,8 @@ class ClusterClassifier_Generator(object):
                             'RFR':  Random Forest Regression (50 trees)
         :param kwargs:      keyword arguments to be passed to the __init__() function of machine learners
         """
+        from sklearn.pipeline import Pipeline
+
         ###################
         # train the model #
         ###################
@@ -555,6 +558,8 @@ class ClusterClassifier_Generator(object):
                                 - if given as string, e.g., '80%' excludes the worst 20 % of the input spectra
         :param kwargs:      keyword arguments to be passed to machine learner
         """
+        from sklearn.model_selection import train_test_split
+
         # validate and set defaults
         if not os.path.isdir(outDir):
             os.makedirs(outDir)
@@ -781,6 +786,11 @@ def get_machine_learner(method='LR', **init_params):
                             'RFR':  Random Forest Regression (50 trees)
     :param init_params:     parameters to be passed to __init__() function of the returned machine learner model.
     """
+    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.linear_model import LinearRegression, Ridge
+    from sklearn.pipeline import make_pipeline
+    from sklearn.preprocessing import PolynomialFeatures
+
     if method == 'LR':
         return LinearRegression(**init_params)
     elif method == 'RR':

@@ -46,3 +46,6 @@ dependencies:
     - rednose
     - sphinx-argparse
 
+    # setup requirements
+    - setuptools-git
+

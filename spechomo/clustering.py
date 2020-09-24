@@ -25,14 +25,16 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from multiprocessing import cpu_count
-from typing import Union  # noqa F401  # flake8 issue
+from typing import Union, TYPE_CHECKING  # noqa F401  # flake8 issue
+
+if TYPE_CHECKING:
+    from sklearn.cluster import KMeans
 
 import dill
 import numpy as np
 from geoarray import GeoArray
 from matplotlib import pyplot as plt
 from pandas import DataFrame
-from sklearn.cluster import KMeans
 from specclassify import SAM_Classifier, classify_image
 
 from .utils import im2spectra
@@ -140,6 +142,8 @@ class KMeansRSImage(object):
         :param nmax_spectra:    maximum number of spectra to be included (pseudo-randomly selected (reproducable))
         :return:
         """
+        from sklearn.cluster import KMeans  # avoids static TLS ImportError here
+
         # data reduction in case we have too many spectra
         if self.spectra.shape[0] > nmax_spectra:
             if self.v:

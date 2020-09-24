@@ -39,7 +39,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 from geoarray import GeoArray  # noqa F401  # flake8 issue
-from sklearn.linear_model import LinearRegression
 
 from .classifier_creation import get_filename_classifier_collection, get_machine_learner
 from .exceptions import ClassifierNotAvailableError
@@ -491,6 +490,8 @@ def get_jsonable_value(in_value, return_typesdict=False):
 
 
 def classifier_to_jsonable_dict(clf, skipkeys: list = None, include_typesdict=False):
+    from sklearn.linear_model import LinearRegression  # avoids static TLS error here
+
     if isinstance(clf, LinearRegression):
         jsonable_dict = dict(clftype='LR')
         typesdict = dict()
@@ -530,6 +531,8 @@ def classifier_from_json_str(json_str):
     :param json_str:    the JSON string to be used for de-serialization
     :return:
     """
+    from sklearn.linear_model import LinearRegression  # avoids static TLS error here
+
     in_dict = json.loads(json_str)
 
     if in_dict['clftype']['val'] == 'LR':
