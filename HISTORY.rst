@@ -2,6 +2,12 @@
 History
 =======
 
+0.6.9 (2020-09-25)
+------------------
+
+* Moved matplotlib imports function/class level to avoid static TLS ImportError.
+
+
 0.6.8 (2020-09-25)
 ------------------
 

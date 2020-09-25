@@ -30,7 +30,6 @@ from typing import Union, TYPE_CHECKING  # noqa F401  # flake8 issue
 import numpy as np
 from geoarray import GeoArray
 from geoarray.baseclasses import get_array_tilebounds
-from matplotlib import pyplot as plt
 
 from .logging import SpecHomo_Logger
 
@@ -116,6 +115,8 @@ class SpectralResampler(object):
             .ravel()
 
         if v:
+            from matplotlib import pyplot as plt
+
             plt.figure()
             for band in self.rsr_tgt.bands:
                 plt.plot(self.wvl_1nm, self.rsr_1nm[band] / max(self.rsr_1nm[band]))

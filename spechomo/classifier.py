@@ -29,14 +29,16 @@ import tempfile
 import zipfile
 from collections import OrderedDict
 from pprint import pformat
-from typing import Union, List  # noqa F401  # flake8 issue
+from typing import Union, List, TYPE_CHECKING  # noqa F401  # flake8 issue
 import json
 import builtins
+
+if TYPE_CHECKING:
+    from matplotlib import pyplot as plt  # noqa F401  # flake8 issue
 
 from tqdm import tqdm
 import dill
 import numpy as np
-from matplotlib import pyplot as plt
 from pandas import DataFrame
 from geoarray import GeoArray  # noqa F401  # flake8 issue
 
@@ -304,6 +306,7 @@ class Cluster_Learner(object):
     def plot_sample_spectra(self, cluster_label='all', include_mean_spectrum=True, include_median_spectrum=True,
                             ncols=5, **kw_fig):
         # type: (Union[str, int, List], bool, bool, int, dict) -> plt.figure
+        from matplotlib import pyplot as plt  # noqa
 
         if isinstance(cluster_label, int):
             lbls2plot = [cluster_label]

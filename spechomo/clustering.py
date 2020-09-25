@@ -34,7 +34,6 @@ if TYPE_CHECKING:
 import dill
 import numpy as np
 from geoarray import GeoArray
-from matplotlib import pyplot as plt
 from pandas import DataFrame
 from specclassify import SAM_Classifier, classify_image
 
@@ -362,6 +361,8 @@ class KMeansRSImage(object):
 
         :param figsize:     figure size (inches)
         """
+        from matplotlib import pyplot as plt
+
         plt.figure(figsize=figsize)
         for i, center_signature in enumerate(self.clusters.cluster_centers_):
             plt.plot(range(1, self.im.bands + 1), center_signature, label='Cluster #%s' % (i + 1))
@@ -379,6 +380,8 @@ class KMeansRSImage(object):
 
         :param figsize:     figure size (inches)
         """
+        from matplotlib import pyplot as plt
+
         # grab the number of different clusters and create a histogram
         # based on the number of pixels assigned to each cluster
         numLabels = np.arange(0, len(np.unique(self.clusters.labels_)) + 1)
@@ -405,6 +408,8 @@ class KMeansRSImage(object):
 
         :param figsize:     figure size (inches)
         """
+        from matplotlib import pyplot as plt
+
         plt.figure(figsize=figsize)
         rows, cols = self.clustermap.shape[:2]
 

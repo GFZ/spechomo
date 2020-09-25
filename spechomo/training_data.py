@@ -33,7 +33,6 @@ from tqdm import tqdm
 
 import numpy as np
 from geoarray import GeoArray
-from matplotlib import pyplot as plt
 from pandas import DataFrame
 from pandas.plotting import scatter_matrix
 from pyrsr import RSR
@@ -69,6 +68,8 @@ class TrainingData(object):
 
     def plot_scatter_matrix(self, figsize=(15, 15), mode='intersensor'):
         # TODO complete this function
+        from matplotlib import pyplot as plt
+
         train_X = self.train_X[np.random.choice(self.train_X.shape[0], 1000, replace=False), :]
         train_Y = self.train_Y[np.random.choice(self.train_Y.shape[0], 1000, replace=False), :]
 
@@ -113,6 +114,7 @@ class TrainingData(object):
     def plot_scattermatrix(self):
         # TODO complete this function
         import seaborn
+        from matplotlib import pyplot as plt
 
         fig, axes = plt.subplots(self.im_X.data.bands, self.im_Y.data.bands,
                                  figsize=(25, 9), sharex='all', sharey='all')
@@ -140,6 +142,7 @@ class TrainingData(object):
     def show_band_scatterplot(self, band_src_im, band_tgt_im):
         # TODO complete this function
         from scipy.stats import gaussian_kde
+        from matplotlib import pyplot as plt
 
         x = self.im_X.data[band_src_im].flatten()[:10000]
         y = self.im_Y.data[band_tgt_im].flatten()[:10000]
@@ -380,6 +383,7 @@ class RefCube(object):
     def plot_sample_spectra(self, image_basename, cluster_label='all', include_mean_spectrum=True,
                             include_median_spectrum=True, ncols=5, **kw_fig):
         # type: (Union[str, int, List], str, bool, bool, int, dict) -> plt.figure
+        from matplotlib import pyplot as plt
 
         if isinstance(cluster_label, int):
             lbls2plot = [cluster_label]
