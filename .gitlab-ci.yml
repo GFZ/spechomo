@@ -57,7 +57,7 @@ test_spechomo_install:
 #    - conda update -c conda-forge python
 
     # install some dependencies that cause trouble when installed via pip
-    - conda install -y -c conda-forge matplotlib numpy pandas "scikit-learn=0.19.1"
+    - conda install -y -c conda-forge matplotlib numpy pandas "scikit-learn=0.23.2"
 
     # install not pip-installable deps of geoarray/py_tools_ds
     - conda install -y -c conda-forge basemap gdal geopandas pyproj scikit-image shapely

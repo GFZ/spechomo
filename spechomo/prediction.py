@@ -33,7 +33,6 @@ from typing import Union, Tuple  # noqa F401  # flake8 issue
 from multiprocessing import cpu_count
 import traceback
 import time
-from scipy.interpolate import interp1d
 from geoarray import GeoArray  # noqa F401  # flake8 issue
 from specclassify import classify_image
 # from specclassify import kNN_MinimumDistance_Classifier
@@ -72,6 +71,8 @@ class SpectralHomogenizer(object):
         :param kind:        interpolation kind to be passed to scipy.interpolate.interp1d (default: 'linear')
         :return:
         """
+        from scipy.interpolate import interp1d  # import here to avoid static TLS ImportError
+
         assert kind in ['linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic'], \
             "%s is not a supported kind of spectral interpolation." % kind
         assert arrcube is not None,\

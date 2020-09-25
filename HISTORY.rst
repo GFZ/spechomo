@@ -2,6 +2,14 @@
 History
 =======
 
+0.6.8 (2020-09-25)
+------------------
+
+* Moved scipy imports function/class level to avoid static TLS ImportError.
+* environment_spechomo.yml now ueses Python 3.7+.
+* scikit-learn is now pinned to 0.23.2+ due to classifier recreation.
+
+
 0.6.7 (2020-09-24)
 ------------------
 
@@ -12,7 +20,7 @@ History
 0.6.6 (2020-09-24)
 ------------------
 
-* Moved imports of scikit-learn to function/class level to avoid static TLS ImportError. Updated version info.
+* Moved imports of scikit-learn to function/class level to avoid static TLS ImportError.
 
 
 0.6.5 (2020-09-15)
