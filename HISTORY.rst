@@ -2,6 +2,13 @@
 History
 =======
 
+0.6.10 (2020-09-25)
+-------------------
+
+* Fixed an AssertionError within ClusterClassifier_Generator.create_classifiers() caused by nodata pixels in the target
+  sensor reference cube that were not dropped before creating the classifier.
+
+
 0.6.9 (2020-09-25)
 ------------------
 
