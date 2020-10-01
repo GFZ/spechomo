@@ -2,8 +2,8 @@
 History
 =======
 
-0.7.0 (coming soon)
--------------------
+0.7.0 (2020-10-01)
+------------------
 
 * Re-trained LR classifiers.
 * Updated classifiers within test data.
