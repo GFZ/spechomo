@@ -45,7 +45,7 @@ from .options import options
 
 __author__ = 'Daniel Scheffler'
 
-classifier_rootdir = options['classifiers']['rootdir']
+_classifier_rootdir = options['classifiers']['rootdir']
 
 
 class SpectralHomogenizer(object):
@@ -57,7 +57,7 @@ class SpectralHomogenizer(object):
         :param classifier_rootDir:  root directory where machine learning classifiers are stored.
         :param logger:              instance of logging.Logger
         """
-        self.classifier_rootDir = classifier_rootDir or classifier_rootdir
+        self.classifier_rootDir = classifier_rootDir or _classifier_rootdir
         self.logger = logger or SpecHomo_Logger(__name__)
         self.CPUs = CPUs or cpu_count()
 
@@ -278,7 +278,7 @@ class RSImage_ClusterPredictor(object):
         """
         self.method = method
         self.n_clusters = n_clusters
-        self.classifier_rootDir = os.path.abspath(classifier_rootDir) if classifier_rootDir else classifier_rootdir
+        self.classifier_rootDir = os.path.abspath(classifier_rootDir) if classifier_rootDir else _classifier_rootdir
         self.classif_map = None
         self.classif_map_fractions = None
         self.distance_metrics = None
@@ -300,7 +300,7 @@ class RSImage_ClusterPredictor(object):
 
     def get_classifier(self, src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA):
         # type: (str, str, list, str, str, list) -> Cluster_Learner
-        """Select the correct machine learning classifier out of previously saves classifier collections.
+        """Select the correct machine learning classifier out of previously saved classifier collections.
 
         Describe the classifier specifications with the given arguments.
         :param src_satellite:   source satellite, e.g., 'Landsat-8'
@@ -311,8 +311,38 @@ class RSImage_ClusterPredictor(object):
         :param tgt_LBA:         target LayerBandsAssignment
         :return:                classifier instance loaded from disk
         """
-        return Cluster_Learner.from_disk(self.classifier_rootDir, self.method, self.n_clusters,
-                                         src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
+        args_fd = (self.classifier_rootDir, self.method, self.n_clusters,
+                   src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
+
+        try:
+            CL = Cluster_Learner.from_disk(*args_fd)
+
+        except FileNotFoundError:
+            if self.classifier_rootDir == _classifier_rootdir:
+                # the default root directory is used
+
+                if not os.path.exists(os.path.join(_classifier_rootdir, '%s_classifiers.zip' % self.method)):
+                    # download the classifiers
+                    self.logger.info('The pre-trained classifiers have not been downloaded yet. Downloading...')
+
+                    from .utils import download_pretrained_classifiers
+                    download_pretrained_classifiers(method=self.method,
+                                                    tgt_dir=self.classifier_rootDir)
+
+                else:
+                    self.logger.error('%s classifiers found at %s. However, they do not contain a suitable classifier '
+                                      'for the current predition. If desired, delete the existing classifiers and try '
+                                      'again. Pre-trained classifiers are then automatically downloaded.'
+                                      % (self.method, self.classifier_rootDir))
+
+                # try again
+                CL = Cluster_Learner.from_disk(*args_fd)
+
+            else:
+                # classifier not found in the user provided root directory
+                raise
+
+        return CL
 
     def predict(self, image, classifier, in_nodataVal=None, out_nodataVal=None, cmap_nodataVal=None,
                 global_clf_threshold=None, unclassified_pixVal=-1):

@@ -39,7 +39,8 @@ from unittest import TestCase
 from spechomo.classifier import Cluster_Learner
 from spechomo import __path__
 
-classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
+# classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
+classifier_rootdir = os.path.join(__path__[0], '..', 'tests', 'data', 'classifiers', 'SAMclassassignment')
 
 
 class Test_ClusterClassifier(TestCase):

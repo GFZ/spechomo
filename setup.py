@@ -66,7 +66,8 @@ setup(
     long_description=readme + '\n\n' + history,
     include_package_data=True,
     package_data={'spechomo': ['options_default.yaml',
-                               'resources/**/**/*']},
+                               # 'resources/**/**/*'
+                               ]},
     keywords=['spechomo', 'spectral homogenization', 'sensor fusion', 'remote sensing'],
     name='spechomo',
     packages=find_packages(include=['spechomo'], exclude=['tests']),

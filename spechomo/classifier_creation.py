@@ -195,7 +195,7 @@ class ReferenceCube_Generator(object):
                                 contain nodata within the spectral response of a target band
                                     'radical':      set output band to nodata
                                     'conservative': use existing spectral information and ignore nodata
-                                                    (might alter the outpur spectral information,
+                                                    (might alter the output spectral information,
                                                      e.g., at spectral absorption bands)
         :param progress:        show progress bar (default: True)
         :return:                np.array: [tgt_n_samples x images x spectral bands of the target sensor]
@@ -621,6 +621,16 @@ class ClusterClassifier_Generator(object):
                     # (clusters with too few spectra that are set to nodata in the refcube)
                     df_src_spectra_allclust = df_src_spectra_allclust[df_src_spectra_allclust.cluster_label != -9999]
                     df_tgt_spectra_allclust = df_tgt_spectra_allclust[df_tgt_spectra_allclust.cluster_label != -9999]
+
+                    # remove spectra with -9999 in all bands that HAVE a valid clusterlabel
+                    # NOTE: This may happen because the cluster labels are computed on the source cube only and may be
+                    #       different on the target cube.
+                    sub_bad = df_tgt_spectra_allclust[df_tgt_spectra_allclust.iloc[:, 3] == -9999].copy()
+                    if not sub_bad.empty:
+                        idx_bad = sub_bad[np.std(sub_bad.iloc[:, 3:], axis=1) == 0].index
+                        if not idx_bad.empty:
+                            df_src_spectra_allclust = df_src_spectra_allclust.drop(idx_bad)
+                            df_tgt_spectra_allclust = df_tgt_spectra_allclust.drop(idx_bad)
 
                     # ensure source and target spectra do not contain nodata values (would affect classifiers)
                     assert src_cube.data.nodata is None or src_cube.data.nodata not in df_src_spectra_allclust.values

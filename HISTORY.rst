@@ -2,6 +2,24 @@
 History
 =======
 
+0.7.0 (coming soon)
+-------------------
+
+* Re-trained LR classifiers.
+* Updated classifiers within test data.
+* Classifiers are no longer stored in the repository (resources directory) but are automatically downloaded on demand
+  at the first run (added corresponding code).
+* Fixed TemporaryDirectory bug in Test_Utils.test_export_classifiers_as_JSON().
+* Re-enabled CI job 'deploy_pypi'.
+
+
+0.6.10 (2020-09-25)
+-------------------
+
+* Fixed an AssertionError within ClusterClassifier_Generator.create_classifiers() caused by nodata pixels in the target
+  sensor reference cube that were not dropped before creating the classifier.
+
+
 0.6.9 (2020-09-25)
 ------------------
 
