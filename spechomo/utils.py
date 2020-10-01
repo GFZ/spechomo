@@ -32,6 +32,7 @@ from multiprocessing import Pool
 from typing import Union, List  # noqa F401  # flake8 issue
 import json
 import warnings
+from urllib.request import urlretrieve, urlopen
 
 import numpy as np  # noqa F401  # flake8 issue
 from geoarray import GeoArray  # noqa F401  # flake8 issue
@@ -217,16 +218,16 @@ def export_classifiers_as_JSON(export_rootDir,
 
 
 def download_pretrained_classifiers(method, tgt_dir=options['classifiers']['rootdir']):
-    from urllib.request import urlretrieve, urlopen
-
-    clf_name = '100k_conservrsp_SCA_SD100percSA90perc_without_aviris__SCADist90pSAM40p'
-
     remote_filespecs = {
         '100k_conservrsp_SCA_SD100percSA90perc_without_aviris__SCADist90pSAM40p': {
             'LR': 'https://nextcloud.gfz-potsdam.de/s/czxJrCERkp8G8d9/download',
         }
     }
-    url = remote_filespecs[clf_name][method]
+    clf_name = options['classifiers']['name']
+    try:
+        url = remote_filespecs[clf_name][method]
+    except KeyError:
+        raise RuntimeError("Currently there are no %s classifiers named '%s' available." % (method, clf_name))
 
     for i in range(3):  # try 3 times
         if i > 0:
