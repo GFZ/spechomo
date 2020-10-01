@@ -42,7 +42,8 @@ from spechomo.prediction import SpectralHomogenizer, RSImage_ClusterPredictor
 from spechomo.utils import spectra2im
 from spechomo import __path__
 
-classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
+# classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
+classifier_rootdir = os.path.join(__path__[0], '..', 'tests', 'data', 'classifiers', 'SAMclassassignment')
 testdata_rootdir = os.path.join(__path__[0], '..', 'tests', 'data')
 
 
@@ -300,4 +301,4 @@ class Test_RSImage_ClusterPredictor(unittest.TestCase):
                 self.assertTrue(np.array_equal(self.CP_SAMcla.classif_map[:].flatten(), np.arange(self.n_clusters)))
             self.assertTrue(np.allclose(im_homo, np.vstack([self.clf_L8.MLdict[i].tgt_cluster_center
                                                             for i in range(self.n_clusters)]),
-                                        atol=5 if clf_alg not in ['kNN_MinDist', 'kNN_SAM', 'kNN_FEDSA'] else 1000))
+                                        atol=6 if clf_alg not in ['kNN_MinDist', 'kNN_SAM', 'kNN_FEDSA'] else 1000))

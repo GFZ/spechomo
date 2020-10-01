@@ -58,7 +58,7 @@ def spectra2im(spectra, tgt_rows, tgt_cols):
     :param tgt_cols:    number of target image rows
     :return:            3D array (rows x columns x spectral bands)
     """
-    return spectra.reshape(tgt_rows, tgt_cols, spectra.shape[1])
+    return spectra.reshape((tgt_rows, tgt_cols, spectra.shape[1]))
 
 
 _columns_df_trafos = ['method', 'src_sat', 'src_sen', 'src_LBA', 'tgt_sat', 'tgt_sen', 'tgt_LBA', 'n_clusters']
@@ -214,3 +214,31 @@ def export_classifiers_as_JSON(export_rootDir,
 
     else:
         warnings.warn('No classifiers found matching the provided filter criteria. Nothing exported.', RuntimeWarning)
+
+
+def download_pretrained_classifiers(method, tgt_dir=options['classifiers']['rootdir']):
+    from urllib.request import urlretrieve, urlopen
+
+    clf_name = '100k_conservrsp_SCA_SD100percSA90perc_without_aviris__SCADist90pSAM40p'
+
+    remote_filespecs = {
+        '100k_conservrsp_SCA_SD100percSA90perc_without_aviris__SCADist90pSAM40p': {
+            'LR': 'https://nextcloud.gfz-potsdam.de/s/czxJrCERkp8G8d9/download',
+        }
+    }
+    url = remote_filespecs[clf_name][method]
+
+    for i in range(3):  # try 3 times
+        if i > 0:
+            print('Download failed. Restarting...')
+
+        # get filename
+        fn = urlopen(url).headers['content-disposition'].split('filename=')[-1].replace('"', '')
+
+        # download
+        if not os.path.isdir(tgt_dir):
+            os.makedirs(tgt_dir)
+        outP, msg = urlretrieve(url, os.path.join(tgt_dir, fn))
+
+        if os.path.getsize(outP) == int(msg.get('content-length')):
+            return outP

@@ -33,15 +33,23 @@ Tests for spechomo.utils
 """
 
 import unittest
+import os
 from tempfile import TemporaryDirectory
 from pandas import DataFrame
 
-from spechomo.utils import list_available_transformations, export_classifiers_as_JSON
+from spechomo.utils import (
+    list_available_transformations,
+    export_classifiers_as_JSON,
+    download_pretrained_classifiers
+)
+from spechomo import __path__
+
+classifier_rootdir = os.path.join(__path__[0], '..', 'tests', 'data', 'classifiers', 'SAMclassassignment')
 
 
 class Test_Utils(unittest.TestCase):
     def test_list_available_transformations(self):
-        trafoslist = list_available_transformations()
+        trafoslist = list_available_transformations(classifier_rootDir=classifier_rootdir)
 
         self.assertIsInstance(trafoslist, DataFrame)
         self.assertTrue(len(trafoslist) != 0)
@@ -49,13 +57,18 @@ class Test_Utils(unittest.TestCase):
     def test_export_classifiers_as_JSON(self):
         with TemporaryDirectory() as td:
             export_classifiers_as_JSON(export_rootDir=td, method='LR', src_sat='Landsat-8', tgt_sat='Sentinel-2A',
-                                       n_clusters=5)
+                                       n_clusters=5, classifier_rootDir=classifier_rootdir)
 
-        with self.assertWarns(RuntimeWarning):
-            export_classifiers_as_JSON(export_rootDir=td, method='LR', src_sat='Landsat-8', tgt_sat='Sentinel-2A',
-                                       n_clusters=-5)
+            # negative n_clusters
+            with self.assertWarns(RuntimeWarning):
+                export_classifiers_as_JSON(export_rootDir=td, method='LR', src_sat='Landsat-8', tgt_sat='Sentinel-2A',
+                                           n_clusters=-5, classifier_rootDir=classifier_rootdir)
 
-        # QR is currently not supported
-        with self.assertRaises(RuntimeError):
-            export_classifiers_as_JSON(export_rootDir=td, method='QR', src_sat='Landsat-8', tgt_sat='Sentinel-2A',
-                                       n_clusters=5)
+            # QR is currently not supported
+            with self.assertRaises(RuntimeError):
+                export_classifiers_as_JSON(export_rootDir=td, method='QR', src_sat='Landsat-8', tgt_sat='Sentinel-2A',
+                                           n_clusters=50, classifier_rootDir=classifier_rootdir)
+
+    def test_download_pretrained_classifiers(self):
+        with TemporaryDirectory() as td:
+            self.assertIsNotNone(download_pretrained_classifiers('LR', os.path.join(td, 'not_existing_subdir')))
