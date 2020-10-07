@@ -2,8 +2,8 @@
 History
 =======
 
-0.7.1 (coming soon)
--------------------
+0.8.0 (2020-10-07)
+------------------
 
 * SpecHomo is now on conda-forge! Updated the installation instructions accordingly.
 
