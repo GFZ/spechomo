@@ -32,20 +32,21 @@ Status
      :target: https://pyup.io/repos/github/danschef/spechomo/
      :alt: Updates
 
-
 .. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/pipeline.svg
         :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/commits/master
 .. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/coverage.svg
         :target: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/coverage/
 .. image:: https://img.shields.io/static/v1?label=Documentation&message=GitLab%20Pages&color=orange
         :target: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/
-.. .. image:: https://img.shields.io/pypi/v/spechomo.svg
+.. image:: https://img.shields.io/pypi/v/spechomo.svg
         :target: https://pypi.python.org/pypi/spechomo
-.. .. image:: https://img.shields.io/pypi/l/spechomo.svg
+.. image:: https://img.shields.io/conda/vn/conda-forge/spechomo.svg
+        :target: https://anaconda.org/conda-forge/spechomo
+.. image:: https://img.shields.io/pypi/l/spechomo.svg
         :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/blob/master/LICENSE
-.. .. image:: https://img.shields.io/pypi/pyversions/spechomo.svg
+.. image:: https://img.shields.io/pypi/pyversions/spechomo.svg
         :target: https://img.shields.io/pypi/pyversions/spechomo.svg
-.. .. image:: https://img.shields.io/pypi/dm/spechomo.svg
+.. image:: https://img.shields.io/pypi/dm/spechomo.svg
         :target: https://pypi.python.org/pypi/spechomo
 .. image:: https://zenodo.org/badge/241405333.svg
    :target: https://zenodo.org/badge/latestdoi/241405333

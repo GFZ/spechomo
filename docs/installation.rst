@@ -2,13 +2,13 @@
 Installation
 ============
 
-The spechomo package depends on some open source packages which are usually installed without problems by the automatic
-install routine. However, for some projects, we strongly recommend resolving dependencies before the automatic
-installer is run. This approach avoids problems with conflicting versions of the same software.
-Using conda_, the recommended approach is:
+Using Anaconda or Miniconda (recommended)
+-----------------------------------------
+
+Using conda_, SpecHomo is installed as follows:
 
 
-1. Create virtual environment for spechomo (optional but recommended):
+1. Create virtual environment for SpecHomo (optional but recommended):
 
    .. code-block:: bash
 
@@ -16,31 +16,53 @@ Using conda_, the recommended approach is:
     $ source activate spechomo
 
 
-2. Install some libraries needed for spechomo:
+2. Then install spechomo itself:
 
    .. code-block:: bash
 
-    $ conda install -c conda-forge matplotlib numpy pandas "scikit-learn>=0.23.2" basemap gdal geopandas pyproj scikit-image shapely
+    $ conda install -c conda-forge spechomo
 
 
-3. Then install spechomo using the pip installer:
+This is the preferred method to install SpecHomo, as it will always installs the most recent stable release and
+automatically resolves all the dependencies.
+
+
+Using pip (not recommended)
+---------------------------
+
+There is also a `pip`_ installer for SpecHomo. However, please note that SpecHomo depends on some
+open source packages that may cause problems when installed with pip. Therefore, we strongly recommend
+to resolve the following dependencies before the pip installer is run:
+
+    * cartopy
+    * gdal
+    * geopandas
+    * matplotlib
+    * numpy
+    * pandas
+    * pyproj
+    * scikit-learn >=0.23.2
+    * scikit-image
+    * shapely
+
+Then, the pip installer can be run by:
 
    .. code-block:: bash
 
-    $ pip install git+https://gitext.gfz-potsdam.de/geomultisens/spechomo.git
-
-
-This is the preferred method to install spechomo, as it will always install the most recent stable release.
-
-.. note::
-
-    The spechomo package has been tested with Python 3.4+ and Python 2.7. It should be fully compatible to all Python
-    versions from 2.7 onwards. However, we will continously drop the support for Python 2.7 in future.
-
+    $ pip install spechomo
 
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
 
+
+
+.. note::
+
+    The SpecHomo package has been tested with Python 3.4+ and Python 2.7. It should be fully compatible to all Python
+    versions from 2.7 onwards. However, we will continously drop the support for Python 2.7 in future.
+
+
 .. _pip: https://pip.pypa.io
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
 .. _conda: https://conda.io/docs
+.. _`dependencies of SpecHomo`: https://gitext.gfz-potsdam.de/danschef/arosics/-/blob/master/requirements.txt
