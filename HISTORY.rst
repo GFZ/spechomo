@@ -2,6 +2,12 @@
 History
 =======
 
+0.8.1 (2020-10-08)
+------------------
+
+* Added latest QR classifiers.
+
+
 0.8.0 (2020-10-07)
 ------------------
 
@@ -36,7 +42,7 @@ History
 ------------------
 
 * Moved scipy imports function/class level to avoid static TLS ImportError.
-* environment_spechomo.yml now ueses Python 3.7+.
+* environment_spechomo.yml now uses Python 3.7+.
 * scikit-learn is now pinned to 0.23.2+ due to classifier recreation.
 
 

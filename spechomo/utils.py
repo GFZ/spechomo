@@ -220,7 +220,8 @@ def export_classifiers_as_JSON(export_rootDir,
 def download_pretrained_classifiers(method, tgt_dir=options['classifiers']['rootdir']):
     remote_filespecs = {
         '100k_conservrsp_SCA_SD100percSA90perc_without_aviris__SCADist90pSAM40p': {
-            'LR': 'https://nextcloud.gfz-potsdam.de/s/czxJrCERkp8G8d9/download',
+            'LR': 'https://nextcloud.gfz-potsdam.de/s/Rzb75kckBreFfNE/download',
+            'QR': 'https://nextcloud.gfz-potsdam.de/s/Kk4zoCXxAEkAFZL/download',
         }
     }
     clf_name = options['classifiers']['name']

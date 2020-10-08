@@ -72,3 +72,4 @@ class Test_Utils(unittest.TestCase):
     def test_download_pretrained_classifiers(self):
         with TemporaryDirectory() as td:
             self.assertIsNotNone(download_pretrained_classifiers('LR', os.path.join(td, 'not_existing_subdir')))
+            self.assertIsNotNone(download_pretrained_classifiers('QR', os.path.join(td, 'not_existing_subdir')))
