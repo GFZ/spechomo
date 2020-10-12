@@ -52,7 +52,7 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
@@ -62,7 +62,7 @@ setup(
     ],
     description="Spectral homogenization of multispectral satellite data.",
     install_requires=requirements,
-    license="GNU General Public License v3",
+    license="GPL-3.0-or-later",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
     package_data={'spechomo': ['options_default.yaml',

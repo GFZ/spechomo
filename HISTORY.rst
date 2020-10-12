@@ -2,6 +2,12 @@
 History
 =======
 
+0.8.2 (2020-10-12)
+------------------
+
+* Use SPDX license identifier and set all files to GLP3+ to be consistent with license headers in the source files.
+
+
 0.8.1 (2020-10-08)
 ------------------
 
