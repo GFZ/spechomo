@@ -451,11 +451,12 @@ class ClusterClassifier_Generator(object):
 
         LBAs = []
         kw = dict(satellite=satellite, sensor=sensor, no_thermal=True, after_ac=True)
-        for lba in [get_LayerBandsAssignment(no_pan=False, sort_by_cwl=True, **kw),  # L1C_withPan_cwlSorted
-                    get_LayerBandsAssignment(no_pan=True, sort_by_cwl=True, **kw),  # L1C_noPan_cwlSorted
-                    get_LayerBandsAssignment(no_pan=False, sort_by_cwl=False, **kw),  # L1C_withPan_alphabetical
-                    get_LayerBandsAssignment(no_pan=True, sort_by_cwl=False, **kw),  # L1C_noPan_alphabetical
-                    ]:
+        for lba in [
+            # get_LayerBandsAssignment(no_pan=False, sort_by_cwl=True, **kw),  # L1C_withPan_cwlSorted
+            get_LayerBandsAssignment(no_pan=True, sort_by_cwl=True, **kw),  # L1C_noPan_cwlSorted
+            # get_LayerBandsAssignment(no_pan=False, sort_by_cwl=False, **kw),  # L1C_withPan_alphabetical
+            get_LayerBandsAssignment(no_pan=True, sort_by_cwl=False, **kw),  # L1C_noPan_alphabetical
+        ]:
             if lba not in LBAs:
                 LBAs.append(lba)
 
