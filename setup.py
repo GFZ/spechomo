@@ -39,12 +39,33 @@ version = {}
 with open("spechomo/version.py") as version_file:
     exec(version_file.read(), version)
 
-requirements = ['numpy', 'matplotlib', 'pandas', 'dill', 'nested_dict', 'tqdm', 'scipy', 'scikit-learn>=0.23.2',
-                'geoarray', 'seaborn', 'pyyaml', 'tabulate', 'specclassify>=0.2.0', 'pyrsr', 'natsort']
+req = [
+    'dill',
+    'geoarray',
+    'matplotlib',
+    'natsort',
+    'nested_dict',
+    'numpy',
+    'pandas',
+    'pyrsr',
+    'pyyaml',
+    'scikit-learn>=0.23.2',
+    'scipy',
+    'seaborn',
+    'specclassify>=0.2.0',
+    'tabulate',
+    'tqdm',
+]
 
-setup_requirements = ['setuptools-git']  # needed for package_data version-controlled by GIT
+req_setup = ['setuptools-git']  # needed for package_data version-controlled by GIT
 
-test_requirements = ['coverage', 'nose', 'nose-htmloutput', 'rednose']
+req_test = ['coverage', 'nose', 'nose2', 'nose-htmloutput', 'rednose']
+
+req_doc = ['sphinx-argparse', 'sphinx_rtd_theme', 'sphinx-autodoc-typehints']
+
+req_lint = ['flake8', 'pycodestyle', 'pydocstyle']
+
+req_dev = req_setup + req_test + req_doc + req_lint
 
 setup(
     author="Daniel Scheffler",
@@ -61,7 +82,13 @@ setup(
         'Programming Language :: Python :: 3.9',
     ],
     description="Spectral homogenization of multispectral satellite data.",
-    install_requires=requirements,
+    extras_require={
+        "doc": req_doc,
+        "test": req_test,
+        "lint": req_lint,
+        "dev": req_dev
+    },
+    install_requires=req,
     license="GPL-3.0-or-later",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
@@ -71,9 +98,9 @@ setup(
     keywords=['spechomo', 'spectral homogenization', 'sensor fusion', 'remote sensing'],
     name='spechomo',
     packages=find_packages(include=['spechomo'], exclude=['tests']),
-    setup_requires=setup_requirements,
+    setup_requires=req_setup,
     test_suite='tests',
-    tests_require=test_requirements,
+    tests_require=req_test,
     url='https://gitext.gfz-potsdam.de/geomultisens/spechomo',
     version=version['__version__'],
     zip_safe=False,

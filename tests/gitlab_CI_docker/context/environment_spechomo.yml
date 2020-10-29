@@ -6,32 +6,23 @@ channels: &id1
 dependencies:
   - python>=3.7.*
   - pip
+  - geoarray>=0.9.0
   - matplotlib
   - numpy
   - pandas
+  - pyrsr
   - scikit-learn=0.23.2  # Classifiers have been trained with this version. Different versions might cause breaking code.
-
-  # geoarray
-  - cartopy
-  - gdal
-  - geopandas
-  - holoviews
-  - pyproj
-  - scikit-image
-  - shapely
+  - specclassify>=0.2.0
 
   - pip:
     - dill
-    - geoarray>=0.9.0
-    - specclassify>=0.2.0
-    - pyrsr
+    - natsort
     - nested_dict
     - pyyaml
     - scipy
     - seaborn
-    - tqdm
     - tabulate
-    - natsort
+    - tqdm
 
     # test and doc dependencies
     - coverage

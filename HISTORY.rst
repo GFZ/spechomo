@@ -5,7 +5,10 @@ History
 0.8.3 (coming soon)
 -------------------
 
-* Replaced deprecated 'source activate' by 'conda activate.' Updated installation instructions.
+* Replaced deprecated 'source activate' by 'conda activate.'
+* Updated installation instructions.
+* Revised requirements.
+* Added doc, test, lint and dev requirements to optional requirements in setup.py.
 
 
 0.8.2 (2020-10-12)
