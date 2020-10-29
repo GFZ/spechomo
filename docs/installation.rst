@@ -5,7 +5,7 @@ Installation
 Using Anaconda or Miniconda (recommended)
 -----------------------------------------
 
-Using conda_, SpecHomo is installed as follows:
+Using conda_ (latest version recommended), SpecHomo is installed as follows:
 
 
 1. Create virtual environment for SpecHomo (optional but recommended):
@@ -13,7 +13,7 @@ Using conda_, SpecHomo is installed as follows:
    .. code-block:: bash
 
     $ conda create -c conda-forge --name spechomo python=3
-    $ source activate spechomo
+    $ conda activate spechomo
 
 
 2. Then install spechomo itself:
@@ -23,7 +23,7 @@ Using conda_, SpecHomo is installed as follows:
     $ conda install -c conda-forge spechomo
 
 
-This is the preferred method to install SpecHomo, as it will always installs the most recent stable release and
+This is the preferred method to install SpecHomo, as it always installs the most recent stable release and
 automatically resolves all the dependencies.
 
 

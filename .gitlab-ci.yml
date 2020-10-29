@@ -51,7 +51,7 @@ test_spechomo_install:
     - conda update conda
 #    - conda install conda-build
     - conda create -y -q -c conda-forge --name spechomo_test python=3
-    - source activate spechomo_test
+    - conda activate spechomo_test
 
     # update conda and python
 #    - conda update -n base -c conda-forge conda
@@ -115,7 +115,7 @@ deploy_pypi:
     - test_spechomo
   script:
     - source /root/miniconda3/bin/activate
-    - source activate ci_env
+    - conda activate ci_env
     - pip install -U twine
     - python setup.py sdist
     - twine upload dist/*  # requires creds as environment variables
