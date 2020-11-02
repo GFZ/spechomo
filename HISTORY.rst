@@ -2,13 +2,20 @@
 History
 =======
 
-0.8.3 (coming soon)
--------------------
+0.9.0 (2020-11-02)
+------------------
 
 * Replaced deprecated 'source activate' by 'conda activate.'
 * Updated installation instructions.
 * Revised requirements.
 * Added doc, test, lint and dev requirements to optional requirements in setup.py.
+* Updated LR and QR classifiers.
+* Added sklearn import to avoid static TLS ImportError.
+* Improved code style of SpectralHomogenizer.interpolate_cube() and SpectralHomogenizer.predict().
+* Bugfix for also predicting spectral information for pixels that contain nodata in any band
+  (causes faulty predictions).
+* Bugfix for only choosing 25 spectra in classifier creation in case the maximum angle threshold is automatically
+  set to 0 because there are many well matching spectra.
 
 
 0.8.2 (2020-10-12)

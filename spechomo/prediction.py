@@ -78,15 +78,23 @@ class SpectralHomogenizer(object):
         assert arrcube is not None,\
             'L2B_obj.interpolate_cube_linear expects a numpy array as input. Got %s.' % type(arrcube)
 
-        orig_CWLs, target_CWLs = np.array(source_CWLs), np.array(target_CWLs)
+        orig_CWLs = np.array(source_CWLs)
+        target_CWLs = np.array(target_CWLs)
 
         self.logger.info(
             'Performing spectral homogenization (%s interpolation) with target wavelength positions at %s nm.'
             % (kind, ', '.join(np.round(np.array(target_CWLs[:-1]), 1).astype(str)) +
                ' and %s' % np.round(target_CWLs[-1], 1)))
-        outarr = interp1d(np.array(orig_CWLs), arrcube, axis=2, kind=kind, fill_value='extrapolate')(target_CWLs)
+        outarr = \
+            interp1d(np.array(orig_CWLs),
+                     arrcube,
+                     axis=2,
+                     kind=kind,
+                     fill_value='extrapolate')(target_CWLs)
 
-        if np.min(outarr) >= np.iinfo(np.int16).min and np.max(outarr) <= np.iinfo(np.int16).max:
+        if np.min(outarr) >= np.iinfo(np.int16).min and \
+           np.max(outarr) <= np.iinfo(np.int16).max:
+
             outarr = outarr.astype(np.int16)
         elif np.min(outarr) >= np.iinfo(np.int32).min and np.max(outarr) <= np.iinfo(np.int32).max:
             outarr = outarr.astype(np.int32)
@@ -442,9 +450,13 @@ class RSImage_ClusterPredictor(object):
                                    geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
                                    bandnames=['B%s' % i if len(i) == 2 else 'B0%s' % i for i in classifier.tgt_LBA])
 
-        if classifier.n_clusters > 1 and self.classif_map.ndim > 2:
-            dist_min, dist_max = self.distance_metrics.min(), self.distance_metrics.max()
-            dist_norm = (self.distance_metrics - dist_min) / (dist_max - dist_min)
+        if classifier.n_clusters > 1 and\
+           self.classif_map.ndim > 2:
+
+            dist_min, dist_max = np.min(self.distance_metrics),\
+                                 np.max(self.distance_metrics)
+            dist_norm = (self.distance_metrics - dist_min) /\
+                        (dist_max - dist_min)
             weights = 1 - dist_norm
         else:
             weights = None
@@ -481,9 +493,15 @@ class RSImage_ClusterPredictor(object):
 
             # set saturated pixels (exceeding the output data range with respect to the data type) to no-data
             if isinstance(image_predicted.dtype, np.integer):
-                out_dTMin, out_dTMax = np.iinfo(image_predicted.dtype).min, np.iinfo(image_predicted.dtype).max
-                if im_tile_pred.min() < out_dTMin or im_tile_pred.max() > out_dTMax:
-                    mask_saturated = np.any(im_tile_pred > out_dTMax | im_tile_pred < out_dTMin, axis=2)
+                out_dTMin, out_dTMax = np.iinfo(image_predicted.dtype).min,\
+                                       np.iinfo(image_predicted.dtype).max
+
+                if np.min(im_tile_pred) < out_dTMin or\
+                   np.max(im_tile_pred) > out_dTMax:
+
+                    mask_saturated = np.any(im_tile_pred > out_dTMax |
+                                            im_tile_pred < out_dTMin,
+                                            axis=2)
                     n_saturated_px += np.sum(mask_saturated)
                     im_tile_pred[mask_saturated] = out_nodataVal
 
@@ -517,7 +535,8 @@ class RSImage_ClusterPredictor(object):
 
         # re-apply nodata values to predicted result
         if image.nodata is not None:
-            image_predicted[image.mask_nodata[:] == 0] = out_nodataVal
+            mask_nodata = image.calc_mask_nodata(overwrite=True, flag='any')
+            image_predicted[~mask_nodata] = out_nodataVal
 
         # copy mask_nodata
         image_predicted.mask_nodata = image.mask_nodata

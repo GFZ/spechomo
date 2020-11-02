@@ -25,3 +25,5 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Unit test package for spechomo."""
+
+import sklearn  # noqa # avoids a static TLS ImportError during runtime of SICOR (when importing sklearn there)

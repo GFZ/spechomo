@@ -728,19 +728,19 @@ class ClusterClassifier_Generator(object):
             max_angle = np.percentile(df_src_spectra.spectral_angle,
                                       int(max_angle.split('%')[0].strip()))
 
-        tmp = df_src_spectra[df_src_spectra.spectral_angle < max_angle]
+        tmp = df_src_spectra[df_src_spectra.spectral_angle <= max_angle]
         if len(tmp.index) > 10:
             df_src_spectra = tmp
         else:
-            df_src_spectra = df_src_spectra.sort_values(by='spectral_angle').head(25)
-            self.logger.warning('Had to choose spectra with SA up to %.2f degrees for cluster #%s.'
+            df_src_spectra = df_src_spectra.sort_values(by='spectral_angle').head(10)
+            self.logger.warning('Had to choose spectra with SA up to %.1f degrees for cluster #%s.'
                                 % (np.max(df_src_spectra['spectral_angle']), clusterlabel))
 
         if isinstance(max_distance, str):
             max_distance = np.percentile(df_src_spectra.spectral_distance,
                                          int(max_distance.split('%')[0].strip()))
 
-        tmp = df_src_spectra[df_src_spectra.spectral_distance < max_distance]
+        tmp = df_src_spectra[df_src_spectra.spectral_distance <= max_distance]
         if len(tmp.index) > 10:
             df_src_spectra = tmp
         else:
