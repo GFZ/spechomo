@@ -41,7 +41,7 @@ with open("spechomo/version.py") as version_file:
 
 req = [
     'dill',
-    'geoarray',
+    'geoarray>=0.10.4',
     'matplotlib',
     'natsort',
     'nested_dict',

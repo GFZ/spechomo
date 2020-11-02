@@ -12,6 +12,7 @@ test_spechomo:
   script:
     - source /root/miniconda3/bin/activate ci_env
     - conda install -y -c conda-forge "scikit-learn=0.23.2"  # FIXME remove as soon as docker container is rebuilt
+    - pip install 'geoarray>=0.10.4'  # FIXME remove as soon as docker container is rebuilt
 
     # run nosetests
     - make nosetests  # test are called here

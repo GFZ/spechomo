@@ -16,6 +16,7 @@ History
   (causes faulty predictions).
 * Bugfix for only choosing 25 spectra in classifier creation in case the maximum angle threshold is automatically
   set to 0 because there are many well matching spectra.
+* Added minimal version of geoarray.
 
 
 0.8.2 (2020-10-12)

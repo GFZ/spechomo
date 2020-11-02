@@ -96,8 +96,11 @@ class SpectralHomogenizer(object):
            np.max(outarr) <= np.iinfo(np.int16).max:
 
             outarr = outarr.astype(np.int16)
+
         elif np.min(outarr) >= np.iinfo(np.int32).min and np.max(outarr) <= np.iinfo(np.int32).max:
+
             outarr = outarr.astype(np.int32)
+
         else:
             raise TypeError('The interpolated data cube cannot be cast into a 16- or 32-bit integer array.')
 
@@ -405,7 +408,8 @@ class RSImage_ClusterPredictor(object):
                 if self.classif_alg == 'RF':
                     train_spectra = np.vstack([classifier.MLdict[clust].cluster_sample_spectra
                                                for clust in range(classifier.n_clusters)])
-                    train_labels = list(np.hstack([[i] * 100 for i in range(classifier.n_clusters)]))
+                    train_labels = list(np.hstack([[i] * 100
+                                                   for i in range(classifier.n_clusters)]))
                 else:
                     train_spectra = classifier.cluster_centers
                     train_labels = classifier.cluster_pixVals
@@ -424,7 +428,10 @@ class RSImage_ClusterPredictor(object):
                                  % time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)))
 
             else:
-                self.classif_map = GeoArray(np.full((image.rows, image.cols), classifier.cluster_pixVals[0], np.int16),
+                self.classif_map = GeoArray(np.full((image.rows,
+                                                     image.cols),
+                                                    classifier.cluster_pixVals[0],
+                                                    np.int16),
                                             nodata=cmap_nodataVal)
 
                 # overwrite all pixels where the input image contains nodata in ANY band
@@ -432,7 +439,8 @@ class RSImage_ClusterPredictor(object):
                 if in_nodataVal is not None and cmap_nodataVal is not None:
                     self.classif_map[np.any(image[:] == image.nodata, axis=2)] = cmap_nodataVal
 
-                self.distance_metrics = np.zeros_like(self.classif_map, np.float32)
+                self.distance_metrics = np.zeros_like(self.classif_map,
+                                                      np.float32)
 
         ####################
         # apply prediction #
@@ -446,9 +454,17 @@ class RSImage_ClusterPredictor(object):
         # NOTE: prediction is applied in 1000 x 1000 tiles to save memory (because classifier.predict returns float32)
         t0 = time.time()
         out_nodataVal = out_nodataVal if out_nodataVal is not None else image.nodata
-        image_predicted = GeoArray(np.empty((image.rows, image.cols, classifier.tgt_n_bands), dtype=image.dtype),
-                                   geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
-                                   bandnames=['B%s' % i if len(i) == 2 else 'B0%s' % i for i in classifier.tgt_LBA])
+        image_predicted = GeoArray(np.empty((image.rows,
+                                             image.cols,
+                                             classifier.tgt_n_bands),
+                                            dtype=image.dtype),
+                                   geotransform=image.gt,
+                                   projection=image.prj,
+                                   nodata=out_nodataVal,
+                                   bandnames=['B%s' % i
+                                              if len(i) == 2
+                                              else 'B0%s' % i
+                                              for i in classifier.tgt_LBA])
 
         if classifier.n_clusters > 1 and\
            self.classif_map.ndim > 2:
@@ -458,6 +474,7 @@ class RSImage_ClusterPredictor(object):
             dist_norm = (self.distance_metrics - dist_min) /\
                         (dist_max - dist_min)
             weights = 1 - dist_norm
+
         else:
             weights = None
 
