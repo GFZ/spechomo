@@ -23,6 +23,6 @@ data.
 
 .. seealso::
 
-    For details regarding the implemented algorithm, example use cases, quality assessment and benchmarks
-    refer to the following (open-access) paper:
-    `Scheffler et al. 2017 <http://www.mdpi.com/2072-4292/9/7/676>`__
+    For details regarding the implemented algorithm, example use cases and quality evaluations
+    refer to the following paper:
+    `Scheffler et al. 2020 <https://doi.org/10.1016/j.rse.2020.111723>`__

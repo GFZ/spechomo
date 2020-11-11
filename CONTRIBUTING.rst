@@ -70,7 +70,7 @@ Ready to contribute? Here's how to set up `spechomo` for local development.
 
    .. code-block:: bash
 
-      $ git clone git@github.com:your_name_here/spechomo.git
+      $ git clone `git@github.com:your_name_here/spechomo.git`
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
@@ -109,17 +109,17 @@ Ready to contribute? Here's how to set up `spechomo` for local development.
 
 7. Submit a pull request through the GitHub website.
 
-Pull Request Guidelines
------------------------
+Merge Request Guidelines
+------------------------
 
-Before you submit a pull request, check that it meets these guidelines:
+Before you submit a merge request, check that it meets these guidelines:
 
-1. The pull request should include tests.
-2. If the pull request adds functionality, the docs should be updated. Put
+1. The merge request should include tests.
+2. If the merge request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 2.7, 3.4, 3.5 and 3.6, and for PyPy. Check
-   https://travis-ci.org/danschef/spechomo/pull_requests
+3. The merge request should work for Python 2.7, 3.4+, and for PyPy. Check
+   https://gitext.gfz-potsdam.de/geomultisens/spechomo/-/merge_requests
    and make sure that the tests pass for all supported Python versions.
 
 Tips
@@ -142,4 +142,4 @@ $ bumpversion patch # possible: major / minor / patch
 $ git push
 $ git push --tags
 
-Travis will then deploy to PyPI if tests pass.
+The GitLab continous integration system will then deploy to PyPI if tests pass.

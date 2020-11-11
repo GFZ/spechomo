@@ -11,7 +11,10 @@
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
+# later version. Please note the following exception: `spechomo` depends on tqdm,
+# which is distributed under the Mozilla Public Licence (MPL) v2.0 except for the
+# files "tqdm/_tqdm.py", "setup.py", "README.rst", "MANIFEST.in" and ".gitignore".
+# Details can be found here: https://github.com/tqdm/tqdm/blob/master/LICENCE.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -29,6 +32,7 @@ from multiprocessing import Pool
 from typing import Union, List  # noqa F401  # flake8 issue
 import json
 import warnings
+from urllib.request import urlretrieve, urlopen
 
 import numpy as np  # noqa F401  # flake8 issue
 from geoarray import GeoArray  # noqa F401  # flake8 issue
@@ -55,7 +59,7 @@ def spectra2im(spectra, tgt_rows, tgt_cols):
     :param tgt_cols:    number of target image rows
     :return:            3D array (rows x columns x spectral bands)
     """
-    return spectra.reshape(tgt_rows, tgt_cols, spectra.shape[1])
+    return spectra.reshape((tgt_rows, tgt_cols, spectra.shape[1]))
 
 
 _columns_df_trafos = ['method', 'src_sat', 'src_sen', 'src_LBA', 'tgt_sat', 'tgt_sen', 'tgt_LBA', 'n_clusters']
@@ -211,3 +215,34 @@ def export_classifiers_as_JSON(export_rootDir,
 
     else:
         warnings.warn('No classifiers found matching the provided filter criteria. Nothing exported.', RuntimeWarning)
+
+
+def download_pretrained_classifiers(method, tgt_dir=options['classifiers']['rootdir']):
+    remote_filespecs = {
+        '100k_conservrsp_SCA_SD100percSA90perc_without_aviris__SCADist90pSAM40p': {
+            # 'LR': 'https://nextcloud.gfz-potsdam.de/s/Rzb75kckBreFfNE/download',  # 20201008
+            'LR': 'https://nextcloud.gfz-potsdam.de/s/mZEnS5g7AGWyRHB/download',
+            # 'QR': 'https://nextcloud.gfz-potsdam.de/s/Kk4zoCXxAEkAFZL/download',  # 20201008
+            'QR': 'https://nextcloud.gfz-potsdam.de/s/JcQDbZBtTiw9NYi/download',
+        }
+    }
+    clf_name = options['classifiers']['name']
+    try:
+        url = remote_filespecs[clf_name][method]
+    except KeyError:
+        raise RuntimeError("Currently there are no %s classifiers named '%s' available." % (method, clf_name))
+
+    for i in range(3):  # try 3 times
+        if i > 0:
+            print('Download failed. Restarting...')
+
+        # get filename
+        fn = urlopen(url).headers['content-disposition'].split('filename=')[-1].replace('"', '')
+
+        # download
+        if not os.path.isdir(tgt_dir):
+            os.makedirs(tgt_dir)
+        outP, msg = urlretrieve(url, os.path.join(tgt_dir, fn))
+
+        if os.path.getsize(outP) == int(msg.get('content-length')):
+            return outP

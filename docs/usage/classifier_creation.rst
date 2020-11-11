@@ -5,7 +5,7 @@ Although SpecHomo already includes a lot of classifiers for spectral harmonizati
 applications to train your own.
 
 The way to create some SpecHomo-compatible classifiers is described below. Details on the underlying algorithms can be
-found in `Scheffler et al. 2019 <LINK>`__.
+found in `Scheffler et al. 2020 <https://doi.org/10.1016/j.rse.2020.111723>`__.
 
 1. Build up a spectral database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -45,7 +45,7 @@ images:
                                   tgt_sat_sen_list=[
                                       ('Sentinel-2A', 'MSI'),
                                       ('Landsat-8', 'OLI_TIRS')
-                                  ]
+                                  ],
                                   tgt_n_samples=10000)
 
     # run reference cube generation
@@ -80,7 +80,7 @@ Here is an example based on the above created reference cubes for Sentinel-2A an
 
 The classifiers are saved as *.dill files. You may explore them later using the
 :func:`list_available_transformations<spechomo.utils.list_available_transformations>` function as described
-`here <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html>`__.
+`here <https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html>`__.
 
 .. note::
 

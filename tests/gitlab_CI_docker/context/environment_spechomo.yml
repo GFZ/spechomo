@@ -1,40 +1,28 @@
 name: spechomo
 
 channels: &id1
-  - http://conda.anaconda.org/conda-forge
+  - conda-forge
 
 dependencies:
-  - python=3.*.*
+  - python>=3.7.*
+  - pip
+  - geoarray>=0.10.4
   - matplotlib
   - numpy
   - pandas
-  # - scikit-learn=0.19.1  # Classifiers have been trained with this version. Different versions might cause breaking code.
-  - scikit-learn
-
-  # geoarray
-  - basemap
-  - bokeh
-  - gdal
-    # - geos>3.7.0   # pinning should not be needed anymore - https://github.com/conda-forge/basemap-feedstock/issues/43
-  - geopandas
-  - holoviews
-  - conda-forge::libgdal  # force to use conda-forge for libgdal to avoid package version incompatiblies due to mixed channels
-  - pyproj
-  - scikit-image
-  - shapely
+  - pyrsr
+  - scikit-learn=0.23.2  # Classifiers have been trained with this version. Different versions might cause breaking code.
+  - specclassify>=0.2.0
 
   - pip:
     - dill
-    - geoarray>=0.8.9
-    - specclassify>=0.2.0
-    - pyrsr
+    - natsort
     - nested_dict
     - pyyaml
     - scipy
     - seaborn
-    - tqdm
     - tabulate
-    - natsort
+    - tqdm
 
     # test and doc dependencies
     - coverage
@@ -47,4 +35,7 @@ dependencies:
     - pydocstyle
     - rednose
     - sphinx-argparse
+
+    # setup requirements
+    - setuptools-git
 

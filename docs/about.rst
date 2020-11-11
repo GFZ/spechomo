@@ -43,4 +43,4 @@ may also train your own homogenization classifiers specifically optimized to you
 the needed functionality for that.
 
 For further details on how to use SpecHomo check out the
-`documentation <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/>`__!
+`documentation <https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/>`__!

@@ -11,7 +11,10 @@
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
+# later version. Please note the following exception: `spechomo` depends on tqdm,
+# which is distributed under the Mozilla Public Licence (MPL) v2.0 except for the
+# files "tqdm/_tqdm.py", "setup.py", "README.rst", "MANIFEST.in" and ".gitignore".
+# Details can be found here: https://github.com/tqdm/tqdm/blob/master/LICENCE.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -25,7 +28,7 @@ import os
 import re
 from glob import glob
 from multiprocessing import cpu_count
-from typing import List, Tuple, Union, Dict  # noqa F401  # flake8 issue
+from typing import List, Tuple, Union, Dict, TYPE_CHECKING  # noqa F401  # flake8 issue
 import logging  # noqa F401  # flake8 issue
 from itertools import product
 
@@ -33,15 +36,16 @@ import dill
 import numpy as np
 from nested_dict import nested_dict
 from pandas import DataFrame
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline, make_pipeline
-from sklearn.preprocessing import PolynomialFeatures
 from tqdm import tqdm
 from geoarray import GeoArray
 from pyrsr import RSR
 from pyrsr.sensorspecs import get_LayerBandsAssignment
+
+if TYPE_CHECKING:
+    # avoid the sklearn imports on module level to get rid of static TLS ImportError
+    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.linear_model import LinearRegression, Ridge
+    from sklearn.pipeline import Pipeline
 
 from .clustering import KMeansRSImage
 from .resampling import SpectralResampler
@@ -70,6 +74,9 @@ class ReferenceCube_Generator(object):
         :param CPUs:            number CPUs to use for computation
         :param dir_clf_dump:    directory where to store the serialized KMeans classifier
         """
+        if not filelist_refs:
+            raise ValueError('The given list of reference images is empty.')
+
         # args + kwargs
         self.ims_ref = [filelist_refs, ] if isinstance(filelist_refs, str) else filelist_refs
         self.tgt_sat_sen_list = tgt_sat_sen_list or [
@@ -188,7 +195,7 @@ class ReferenceCube_Generator(object):
                                 contain nodata within the spectral response of a target band
                                     'radical':      set output band to nodata
                                     'conservative': use existing spectral information and ignore nodata
-                                                    (might alter the outpur spectral information,
+                                                    (might alter the output spectral information,
                                                      e.g., at spectral absorption bands)
         :param progress:        show progress bar (default: True)
         :return:                np.array: [tgt_n_samples x images x spectral bands of the target sensor]
@@ -412,9 +419,12 @@ class ClusterClassifier_Generator(object):
         # type: (List[Union[str, RefCube]], logging.Logger) -> None
         """Get an instance of Classifier_Generator.
 
-        :param list_refcubes:   list of RefCube instances for which the classifiers are to be created.
+        :param list_refcubes:   list of RefCube instances or paths for which the classifiers are to be created.
         :param logger:          instance of logging.Logger()
         """
+        if not list_refcubes:
+            raise ValueError('The given list of RefCube instances or paths is empty.')
+
         self.refcubes = [RefCube(inRC) if isinstance(inRC, str) else inRC for inRC in list_refcubes]
         self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
 
@@ -467,6 +477,8 @@ class ClusterClassifier_Generator(object):
                             'RFR':  Random Forest Regression (50 trees)
         :param kwargs:      keyword arguments to be passed to the __init__() function of machine learners
         """
+        from sklearn.pipeline import Pipeline
+
         ###################
         # train the model #
         ###################
@@ -523,7 +535,7 @@ class ClusterClassifier_Generator(object):
 
         return ML
 
-    def create_classifiers(self, outDir, method='LR', n_clusters=50, sam_classassignment=False, CPUs=24,
+    def create_classifiers(self, outDir, method='LR', n_clusters=50, sam_classassignment=False, CPUs=None,
                            max_distance=options['classifiers']['trainspec_filtering']['max_distance'],
                            max_angle=options['classifiers']['trainspec_filtering']['max_angle'],
                            **kwargs):
@@ -546,7 +558,12 @@ class ClusterClassifier_Generator(object):
                                 - if given as string, e.g., '80%' excludes the worst 20 % of the input spectra
         :param kwargs:      keyword arguments to be passed to machine learner
         """
+        from sklearn.model_selection import train_test_split
+
         # validate and set defaults
+        if not os.path.isdir(outDir):
+            os.makedirs(outDir)
+
         if method == 'RFR':
             if n_clusters > 1:
                 self.logger.warning("The spectral homogenization method 'Random Forest Regression' does not allow "
@@ -568,7 +585,8 @@ class ClusterClassifier_Generator(object):
             clusterlabels_src_cube, spectral_distances, spectral_angles = \
                 self._get_cluster_labels_for_source_refcube(src_cube, n_clusters, CPUs,
                                                             sam_classassignment=sam_classassignment,
-                                                            return_spectral_distances=True, return_spectral_angles=True)
+                                                            return_spectral_distances=True,
+                                                            return_spectral_angles=True)
 
             for tgt_cube in self.refcubes:
                 if (src_cube.satellite, src_cube.sensor) == (tgt_cube.satellite, tgt_cube.sensor):
@@ -603,6 +621,16 @@ class ClusterClassifier_Generator(object):
                     # (clusters with too few spectra that are set to nodata in the refcube)
                     df_src_spectra_allclust = df_src_spectra_allclust[df_src_spectra_allclust.cluster_label != -9999]
                     df_tgt_spectra_allclust = df_tgt_spectra_allclust[df_tgt_spectra_allclust.cluster_label != -9999]
+
+                    # remove spectra with -9999 in all bands that HAVE a valid clusterlabel
+                    # NOTE: This may happen because the cluster labels are computed on the source cube only and may be
+                    #       different on the target cube.
+                    sub_bad = df_tgt_spectra_allclust[df_tgt_spectra_allclust.iloc[:, 3] == -9999].copy()
+                    if not sub_bad.empty:
+                        idx_bad = sub_bad[np.std(sub_bad.iloc[:, 3:], axis=1) == 0].index
+                        if not idx_bad.empty:
+                            df_src_spectra_allclust = df_src_spectra_allclust.drop(idx_bad)
+                            df_tgt_spectra_allclust = df_tgt_spectra_allclust.drop(idx_bad)
 
                     # ensure source and target spectra do not contain nodata values (would affect classifiers)
                     assert src_cube.data.nodata is None or src_cube.data.nodata not in df_src_spectra_allclust.values
@@ -648,7 +676,8 @@ class ClusterClassifier_Generator(object):
                                                            n_clusters=n_clusters, **kwargs)
 
             with open(os.path.join(outDir, fName_cls), 'wb') as outF:
-                dill.dump(cls_collection.to_dict(), outF, protocol=dill.HIGHEST_PROTOCOL)
+                dill.dump(cls_collection.to_dict(), outF,
+                          protocol=dill.HIGHEST_PROTOCOL - 1)  # ensures some downwards compatibility
 
     def _get_cluster_labels_for_source_refcube(self, src_cube, n_clusters, CPUs, sam_classassignment=False,
                                                return_spectral_distances=False, return_spectral_angles=False):
@@ -699,19 +728,19 @@ class ClusterClassifier_Generator(object):
             max_angle = np.percentile(df_src_spectra.spectral_angle,
                                       int(max_angle.split('%')[0].strip()))
 
-        tmp = df_src_spectra[df_src_spectra.spectral_angle < max_angle]
+        tmp = df_src_spectra[df_src_spectra.spectral_angle <= max_angle]
         if len(tmp.index) > 10:
             df_src_spectra = tmp
         else:
-            df_src_spectra = df_src_spectra.sort_values(by='spectral_angle').head(25)
-            self.logger.warning('Had to choose spectra with SA up to %.2f degrees for cluster #%s.'
+            df_src_spectra = df_src_spectra.sort_values(by='spectral_angle').head(10)
+            self.logger.warning('Had to choose spectra with SA up to %.1f degrees for cluster #%s.'
                                 % (np.max(df_src_spectra['spectral_angle']), clusterlabel))
 
         if isinstance(max_distance, str):
             max_distance = np.percentile(df_src_spectra.spectral_distance,
                                          int(max_distance.split('%')[0].strip()))
 
-        tmp = df_src_spectra[df_src_spectra.spectral_distance < max_distance]
+        tmp = df_src_spectra[df_src_spectra.spectral_distance <= max_distance]
         if len(tmp.index) > 10:
             df_src_spectra = tmp
         else:
@@ -768,6 +797,11 @@ def get_machine_learner(method='LR', **init_params):
                             'RFR':  Random Forest Regression (50 trees)
     :param init_params:     parameters to be passed to __init__() function of the returned machine learner model.
     """
+    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.linear_model import LinearRegression, Ridge
+    from sklearn.pipeline import make_pipeline
+    from sklearn.preprocessing import PolynomialFeatures
+
     if method == 'LR':
         return LinearRegression(**init_params)
     elif method == 'RR':

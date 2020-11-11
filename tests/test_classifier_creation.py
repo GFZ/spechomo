@@ -12,7 +12,10 @@
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
+# later version. Please note the following exception: `spechomo` depends on tqdm,
+# which is distributed under the Mozilla Public Licence (MPL) v2.0 except for the
+# files "tqdm/_tqdm.py", "setup.py", "README.rst", "MANIFEST.in" and ".gitignore".
+# Details can be found here: https://github.com/tqdm/tqdm/blob/master/LICENCE.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -40,17 +43,10 @@ from pyrsr import RSR
 from spechomo import __path__
 from spechomo.classifier_creation import ReferenceCube_Generator, RefCube, ClusterClassifier_Generator
 
-hyspec_data = os.path.join(__path__[0], '../tests/data/Bavaria_farmland_LMU_Hyspex_subset.bsq')
+hyspec_data = os.path.join(__path__[0], '../tests/data/AV_mastercal_testdata.bsq')
 refcube_l8 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-8__OLI_TIRS__nclust50__nsamp1000.bsq')
 refcube_l5 = os.path.join(__path__[0], '../tests/data/refcube__Landsat-5__TM__nclust50__nsamp1000.bsq')
 refcube_s2 = os.path.join(__path__[0], '../tests/data/refcube__Sentinel-2A__MSI__nclust50__nsamp1000.bsq')
-# TODO remove that
-# refcube_l7 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/perc20excl/' \
-#              'refcube__Landsat-7__ETM+__nclust50__nsamp20000.bsq'
-# refcube_l8 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/20k_SCA_nofilt_without_aviris/' \
-#              'refcube__Landsat-8__OLI_TIRS__nclust50__nsamp20000.bsq'
-# refcube_s2 = '/home/gfz-fe/scheffler/temp/SPECHOM_py/CUBE/20k_SCA_nofilt_without_aviris/' \
-#              'refcube__Sentinel-2A__MSI__nclust50__nsamp20000.bsq'
 
 
 class Test_ReferenceCube_Generator(unittest.TestCase):

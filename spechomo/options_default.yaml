@@ -1,4 +1,6 @@
 classifiers:
+    name: '100k_conservrsp_SCA_SD100percSA90perc_without_aviris__SCADist90pSAM40p'
+
     RFR:  # Random Forest
         n_trees: 50
         max_depth: 5

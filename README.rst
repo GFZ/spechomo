@@ -2,12 +2,15 @@
 SpecHomo - Spectral homogenization of multispectral satellite data
 ==================================================================
 
-* Free software: GNU General Public License v3
-* **Documentation:** http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/
-* The **paper** corresponding to this software repository has been accepted by
-  Remote Sensing of Environment but is not yet published:
+* Free software: GNU General Public License v3 or later (GPLv3+)
+* **Documentation:** https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/
+* The **paper** corresponding to this software repository can be found here:
+  `Scheffler et al. 2020 <https://doi.org/10.1016/j.rse.2020.111723>`__ (cite as:
   Scheffler D., Frantz D., Segl K. (2020). Spectral harmonization and red edge prediction of Landsat-8 to Sentinel-2
-  using land cover optimized multivariate regressors. Remote Sens. Environ. (accepted)
+  using land cover optimized multivariate regressors. Remote Sens. Environ. 241, 111723.
+  https://doi.org/10.1016/j.rse.2020.111723)
+* Information on how to **cite the SpecHomo Python package** can be found in the
+  `CITATION <https://gitext.gfz-potsdam.de/geomultisens/spechomo/-/blob/master/CITATION>`__ file.
 * Submit feedback by filing an issue `here <https://gitext.gfz-potsdam.de/geomultisens/spechomo/issues>`__
   or join our chat here: |Gitter|
 
@@ -29,17 +32,24 @@ Status
      :target: https://pyup.io/repos/github/danschef/spechomo/
      :alt: Updates
 
-
 .. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/pipeline.svg
         :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/commits/master
 .. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/coverage.svg
-        :target: http://geomultisens.gitext.gfz-potsdam.de/spechomo/coverage/
+        :target: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/coverage/
+.. image:: https://img.shields.io/static/v1?label=Documentation&message=GitLab%20Pages&color=orange
+        :target: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/
 .. image:: https://img.shields.io/pypi/v/spechomo.svg
         :target: https://pypi.python.org/pypi/spechomo
+.. image:: https://img.shields.io/conda/vn/conda-forge/spechomo.svg
+        :target: https://anaconda.org/conda-forge/spechomo
 .. image:: https://img.shields.io/pypi/l/spechomo.svg
         :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/blob/master/LICENSE
 .. image:: https://img.shields.io/pypi/pyversions/spechomo.svg
         :target: https://img.shields.io/pypi/pyversions/spechomo.svg
+.. image:: https://img.shields.io/pypi/dm/spechomo.svg
+        :target: https://pypi.python.org/pypi/spechomo
+.. image:: https://zenodo.org/badge/241405333.svg
+   :target: https://zenodo.org/badge/latestdoi/241405333
 
 See also the latest coverage_ report and the nosetests_ HTML report.
 
@@ -47,7 +57,7 @@ See also the latest coverage_ report and the nosetests_ HTML report.
 Feature overview
 ----------------
 
-SpecHomo is a **python package for spectral homogenization of multispectral satellite data**, i.e., for the transformation
+SpecHomo is a **Python package for spectral homogenization of multispectral satellite data**, i.e., for the transformation
 of the spectral information of one sensor into the spectral domain of another one. This simplifies workflows, increases
 the reliability of subsequently derived multi-sensor products and may also enable the generation of new products that
 are not possible with the initial spectral definition.
@@ -85,7 +95,7 @@ may also train your own homogenization classifiers specifically optimized to you
 the needed functionality for that.
 
 For further details on how to use SpecHomo check out the
-`documentation <http://geomultisens.gitext.gfz-potsdam.de/spechomo/doc/>`__!
+`documentation <https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/>`__!
 
 Credits
 -------
@@ -97,5 +107,5 @@ This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypack
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-.. _coverage: http://geomultisens.gitext.gfz-potsdam.de/spechomo/coverage/
-.. _nosetests: http://geomultisens.gitext.gfz-potsdam.de/spechomo/nosetests_reports/nosetests.html
+.. _coverage: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/coverage/
+.. _nosetests: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/nosetests_reports/nosetests.html

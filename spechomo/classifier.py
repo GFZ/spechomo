@@ -11,7 +11,10 @@
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
+# later version. Please note the following exception: `spechomo` depends on tqdm,
+# which is distributed under the Mozilla Public Licence (MPL) v2.0 except for the
+# files "tqdm/_tqdm.py", "setup.py", "README.rst", "MANIFEST.in" and ".gitignore".
+# Details can be found here: https://github.com/tqdm/tqdm/blob/master/LICENCE.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -26,17 +29,18 @@ import tempfile
 import zipfile
 from collections import OrderedDict
 from pprint import pformat
-from typing import Union, List  # noqa F401  # flake8 issue
+from typing import Union, List, TYPE_CHECKING  # noqa F401  # flake8 issue
 import json
 import builtins
+
+if TYPE_CHECKING:
+    from matplotlib import pyplot as plt  # noqa F401  # flake8 issue
 
 from tqdm import tqdm
 import dill
 import numpy as np
-from matplotlib import pyplot as plt
 from pandas import DataFrame
 from geoarray import GeoArray  # noqa F401  # flake8 issue
-from sklearn.linear_model import LinearRegression
 
 from .classifier_creation import get_filename_classifier_collection, get_machine_learner
 from .exceptions import ClassifierNotAvailableError
@@ -139,7 +143,11 @@ class Cluster_Learner(object):
         with zipfile.ZipFile(path_classifier_zip, "r") as zf, tempfile.TemporaryDirectory() as td:
             fName_clf = get_filename_classifier_collection(method, src_satellite, src_sensor, n_clusters=n_clusters,
                                                            **kw_clfinit)
-            zf.extract(fName_clf, td)
+            try:
+                zf.extract(fName_clf, td)
+            except KeyError:
+                raise FileNotFoundError("No classifiers for %s %s with %d clusters contained in %s."
+                                        % (src_satellite, src_sensor, n_clusters, path_classifier_zip))
 
             return Cluster_Learner._read_ClassifierCollection_from_unzippedFile(
                 td, method, src_satellite, src_sensor, src_LBA,
@@ -298,6 +306,7 @@ class Cluster_Learner(object):
     def plot_sample_spectra(self, cluster_label='all', include_mean_spectrum=True, include_median_spectrum=True,
                             ncols=5, **kw_fig):
         # type: (Union[str, int, List], bool, bool, int, dict) -> plt.figure
+        from matplotlib import pyplot as plt  # noqa
 
         if isinstance(cluster_label, int):
             lbls2plot = [cluster_label]
@@ -445,7 +454,6 @@ class ClassifierCollection(object):
         except KeyError:
             raise(KeyError("The classifier has no key '%s'. Available keys are: %s"
                            % (item, repr(self))))
-
     # def save_to_json(self, filepath):
     #     a = 1
     #     pass
@@ -484,6 +492,8 @@ def get_jsonable_value(in_value, return_typesdict=False):
 
 
 def classifier_to_jsonable_dict(clf, skipkeys: list = None, include_typesdict=False):
+    from sklearn.linear_model import LinearRegression  # avoids static TLS error here
+
     if isinstance(clf, LinearRegression):
         jsonable_dict = dict(clftype='LR')
         typesdict = dict()
@@ -523,6 +533,8 @@ def classifier_from_json_str(json_str):
     :param json_str:    the JSON string to be used for de-serialization
     :return:
     """
+    from sklearn.linear_model import LinearRegression  # avoids static TLS error here
+
     in_dict = json.loads(json_str)
 
     if in_dict['clftype']['val'] == 'LR':

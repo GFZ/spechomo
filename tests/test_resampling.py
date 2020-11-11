@@ -12,7 +12,10 @@
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
+# later version. Please note the following exception: `spechomo` depends on tqdm,
+# which is distributed under the Mozilla Public Licence (MPL) v2.0 except for the
+# files "tqdm/_tqdm.py", "setup.py", "README.rst", "MANIFEST.in" and ".gitignore".
+# Details can be found here: https://github.com/tqdm/tqdm/blob/master/LICENCE.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -42,7 +45,7 @@ from spechomo.resampling import SpectralResampler as SR
 from spechomo.resampling import _resample_tile_mp, _initializer_mp
 
 
-testdata = os.path.join(__path__[0], '../tests/data/Bavaria_farmland_LMU_Hyspex_subset.bsq')
+testdata = os.path.join(__path__[0], '../tests/data/AV_mastercal_testdata.bsq')
 
 
 class Test_SpectralResampler(unittest.TestCase):
@@ -84,6 +87,7 @@ class Test_SpectralResampler(unittest.TestCase):
         im_rsp = sr.resample_image(image)
         self.assertTrue(np.any(im_rsp), msg='Output image is empty.')
 
+    @unittest.SkipTest
     def test__resample_tile_with_nodata(self):
         # Get a hyperspectral image tile.
         image_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=np.float).flatten()

@@ -11,7 +11,10 @@
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
+# later version. Please note the following exception: `spechomo` depends on tqdm,
+# which is distributed under the Mozilla Public Licence (MPL) v2.0 except for the
+# files "tqdm/_tqdm.py", "setup.py", "README.rst", "MANIFEST.in" and ".gitignore".
+# Details can be found here: https://github.com/tqdm/tqdm/blob/master/LICENCE.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -30,7 +33,6 @@ from typing import Union, Tuple  # noqa F401  # flake8 issue
 from multiprocessing import cpu_count
 import traceback
 import time
-from scipy.interpolate import interp1d
 from geoarray import GeoArray  # noqa F401  # flake8 issue
 from specclassify import classify_image
 # from specclassify import kNN_MinimumDistance_Classifier
@@ -43,7 +45,7 @@ from .options import options
 
 __author__ = 'Daniel Scheffler'
 
-classifier_rootdir = options['classifiers']['rootdir']
+_classifier_rootdir = options['classifiers']['rootdir']
 
 
 class SpectralHomogenizer(object):
@@ -55,12 +57,12 @@ class SpectralHomogenizer(object):
         :param classifier_rootDir:  root directory where machine learning classifiers are stored.
         :param logger:              instance of logging.Logger
         """
-        self.classifier_rootDir = classifier_rootDir or classifier_rootdir
+        self.classifier_rootDir = classifier_rootDir or _classifier_rootdir
         self.logger = logger or SpecHomo_Logger(__name__)
         self.CPUs = CPUs or cpu_count()
 
     def interpolate_cube(self, arrcube, source_CWLs, target_CWLs, kind='linear'):
-        # type: (Union[np.ndarray, GeoArray], list, list, str) -> np.ndarray
+        # type: (Union[np.ndarray, GeoArray], list, list, str) -> GeoArray
         """Spectrally interpolate the spectral bands of a remote sensing image to new band positions.
 
         :param arrcube:     array to be spectrally interpolated
@@ -69,35 +71,48 @@ class SpectralHomogenizer(object):
         :param kind:        interpolation kind to be passed to scipy.interpolate.interp1d (default: 'linear')
         :return:
         """
+        from scipy.interpolate import interp1d  # import here to avoid static TLS ImportError
+
         assert kind in ['linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic'], \
             "%s is not a supported kind of spectral interpolation." % kind
         assert arrcube is not None,\
             'L2B_obj.interpolate_cube_linear expects a numpy array as input. Got %s.' % type(arrcube)
 
-        orig_CWLs, target_CWLs = np.array(source_CWLs), np.array(target_CWLs)
+        orig_CWLs = np.array(source_CWLs)
+        target_CWLs = np.array(target_CWLs)
 
         self.logger.info(
             'Performing spectral homogenization (%s interpolation) with target wavelength positions at %s nm.'
             % (kind, ', '.join(np.round(np.array(target_CWLs[:-1]), 1).astype(str)) +
                ' and %s' % np.round(target_CWLs[-1], 1)))
-        outarr = interp1d(np.array(orig_CWLs), arrcube, axis=2, kind=kind, fill_value='extrapolate')(target_CWLs)
+        outarr = \
+            interp1d(np.array(orig_CWLs),
+                     arrcube,
+                     axis=2,
+                     kind=kind,
+                     fill_value='extrapolate')(target_CWLs)
 
-        if np.min(outarr) >= np.iinfo(np.int16).min and np.max(outarr) <= np.iinfo(np.int16).max:
+        if np.min(outarr) >= np.iinfo(np.int16).min and \
+           np.max(outarr) <= np.iinfo(np.int16).max:
+
             outarr = outarr.astype(np.int16)
+
         elif np.min(outarr) >= np.iinfo(np.int32).min and np.max(outarr) <= np.iinfo(np.int32).max:
+
             outarr = outarr.astype(np.int32)
+
         else:
             raise TypeError('The interpolated data cube cannot be cast into a 16- or 32-bit integer array.')
 
         assert outarr.shape == tuple([*arrcube.shape[:2], len(target_CWLs)])
 
-        return outarr
+        return GeoArray(outarr)
 
     def predict_by_machine_learner(self, arrcube, method, src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor,
                                    tgt_LBA, n_clusters=50, classif_alg='MinDist', kNN_n_neighbors=10,
                                    global_clf_threshold=options['classifiers']['prediction']['global_clf_threshold'],
                                    src_nodataVal=None, out_nodataVal=None, compute_errors=False, bandwise_errors=True,
-                                   **fallback_argskwargs):
+                                   fallback_argskwargs=None):
         # type: (Union[np.ndarray, GeoArray], str, str, str, list, str, str, list, int, str, int, Union[str, int, float], int, int, bool, bool, dict) -> tuple  # noqa
         """Predict spectral bands of target sensor by applying a machine learning approach.
 
@@ -148,7 +163,8 @@ class SpectralHomogenizer(object):
                                     (default: false)
         :param bandwise_errors      whether to compute error information for each band separately (True - default)
                                     or to average errors over bands using median (False) (ignored in case of fallback)
-        :param fallback_argskwargs: arguments and keyword arguments for fallback algorithm ({'args':{}, 'kwargs': {}}
+        :param fallback_argskwargs: arguments and keyword arguments to be passed to the fallback algorithm
+                                    SpectralHomogenizer.interpolate_cube() in case harmonization fails
         :return:                    predicted array (rows x columns x bands)
         :rtype:                     Tuple[np.ndarray, Union[np.ndarray, None]]
         """
@@ -181,8 +197,8 @@ class SpectralHomogenizer(object):
             exc = e
 
         except ClassifierNotAvailableError as e:
-            self.logger.error('\nAn error occurred during spectral homogenization using machine learning. '
-                              'Falling back to linear interpolation. Error message was: ')
+            self.logger.error('\nAn error occurred during spectral homogenization using the %s classifier. '
+                              'Falling back to linear interpolation. Error message was: ' % method)
             self.logger.error(traceback.format_exc())
             exc = e
 
@@ -199,7 +215,7 @@ class SpectralHomogenizer(object):
                                      in_nodataVal=src_nodataVal,
                                      cmap_nodataVal=src_nodataVal,
                                      out_nodataVal=out_nodataVal,
-                                     global_clf_threshold=global_clf_threshold)
+                                     global_clf_threshold=global_clf_threshold)  # type: GeoArray
 
             if compute_errors:
                 errors = RSI_CP.compute_prediction_errors(im_homo, cls,
@@ -211,14 +227,12 @@ class SpectralHomogenizer(object):
 
         elif fallback_argskwargs:
             # fallback: use linear interpolation and set errors to an array of zeros
-            im_homo = self.interpolate_cube(arrcube,
-                                            *fallback_argskwargs['args'],
-                                            **fallback_argskwargs['kwargs'])
+            im_homo = self.interpolate_cube(**fallback_argskwargs)  # type: GeoArray
 
             if compute_errors:
                 self.logger.warning("Spectral homogenization algorithm had to be performed by linear interpolation "
                                     "(fallback). Unable to compute any accuracy information from that.")
-                if not bandwise_errors:
+                if bandwise_errors:
                     errors = np.zeros_like(im_homo, dtype=np.int16)
                 else:
                     errors = np.zeros(im_homo.shape[:2], dtype=np.int16)
@@ -227,7 +241,7 @@ class SpectralHomogenizer(object):
             raise exc
 
         # add metadata
-        im_homo.metadata.band_meta['wavelength'] = cls.tgt_wavelengths
+        im_homo.metadata.band_meta['wavelength'] = cls.tgt_wavelengths if cls else fallback_argskwargs['target_CWLs']
         im_homo.classif_map = RSI_CP.classif_map
         im_homo.distance_metrics = RSI_CP.distance_metrics
 
@@ -275,7 +289,7 @@ class RSImage_ClusterPredictor(object):
         """
         self.method = method
         self.n_clusters = n_clusters
-        self.classifier_rootDir = os.path.abspath(classifier_rootDir) if classifier_rootDir else classifier_rootdir
+        self.classifier_rootDir = os.path.abspath(classifier_rootDir) if classifier_rootDir else _classifier_rootdir
         self.classif_map = None
         self.classif_map_fractions = None
         self.distance_metrics = None
@@ -297,7 +311,7 @@ class RSImage_ClusterPredictor(object):
 
     def get_classifier(self, src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA):
         # type: (str, str, list, str, str, list) -> Cluster_Learner
-        """Select the correct machine learning classifier out of previously saves classifier collections.
+        """Select the correct machine learning classifier out of previously saved classifier collections.
 
         Describe the classifier specifications with the given arguments.
         :param src_satellite:   source satellite, e.g., 'Landsat-8'
@@ -308,8 +322,38 @@ class RSImage_ClusterPredictor(object):
         :param tgt_LBA:         target LayerBandsAssignment
         :return:                classifier instance loaded from disk
         """
-        return Cluster_Learner.from_disk(self.classifier_rootDir, self.method, self.n_clusters,
-                                         src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
+        args_fd = (self.classifier_rootDir, self.method, self.n_clusters,
+                   src_satellite, src_sensor, src_LBA, tgt_satellite, tgt_sensor, tgt_LBA)
+
+        try:
+            CL = Cluster_Learner.from_disk(*args_fd)
+
+        except FileNotFoundError:
+            if self.classifier_rootDir == _classifier_rootdir:
+                # the default root directory is used
+
+                if not os.path.exists(os.path.join(_classifier_rootdir, '%s_classifiers.zip' % self.method)):
+                    # download the classifiers
+                    self.logger.info('The pre-trained classifiers have not been downloaded yet. Downloading...')
+
+                    from .utils import download_pretrained_classifiers
+                    download_pretrained_classifiers(method=self.method,
+                                                    tgt_dir=self.classifier_rootDir)
+
+                else:
+                    self.logger.error('%s classifiers found at %s. However, they do not contain a suitable classifier '
+                                      'for the current predition. If desired, delete the existing classifiers and try '
+                                      'again. Pre-trained classifiers are then automatically downloaded.'
+                                      % (self.method, self.classifier_rootDir))
+
+                # try again
+                CL = Cluster_Learner.from_disk(*args_fd)
+
+            else:
+                # classifier not found in the user provided root directory
+                raise
+
+        return CL
 
     def predict(self, image, classifier, in_nodataVal=None, out_nodataVal=None, cmap_nodataVal=None,
                 global_clf_threshold=None, unclassified_pixVal=-1):
@@ -364,7 +408,8 @@ class RSImage_ClusterPredictor(object):
                 if self.classif_alg == 'RF':
                     train_spectra = np.vstack([classifier.MLdict[clust].cluster_sample_spectra
                                                for clust in range(classifier.n_clusters)])
-                    train_labels = list(np.hstack([[i] * 100 for i in range(classifier.n_clusters)]))
+                    train_labels = list(np.hstack([[i] * 100
+                                                   for i in range(classifier.n_clusters)]))
                 else:
                     train_spectra = classifier.cluster_centers
                     train_labels = classifier.cluster_pixVals
@@ -383,7 +428,10 @@ class RSImage_ClusterPredictor(object):
                                  % time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)))
 
             else:
-                self.classif_map = GeoArray(np.full((image.rows, image.cols), classifier.cluster_pixVals[0], np.int16),
+                self.classif_map = GeoArray(np.full((image.rows,
+                                                     image.cols),
+                                                    classifier.cluster_pixVals[0],
+                                                    np.int16),
                                             nodata=cmap_nodataVal)
 
                 # overwrite all pixels where the input image contains nodata in ANY band
@@ -391,7 +439,8 @@ class RSImage_ClusterPredictor(object):
                 if in_nodataVal is not None and cmap_nodataVal is not None:
                     self.classif_map[np.any(image[:] == image.nodata, axis=2)] = cmap_nodataVal
 
-                self.distance_metrics = np.zeros_like(self.classif_map, np.float32)
+                self.distance_metrics = np.zeros_like(self.classif_map,
+                                                      np.float32)
 
         ####################
         # apply prediction #
@@ -405,14 +454,27 @@ class RSImage_ClusterPredictor(object):
         # NOTE: prediction is applied in 1000 x 1000 tiles to save memory (because classifier.predict returns float32)
         t0 = time.time()
         out_nodataVal = out_nodataVal if out_nodataVal is not None else image.nodata
-        image_predicted = GeoArray(np.empty((image.rows, image.cols, classifier.tgt_n_bands), dtype=image.dtype),
-                                   geotransform=image.gt, projection=image.prj, nodata=out_nodataVal,
-                                   bandnames=['B%s' % i if len(i) == 2 else 'B0%s' % i for i in classifier.tgt_LBA])
+        image_predicted = GeoArray(np.empty((image.rows,
+                                             image.cols,
+                                             classifier.tgt_n_bands),
+                                            dtype=image.dtype),
+                                   geotransform=image.gt,
+                                   projection=image.prj,
+                                   nodata=out_nodataVal,
+                                   bandnames=['B%s' % i
+                                              if len(i) == 2
+                                              else 'B0%s' % i
+                                              for i in classifier.tgt_LBA])
 
-        if classifier.n_clusters > 1 and self.classif_map.ndim > 2:
-            dist_min, dist_max = self.distance_metrics.min(), self.distance_metrics.max()
-            dist_norm = (self.distance_metrics - dist_min) / (dist_max - dist_min)
+        if classifier.n_clusters > 1 and\
+           self.classif_map.ndim > 2:
+
+            dist_min, dist_max = np.min(self.distance_metrics),\
+                                 np.max(self.distance_metrics)
+            dist_norm = (self.distance_metrics - dist_min) /\
+                        (dist_max - dist_min)
             weights = 1 - dist_norm
+
         else:
             weights = None
 
@@ -448,9 +510,15 @@ class RSImage_ClusterPredictor(object):
 
             # set saturated pixels (exceeding the output data range with respect to the data type) to no-data
             if isinstance(image_predicted.dtype, np.integer):
-                out_dTMin, out_dTMax = np.iinfo(image_predicted.dtype).min, np.iinfo(image_predicted.dtype).max
-                if im_tile_pred.min() < out_dTMin or im_tile_pred.max() > out_dTMax:
-                    mask_saturated = np.any(im_tile_pred > out_dTMax | im_tile_pred < out_dTMin, axis=2)
+                out_dTMin, out_dTMax = np.iinfo(image_predicted.dtype).min,\
+                                       np.iinfo(image_predicted.dtype).max
+
+                if np.min(im_tile_pred) < out_dTMin or\
+                   np.max(im_tile_pred) > out_dTMax:
+
+                    mask_saturated = np.any(im_tile_pred > out_dTMax |
+                                            im_tile_pred < out_dTMin,
+                                            axis=2)
                     n_saturated_px += np.sum(mask_saturated)
                     im_tile_pred[mask_saturated] = out_nodataVal
 
@@ -484,7 +552,8 @@ class RSImage_ClusterPredictor(object):
 
         # re-apply nodata values to predicted result
         if image.nodata is not None:
-            image_predicted[image.mask_nodata[:] == 0] = out_nodataVal
+            mask_nodata = image.calc_mask_nodata(overwrite=True, flag='any')
+            image_predicted[~mask_nodata] = out_nodataVal
 
         # copy mask_nodata
         image_predicted.mask_nodata = image.mask_nodata

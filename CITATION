@@ -1,0 +1,35 @@
+You are welcome to use and modify the `spechomo` project.
+See the README.rst and LICENSE files for details.
+
+If you use this software for research we would appreciate appropriate citation.
+This may be prepared using the bibliographic metadata contained in our DOI, accessible through the DOI system and at
+https://doi.org/10.5281/zenodo.3678713
+
+To cite the `spechomo` Python package in your publication, please use (modify the version number if needed):
+
+  Scheffler, Daniel. (2020, April 3). SpecHomo: A Python package for spectral homogenization of multispectral satellite data (Version v0.6.0). Zenodo. https://doi.org/10.5281/zenodo.3678713
+
+This may need modification for the citation style of your publication.
+You are encouraged to include the version number of the software.
+
+A BibTeX entry for LaTeX users should look like this
+(find the one for the latest version here: https://zenodo.org/record/3739570/export/hx):
+
+@software{scheffler_daniel_2020_3739570,
+  author       = {Scheffler, Daniel},
+  title        = {{SpecHomo: A Python package for spectral
+                   homogenization of multispectral satellite data}},
+  month        = apr,
+  year         = 2020,
+  publisher    = {Zenodo},
+  version      = {v0.6.0},
+  doi          = {10.5281/zenodo.3739570},
+  url          = {https://doi.org/10.5281/zenodo.3739570}
+}
+
+For information on citing software products generally, see the
+FORCE11 document [*].
+
+
+[*] FORCE11 Software Citation Working Group (2016), "Software Citation Principles", (Editors: Arfon M. Smith, Daniel S. Katz, Kyle E. Niemeyer).
+    Accessed 2017-08-08 at https://www.force11.org/sites/default/files/shared-documents/software-citation-principles.pdf

@@ -11,7 +11,10 @@
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
+# later version. Please note the following exception: `spechomo` depends on tqdm,
+# which is distributed under the Mozilla Public Licence (MPL) v2.0 except for the
+# files "tqdm/_tqdm.py", "setup.py", "README.rst", "MANIFEST.in" and ".gitignore".
+# Details can be found here: https://github.com/tqdm/tqdm/blob/master/LICENCE.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -25,11 +28,8 @@ from multiprocessing import Pool
 from typing import Union, TYPE_CHECKING  # noqa F401  # flake8 issue
 
 import numpy as np
-import scipy as sp
 from geoarray import GeoArray
 from geoarray.baseclasses import get_array_tilebounds
-from matplotlib import pyplot as plt
-from scipy.interpolate import interp1d
 
 from .logging import SpecHomo_Logger
 
@@ -70,11 +70,13 @@ class SpectralResampler(object):
     @property
     def rsr_1nm(self):
         if not self._rsr_1nm:
+            from scipy.interpolate import interp1d  # import here to avoid static TLS ImportError
+
             for band in self.rsr_tgt.bands:
                 # resample RSR to 1 nm
                 self._rsr_1nm[band] = \
-                    sp.interpolate.interp1d(self.rsr_tgt.rsrs_wvl, self.rsr_tgt.rsrs[band],
-                                            bounds_error=False, fill_value=0, kind='linear')(self.wvl_1nm)
+                    interp1d(self.rsr_tgt.rsrs_wvl, self.rsr_tgt.rsrs[band],
+                             bounds_error=False, fill_value=0, kind='linear')(self.wvl_1nm)
 
                 # validate
                 assert len(self._rsr_1nm[band]) == len(self.wvl_1nm)
@@ -113,6 +115,8 @@ class SpectralResampler(object):
             .ravel()
 
         if v:
+            from matplotlib import pyplot as plt
+
             plt.figure()
             for band in self.rsr_tgt.bands:
                 plt.plot(self.wvl_1nm, self.rsr_1nm[band] / max(self.rsr_1nm[band]))
@@ -218,6 +222,8 @@ def _initializer_mp(image_cube, rsr_tgt, rsr_1nm, wvl_src_nm, wvl_1nm):
 
 def _resample_tile_mp(tilebounds, nodataVal=None, alg_nodata='radical'):
     # TODO speed up by using numba as described here https://krstn.eu/fast-linear-1D-interpolation-with-numba/
+
+    from scipy.interpolate import interp1d
 
     (rS, rE), (cS, cE) = tilebounds
 

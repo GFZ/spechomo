@@ -12,7 +12,10 @@
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
+# later version. Please note the following exception: `spechomo` depends on tqdm,
+# which is distributed under the Mozilla Public Licence (MPL) v2.0 except for the
+# files "tqdm/_tqdm.py", "setup.py", "README.rst", "MANIFEST.in" and ".gitignore".
+# Details can be found here: https://github.com/tqdm/tqdm/blob/master/LICENCE.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -32,14 +35,13 @@ Tests for spechomo.clustering.KMeansRSImage
 import unittest
 import os
 import numpy as np
-from sklearn.cluster import KMeans
 
 from geoarray import GeoArray  # noqa E402 module level import not at top of file
 
 from spechomo import __file__  # noqa E402 module level import not at top of file
 from spechomo.clustering import KMeansRSImage  # noqa E402 module level import not at top of file
 
-testdata = os.path.join(os.path.dirname(__file__), '../tests/data/Bavaria_farmland_LMU_Hyspex_subset.bsq')
+testdata = os.path.join(os.path.dirname(__file__), '../tests/data/AV_mastercal_testdata.bsq')
 
 
 class Test_KMeansRSImage(unittest.TestCase):
@@ -57,6 +59,7 @@ class Test_KMeansRSImage(unittest.TestCase):
         os.environ['MPLBACKEND'] = 'Template'  # disables matplotlib figure popups # NOTE: import geoarray sets 'Agg'
 
     def test_compute_clusters(self):
+        from sklearn.cluster import KMeans  # avoids static TLS error here
         self.kmeans.compute_clusters(nmax_spectra=1e5)
         self.assertIsInstance(self.kmeans.clusters, KMeans)
 

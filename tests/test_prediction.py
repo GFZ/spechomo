@@ -12,7 +12,10 @@
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
+# later version. Please note the following exception: `spechomo` depends on tqdm,
+# which is distributed under the Mozilla Public Licence (MPL) v2.0 except for the
+# files "tqdm/_tqdm.py", "setup.py", "README.rst", "MANIFEST.in" and ".gitignore".
+# Details can be found here: https://github.com/tqdm/tqdm/blob/master/LICENCE.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -39,7 +42,8 @@ from spechomo.prediction import SpectralHomogenizer, RSImage_ClusterPredictor
 from spechomo.utils import spectra2im
 from spechomo import __path__
 
-classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
+# classifier_rootdir = os.path.join(__path__[0], 'resources', 'classifiers')
+classifier_rootdir = os.path.join(__path__[0], '..', 'tests', 'data', 'classifiers', 'SAMclassassignment')
 testdata_rootdir = os.path.join(__path__[0], '..', 'tests', 'data')
 
 
@@ -66,13 +70,13 @@ class Test_SpectralHomogenizer(unittest.TestCase):
 
     def test_interpolate_cube_linear(self):
         outarr = self.SpH.interpolate_cube(self.testArr_L8, self.cwl_L8, [500., 700., 1300.], kind='linear')
-        self.assertIsInstance(outarr, np.ndarray)
+        self.assertIsInstance(outarr, GeoArray)
         self.assertEqual(outarr.shape, (50, 50, 3))
         self.assertEqual(outarr.dtype, np.int16)
 
     def test_interpolate_cube_quadratic(self):
         outarr = self.SpH.interpolate_cube(self.testArr_L8, self.cwl_L8, [500., 700., 1300.], kind='quadratic')
-        self.assertIsInstance(outarr, np.ndarray)
+        self.assertIsInstance(outarr, GeoArray)
         self.assertEqual(outarr.shape, (50, 50, 3))
         self.assertEqual(outarr.dtype, np.int16)
 
@@ -219,6 +223,53 @@ class Test_SpectralHomogenizer(unittest.TestCase):
         self.assertEqual(errors.shape, (50, 50, 11))
         self.assertEqual(errors.dtype, np.int16)
 
+    def test_predict_by_machine_learner__classifierFileNotFound(self):
+        """Test if an error is raised when the classifier file is not found."""
+        self.SpH.logger.setLevel('CRITICAL')
+
+        try:
+            # no fallback_argsKwargs provided -> should raise an error
+            with self.assertRaises(BaseException):
+                self.SpH.predict_by_machine_learner(
+                    self.testArr_L8,
+                    method='LR',
+                    src_satellite='unknown_sat', src_sensor='unknown_sensor', src_LBA=['1'],
+                    tgt_satellite='unknown_sat', tgt_sensor='unknown_sensor', tgt_LBA=['1'],
+                )
+        finally:
+            self.SpH.logger.setLevel('INFO')
+
+    def test_predict_by_machine_learner__fallbackAlgorithm(self):
+        """Test fallback algorithm in case prediction fails."""
+        self.SpH.logger.setLevel('CRITICAL')
+
+        try:
+            for bandwise_errors in [True, False]:
+                predarr, errors = self.SpH.predict_by_machine_learner(
+                    self.testArr_L8,
+                    method='LR',
+                    src_satellite='Landsat-8', src_sensor='OLI_TIRS',
+                    src_LBA=['1', '2', '3', '4', '5', '6', 'NA'],  # not existing LBA
+                    tgt_satellite='Sentinel-2A', tgt_sensor='MSI',
+                    tgt_LBA=['1', '2', '3', '4', '5', '6', '7', '8', '8A', '11', '12'],
+                    compute_errors=True,
+                    bandwise_errors=bandwise_errors,
+                    fallback_argskwargs=dict(arrcube=self.testArr_L8,
+                                             source_CWLs=[1, 2, 3, 4, 5, 6, 7],
+                                             target_CWLs=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                                             kind='linear')
+                )
+                self.assertIsInstance(predarr, GeoArray)
+                self.assertEqual(predarr.shape, (50, 50, 11))
+                self.assertTrue(predarr.dtype in [np.int16, np.int32])
+
+                self.assertIsInstance(errors, np.ndarray)
+                self.assertEqual(errors.shape, (50, 50, 11) if bandwise_errors else (50, 50))
+                self.assertEqual(errors.dtype, np.int16)
+
+        finally:
+            self.SpH.logger.setLevel('INFO')
+
 
 class Test_RSImage_ClusterPredictor(unittest.TestCase):
     def setUp(self) -> None:
@@ -250,4 +301,4 @@ class Test_RSImage_ClusterPredictor(unittest.TestCase):
                 self.assertTrue(np.array_equal(self.CP_SAMcla.classif_map[:].flatten(), np.arange(self.n_clusters)))
             self.assertTrue(np.allclose(im_homo, np.vstack([self.clf_L8.MLdict[i].tgt_cluster_center
                                                             for i in range(self.n_clusters)]),
-                                        atol=5 if clf_alg not in ['kNN_MinDist', 'kNN_SAM', 'kNN_FEDSA'] else 1000))
+                                        atol=6 if clf_alg not in ['kNN_MinDist', 'kNN_SAM', 'kNN_FEDSA'] else 1000))

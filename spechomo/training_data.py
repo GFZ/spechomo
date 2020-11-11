@@ -11,7 +11,10 @@
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
+# later version. Please note the following exception: `spechomo` depends on tqdm,
+# which is distributed under the Mozilla Public Licence (MPL) v2.0 except for the
+# files "tqdm/_tqdm.py", "setup.py", "README.rst", "MANIFEST.in" and ".gitignore".
+# Details can be found here: https://github.com/tqdm/tqdm/blob/master/LICENCE.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -30,10 +33,8 @@ from tqdm import tqdm
 
 import numpy as np
 from geoarray import GeoArray
-from matplotlib import pyplot as plt
 from pandas import DataFrame
 from pandas.plotting import scatter_matrix
-from sklearn.model_selection import train_test_split
 from pyrsr import RSR
 
 from .utils import im2spectra
@@ -50,6 +51,8 @@ class TrainingData(object):
         :param im_Y:        input image Y
         :param test_size:   test size (proportion as float between 0 and 1) or absolute value as integer
         """
+        from sklearn.model_selection import train_test_split  # avoids static TLS error here
+
         self.im_X = GeoArray(im_X)
         self.im_Y = GeoArray(im_Y)
 
@@ -65,6 +68,8 @@ class TrainingData(object):
 
     def plot_scatter_matrix(self, figsize=(15, 15), mode='intersensor'):
         # TODO complete this function
+        from matplotlib import pyplot as plt
+
         train_X = self.train_X[np.random.choice(self.train_X.shape[0], 1000, replace=False), :]
         train_Y = self.train_Y[np.random.choice(self.train_Y.shape[0], 1000, replace=False), :]
 
@@ -109,6 +114,7 @@ class TrainingData(object):
     def plot_scattermatrix(self):
         # TODO complete this function
         import seaborn
+        from matplotlib import pyplot as plt
 
         fig, axes = plt.subplots(self.im_X.data.bands, self.im_Y.data.bands,
                                  figsize=(25, 9), sharex='all', sharey='all')
@@ -136,6 +142,7 @@ class TrainingData(object):
     def show_band_scatterplot(self, band_src_im, band_tgt_im):
         # TODO complete this function
         from scipy.stats import gaussian_kde
+        from matplotlib import pyplot as plt
 
         x = self.im_X.data[band_src_im].flatten()[:10000]
         y = self.im_Y.data[band_tgt_im].flatten()[:10000]
@@ -145,7 +152,7 @@ class TrainingData(object):
         z = gaussian_kde(xy)(xy)
 
         plt.figure(figsize=(15, 15))
-        plt.scatter(x, y, c=z, s=30, edgecolor='')
+        plt.scatter(x, y, c=z, s=30, edgecolor='none')
         plt.show()
 
 
@@ -376,6 +383,7 @@ class RefCube(object):
     def plot_sample_spectra(self, image_basename, cluster_label='all', include_mean_spectrum=True,
                             include_median_spectrum=True, ncols=5, **kw_fig):
         # type: (Union[str, int, List], str, bool, bool, int, dict) -> plt.figure
+        from matplotlib import pyplot as plt
 
         if isinstance(cluster_label, int):
             lbls2plot = [cluster_label]

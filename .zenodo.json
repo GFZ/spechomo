@@ -1,0 +1,49 @@
+{
+    "title": "SpecHomo: A Python package for spectral homogenization of multispectral satellite data",
+    "description": "SpecHomo is a Python package for spectral homogenization of multispectral satellite data, i.e., for the transformation of the spectral information of one sensor into the spectral domain of another one. This simplifies workflows, increases the reliability of subsequently derived multi-sensor products and may also enable the generation of new products that are not possible with the initial spectral definition.",
+    "license": "GPL-3.0+",
+    "upload_type": "software",
+    "keywords": [
+        "Spectral harmonization",
+        "Remote sensing",
+        "Satellite image harmonization",
+        "Analysis ready data"
+    ],
+    "creators": [
+        {
+            "name": "Scheffler, Daniel",
+            "affiliation": "Helmholtz Centre Potsdam German Research Centre for Geosciences GFZ, Section 1.4 - Remote Sensing and Geoinformatics",
+            "orcid": "0000-0003-4106-8928"
+        }
+    ],
+    "references": [
+        "Scheffler D., Frantz D., Segl K. (2020). Spectral harmonization and red edge prediction of Landsat-8 to Sentinel-2 using land cover optimized multivariate regressors. Remote Sens. Environ. 241, 111723. doi:https://doi.org/10.1016/j.rse.2020.111723"
+    ],
+    "related_identifiers": [
+        {
+            "scheme": "url",
+            "identifier": "https://gitext.gfz-potsdam.de/geomultisens/spechomo",
+            "relation": "isSupplementTo",
+            "resource_type": "software"
+        },
+        {
+            "scheme": "url",
+            "identifier": "https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc",
+            "relation": "isDocumentedBy",
+            "resource_type": "publication-softwaredocumentation"
+        },
+        {
+            "scheme": "url",
+            "identifier": "https://www.sciencedirect.com/science/article/pii/S0034425720300924?via%3Dihub",
+            "relation": "isCitedBy",
+            "resource_type": "publication-article"
+        }
+    ],
+        "grants": [
+        {
+            "code": "01 IS 14 010 A-C",
+            "funder": "German Federal Ministry of Education and Research",
+            "title": "GeoMultiSens"
+        }
+    ]
+}
