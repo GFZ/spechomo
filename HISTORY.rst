@@ -2,6 +2,14 @@
 History
 =======
 
+0.9.1 (2020-12-11)
+------------------
+
+* Added URL checker and corresponding CI job.
+* Removed travis related files.
+* Replaced hard-coded links in documentation by cross-linking directives.
+
+
 0.9.0 (2020-11-02)
 ------------------
 

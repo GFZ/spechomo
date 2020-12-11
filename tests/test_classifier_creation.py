@@ -93,8 +93,8 @@ class Test_ReferenceCube_Generator(unittest.TestCase):
         src_im = GeoArray(self.SHC.ims_ref[0])
         unif_random_spectra = self.SHC.cluster_image_and_get_uniform_spectra(src_im)
 
-        # tgt_rsr = RSR(satellite='Sentinel-2A', sensor='MSI')
-        tgt_rsr = RSR(satellite='Terra', sensor='MODIS', sort_by_cwl=True)
+        tgt_rsr = RSR(satellite='Sentinel-2A', sensor='MSI')
+        # tgt_rsr = RSR(satellite='Terra', sensor='MODIS', sort_by_cwl=True)
         unif_random_spectra_rsp = \
             self.SHC.resample_spectra(unif_random_spectra,
                                       src_cwl=np.array(src_im.meta.band_meta['wavelength'], dtype=np.float).flatten(),
