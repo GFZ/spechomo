@@ -35,6 +35,7 @@ dependencies:
     - pydocstyle
     - rednose
     - sphinx-argparse
+    - urlchecker
 
     # setup requirements
     - setuptools-git

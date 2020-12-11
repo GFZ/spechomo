@@ -35,6 +35,7 @@ Tests for spechomo.classifier
 import os
 import json
 from unittest import TestCase
+from tempfile import TemporaryDirectory
 
 from spechomo.classifier import Cluster_Learner
 from spechomo import __path__
@@ -71,9 +72,9 @@ class Test_ClusterClassifier(TestCase):
         outstr = json.dumps(jsonable_dict, sort_keys=True, indent=4)
         self.assertIsInstance(outstr, str)
 
-    # def test_save_to_json(self):
-    #     with TemporaryDirectory() as tmpDir:
-    #         self.clf.save_to_json(os.path.join(tmpDir, 'clf.json'))
+    def test_save_to_json(self):
+        with TemporaryDirectory() as tmpDir:
+            self.clf.save_to_json(os.path.join(tmpDir, 'clf.json'))
 
 
 # class Test_ClassifierCollection(TestCase):

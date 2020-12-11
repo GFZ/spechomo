@@ -278,7 +278,7 @@ class RefCube(object):
             "%s != %s" % (LayerBandsAssignment, self.LayerBandsAssignment)
 
         # reshape 2D spectra array to one image column (refcube is an image with spectral information in the 3rd dim.)
-        im_col = spectra.reshape(spectra.shape[0], 1, spectra.shape[1])
+        im_col = spectra.reshape((spectra.shape[0], 1, spectra.shape[1]))
 
         meta = self.data.metadata  # needs to be copied to the new GeoArray
 
@@ -382,7 +382,7 @@ class RefCube(object):
 
     def plot_sample_spectra(self, image_basename, cluster_label='all', include_mean_spectrum=True,
                             include_median_spectrum=True, ncols=5, **kw_fig):
-        # type: (Union[str, int, List], str, bool, bool, int, dict) -> plt.figure
+        # type: (Union[str, int, List], str, bool, bool, int, dict) -> 'plt.figure'
         from matplotlib import pyplot as plt
 
         if isinstance(cluster_label, int):

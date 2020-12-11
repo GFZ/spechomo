@@ -7,11 +7,11 @@ class. Please see the linked content for a full documentation of this class.
 
 For the sake of simplicity, the usage of this class is described below, at the
 **example of Landsat-8 data, spectrally adapted to Sentinel-2A**. Transformations between various other sensors are
-possible, see `here <https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html
-#which-sensor-transformations-are-available>`__.
+possible, see :ref:`usage/available_transformations:Which sensor transformations are available?`.
 
-First, load the Landsat-8 `surface reflectance`_ image that you want to transform to the spectral domain of Sentinel-2A
-(we use the `geoarray`_ library for this - it is installed with SpecHomo):
+First, load the Landsat-8 :ref:`surface-reflectance <usage/input_data_requirements:Surface Reflectance>` image that you
+want to transform to the spectral domain of Sentinel-2A (we use the `geoarray`_ library for this - it is installed with
+SpecHomo):
 
 .. code-block:: python
 
@@ -23,8 +23,7 @@ First, load the Landsat-8 `surface reflectance`_ image that you want to transfor
 
     Please make sure, that the Landsat-8 input image contains the right bands in the correct order before you run the
     homogenization! By running the :func:`list_available_transformations<spechomo.utils.list_available_transformations>`
-    function as described
-    `here <https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html>`__, you can
+    function as described :doc:`here <./available_transformations>`, you can
     find out, that the needed band list is ['1', '2', '3', '4', '5', '6', '7']. These band numbers refer to the
     official provider band-names as described for Landsat at the
     `USGS website <https://www.usgs.gov/faqs/what-are-band-designations-landsat-satellites>`__.
@@ -66,9 +65,7 @@ follows:
     * You can directly copy/paste possible input parameters for the
       :meth:`predict_by_machine_learner<spechomo.prediction.SpectralHomogenizer.predict_by_machine_learner>` method
       from the :func:`list_available_transformations<spechomo.utils.list_available_transformations>`
-      function as described
-      `here <https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html
-      #which-sensor-transformations-are-available>`__.
+      function as described :ref:`here <usage/available_transformations:Which sensor transformations are available?>`.
     * You may also save the homogenization results to other GDAL compatible image formats
       (see :meth:`geoarray.GeoArray.save` for details).
     * Further explanation on input parameters like `method`, `n_clusters`, `classif_alg` or `global_clf_threshold` is
@@ -77,5 +74,4 @@ follows:
       evaluation of the different homogenization algorithms available in the SpecHomo library.
 
 
-.. _`surface reflectance`: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/usage/input_data_requirements.html#surface-reflectance
 .. _`geoarray`: https://gitext.gfz-potsdam.de/danschef/geoarray

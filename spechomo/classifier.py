@@ -251,7 +251,7 @@ class Cluster_Learner(object):
         """Predict target satellite spectral information using separate prediction coefficients for spectral clusters.
 
         NOTE:   This version of the prediction function uses the prediction coefficients of multiple spectral clusters
-                and computes the result as weighted average of them. Therefore, the classifcation map must assign
+                and computes the result as weighted average of them. Therefore, the classification map must assign
                 multiple spectral cluster to each input pixel.
 
         # NOTE:   At unclassified pixels (cmap_3D[y,x,z>0] == -1) the prediction result using global coefficients
@@ -454,7 +454,6 @@ class ClassifierCollection(object):
         except KeyError:
             raise(KeyError("The classifier has no key '%s'. Available keys are: %s"
                            % (item, repr(self))))
-
     # def save_to_json(self, filepath):
     #     a = 1
     #     pass

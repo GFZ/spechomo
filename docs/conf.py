@@ -47,7 +47,8 @@ extensions = [
     'sphinx.ext.todo',
     'sphinxarg.ext',
     'sphinx_autodoc_typehints',
-    'sphinx.ext.intersphinx'
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.autosectionlabel'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -136,9 +137,13 @@ def setup(app):
 
 # Add mappings for intersphinx extension (allows to link to the API reference of other sphinx documentations)
 intersphinx_mapping = {
-    'geoarray': ('http://danschef.gitext.gfz-potsdam.de/geoarray/doc/', None),
-    'python': ('http://docs.python.org/3', None),
+    'geoarray': ('https://danschef.gitext-pages.gfz-potsdam.de/geoarray/doc/', None),
+    'python': ('https://docs.python.org/3', None),
 }
+
+# Configure the autosectionlabel extension
+autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 10
 
 
 # -- Options for HTML output -------------------------------------------

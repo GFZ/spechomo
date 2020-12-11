@@ -21,17 +21,6 @@ SpecHomo - Spectral homogenization of multispectral satellite data
 Status
 ------
 
-.. .. image:: https://img.shields.io/travis/danschef/spechomo.svg
-        :target: https://travis-ci.org/danschef/spechomo
-
-.. .. image:: https://readthedocs.org/projects/spechomo/badge/?version=latest
-        :target: https://spechomo.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
-.. .. image:: https://pyup.io/repos/github/danschef/spechomo/shield.svg
-     :target: https://pyup.io/repos/github/danschef/spechomo/
-     :alt: Updates
-
 .. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/pipeline.svg
         :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/commits/master
 .. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/coverage.svg
