@@ -2,6 +2,13 @@
 History
 =======
 
+0.9.3 (2020-12-15)
+------------------
+
+* Fixed incorrect handling of classification map nodata value in SpectralHomogenizer (default is now -9999).
+* Updated minimal version of specclassify to 0.2.8.
+
+
 0.9.2 (2020-12-15)
 ------------------
 
