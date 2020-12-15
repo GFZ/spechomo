@@ -521,6 +521,9 @@ class ClusterClassifier_Generator(object):
         ML.rmse_per_band = list(rmse)
         ML.mae_per_band = list(mae)
         ML.mape_per_band = list(mape)
+        from .version import __version__, __versionalias__
+        ML.spechomo_version = __version__
+        ML.spechomo_versionalias = __versionalias__
 
         # convert float64 attributes to float32 to save memory (affects <0,05% of homogenized pixels by 1 DN)
         for attr in ['coef_', 'intercept_', 'singular_', '_residues']:

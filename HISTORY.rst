@@ -2,6 +2,13 @@
 History
 =======
 
+0.9.2 (2020-12-15)
+------------------
+
+* Cluster classifiers can now be saved as JSON files.
+* Added attributes 'spechomo_version' and 'spechomo_versionalias' to ClusterLearner.
+
+
 0.9.1 (2020-12-11)
 ------------------
 
