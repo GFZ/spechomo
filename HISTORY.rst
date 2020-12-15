@@ -6,13 +6,18 @@ History
 ------------------
 
 * Fixed incorrect handling of classification map nodata value in SpectralHomogenizer (default is now -9999).
-* Updated minimal version of specclassify to 0.2.8.
+* Updated minimal version of specclassify to 0.2.8. This fixes issue #8 (Homogenization using kNN classifiers uses
+  faulty weights in case SpectralHomogenizer.predict_by_machine_learner() is called with global_clf_threshold=None.).
+* Changed minimum and maximum values used for normalization of spectral distance measures. SAM values are now
+  normalized between 0 and 15 degrees SA and all other measures use the 90% percentile as maximum value.
+  This fixes issue #9 (Harmonization weights are affected by extreme values in the computed spectral distances between
+  spectrum and available regressors.).
 
 
 0.9.2 (2020-12-15)
 ------------------
 
-* Cluster classifiers can now be saved as JSON files.
+* Cluster classifiers can now be saved as JSON files (relates to issue #5).
 * Added attributes 'spechomo_version' and 'spechomo_versionalias' to ClusterLearner.
 
 

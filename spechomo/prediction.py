@@ -472,11 +472,22 @@ class RSImage_ClusterPredictor(object):
         if classifier.n_clusters > 1 and\
            self.classif_map.ndim > 2:
 
-            dist_min, dist_max = np.min(self.distance_metrics),\
-                                 np.max(self.distance_metrics)
+            if self.classif_alg == 'kNN_SAM':
+                # scale SAM values between 0 and 15 degrees spectral angle
+                dist_min, dist_max = 0, 15
+            else:
+                if in_nodataVal is not None:
+                    # exclude distances where cmap contains nodata (-9999) or unclassified (-1) values
+                    dists4stats = self.distance_metrics[self.classif_map[:, :, 0] > 0]
+                else:
+                    dists4stats = self.distance_metrics
+
+                dist_min, dist_max = np.min(dists4stats), np.percentile(dists4stats, 90)
+
             dist_norm = (self.distance_metrics - dist_min) /\
                         (dist_max - dist_min)
             weights = 1 - dist_norm
+            weights[weights < 0] = 1e-10  # FIXME 0 causes ZeroDivisionError later
 
         else:
             weights = None
