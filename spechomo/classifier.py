@@ -78,6 +78,10 @@ class Cluster_Learner(object):
         self.tgt_wavelengths = sample_MLinst.tgt_wavelengths
         self.n_clusters = sample_MLinst.n_clusters
         self.cluster_centers = np.array([cc.cluster_center for cc in self.MLdict.values()])
+        self.spechomo_version = \
+            sample_MLinst.spechomo_version if hasattr(sample_MLinst, 'spechomo_version') else 'NA'
+        self.spechomo_versionalias = \
+            sample_MLinst.spechomo_versionalias if hasattr(sample_MLinst, 'spechomo_versionalias') else 'NA'
 
     @classmethod
     def from_disk(cls, classifier_rootDir, method, n_clusters,
@@ -252,7 +256,7 @@ class Cluster_Learner(object):
 
         NOTE:   This version of the prediction function uses the prediction coefficients of multiple spectral clusters
                 and computes the result as weighted average of them. Therefore, the classification map must assign
-                multiple spectral cluster to each input pixel.
+                multiple spectral clusters to each input pixel.
 
         # NOTE:   At unclassified pixels (cmap_3D[y,x,z>0] == -1) the prediction result using global coefficients
         #         is ignored in the weighted average. In that case the prediction result is based on the found valid
@@ -280,17 +284,22 @@ class Cluster_Learner(object):
 
         for band in range(cmap_3D.shape[2]):
             ims_pred_temp.append(
-                self.predict(im_src, cmap_3D[:, :, band],
+                self.predict(im_src,
+                             cmap_3D[:, :, band],
                              nodataVal=nodataVal,
                              cmap_nodataVal=cmap_nodataVal,
                              cmap_unclassifiedVal=cmap_unclassifiedVal
                              ))
 
         # merge classification results by weighted averaging
-        nsamp, nbandpred, nbandscmap = np.dot(*weights_3D.shape[:2]), ims_pred_temp[0].shape[2], weights_3D.shape[2]
+        nsamp = np.dot(*weights_3D.shape[:2])
+        nbandpred = ims_pred_temp[0].shape[2]
+        nbandscmap = weights_3D.shape[2]
+
         weights = \
             np.ones((nsamp, nbandpred, nbandscmap)) if weights_3D is None else \
-            np.tile(weights_3D.reshape(nsamp, 1, nbandscmap), (1, nbandpred, 1))  # nclust x n_tgt_bands x n_cmap_bands
+            np.tile(weights_3D.reshape((nsamp, 1, nbandscmap)),
+                    (1, nbandpred, 1))  # nclust x n_tgt_bands x n_cmap_bands
 
         # set weighting of unclassified pixel positions to zero (except from the first cmap band)
         #   -> see NOTE #2 in the docstring
@@ -298,8 +307,12 @@ class Cluster_Learner(object):
         # mask_unclassif[:, :, :1] = False  # if all other clusters are invalid, at least the first one is used for prediction # noqa
         # weights[mask_unclassif] = 0
 
-        spectra_pred = np.average(np.dstack([im2spectra(im) for im in ims_pred_temp]), weights=weights, axis=2)
-        im_pred = spectra2im(spectra_pred, tgt_rows=im_src.shape[0], tgt_cols=im_src.shape[1])
+        spectra_pred = np.average(np.dstack([im2spectra(im) for im in ims_pred_temp]),
+                                  weights=weights,
+                                  axis=2)
+        im_pred = spectra2im(spectra_pred,
+                             tgt_rows=im_src.shape[0],
+                             tgt_cols=im_src.shape[1])
 
         return im_pred
 
@@ -396,7 +409,8 @@ class Cluster_Learner(object):
     def to_jsonable_dict(self):
         """Create a dictionary containing a JSONable replicate of the current Cluster_Learner instance."""
         common_meta_keys = ['src_satellite', 'src_sensor', 'tgt_satellite', 'tgt_sensor', 'src_LBA', 'tgt_LBA',
-                            'src_n_bands', 'tgt_n_bands', 'src_wavelengths', 'tgt_wavelengths', 'n_clusters']
+                            'src_n_bands', 'tgt_n_bands', 'src_wavelengths', 'tgt_wavelengths', 'n_clusters',
+                            'spechomo_version', 'spechomo_versionalias']
         jsonable_dict = dict()
         decode_types_dict = dict()
 
@@ -422,16 +436,13 @@ class Cluster_Learner(object):
 
         return jsonable_dict
 
-    # def save_to_json(self, filepath):
-    #     dict2save = dict(
-    #         cluster_centers=self.cluster_centers.tolist(),
-    #
-    #     )
-    #
-    #     # Create json and save to file
-    #     json_txt = json.dumps(dict2save, indent=4)
-    #     with open(filepath, 'w') as file:
-    #         file.write(json_txt)
+    def save_to_json(self, filepath):
+        jsonable_dict = self.to_jsonable_dict()
+
+        # Create json and save to file
+        json_txt = json.dumps(jsonable_dict, sort_keys=True, indent=4)
+        with open(filepath, 'w') as file:
+            file.write(json_txt)
 
 
 class ClassifierCollection(object):
