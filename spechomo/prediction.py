@@ -152,7 +152,7 @@ class SpectralHomogenizer(object):
         :param global_clf_threshold:  If given, all pixels where the computed similarity metric (set by 'classif_alg')
                                       exceeds the given threshold are predicted using the global classifier (based on a
                                       single transformation per band).
-                                      - only usable for 'MinDist', 'SAM' and 'SID'
+                                      - only usable for 'MinDist', 'SAM' and 'SID' as well as their kNN variants
                                       - may be given as float, integer or string to label a certain distance percentile
                                       - if given as string, it must match the format, e.g., '10%' for labelling the
                                       worst 10 % of the distances as unclassified
@@ -210,17 +210,19 @@ class SpectralHomogenizer(object):
         if cls:
             self.logger.info('Performing spectral homogenization using %s. Target is %s %s %s.'
                              % (method, tgt_satellite, tgt_sensor, tgt_LBA))
+            cmap_nodataVal = src_nodataVal if src_nodataVal is not None else -9999
+
             im_homo = RSI_CP.predict(arrcube,
                                      classifier=cls,
                                      in_nodataVal=src_nodataVal,
-                                     cmap_nodataVal=src_nodataVal,
+                                     cmap_nodataVal=cmap_nodataVal,
                                      out_nodataVal=out_nodataVal,
                                      global_clf_threshold=global_clf_threshold)  # type: GeoArray
 
             if compute_errors:
                 errors = RSI_CP.compute_prediction_errors(im_homo, cls,
                                                           nodataVal=src_nodataVal,
-                                                          cmap_nodataVal=src_nodataVal)
+                                                          cmap_nodataVal=cmap_nodataVal)
 
                 if not bandwise_errors:
                     errors = np.median(errors, axis=2).astype(errors.dtype)
@@ -355,7 +357,7 @@ class RSImage_ClusterPredictor(object):
 
         return CL
 
-    def predict(self, image, classifier, in_nodataVal=None, out_nodataVal=None, cmap_nodataVal=None,
+    def predict(self, image, classifier, in_nodataVal=None, out_nodataVal=None, cmap_nodataVal=-9999,
                 global_clf_threshold=None, unclassified_pixVal=-1):
         # type: (Union[np.ndarray, GeoArray], Cluster_Learner, float, float, float, Union[str, int, float], int) -> GeoArray  # noqa
         """Apply the prediction function of the given specifier to the given remote sensing image.
@@ -369,7 +371,7 @@ class RSImage_ClusterPredictor(object):
         :param out_nodataVal:   no data value written into the predicted image
                                 (copied from the input image if not given)
         :param cmap_nodataVal:  no data value for the classification map
-                                in case more than one sub-classes are used for prediction
+                                in case more than one sub-classes are used for prediction (default: -9999)
         :param global_clf_threshold:  If given, all pixels where the computed similarity metric (set by 'classif_alg')
                                       exceeds the given threshold are predicted using the global classifier (based on a
                                       single transformation per band).
@@ -385,6 +387,7 @@ class RSImage_ClusterPredictor(object):
 
         # ensure image.nodata is present (important for classify_image() -> overwrites cmap at nodata positions)
         image.nodata = in_nodataVal if in_nodataVal is not None else image.nodata  # might be auto-computed here
+        in_nodataVal = image.nodata
 
         ##########################
         # get classification map #
@@ -469,11 +472,22 @@ class RSImage_ClusterPredictor(object):
         if classifier.n_clusters > 1 and\
            self.classif_map.ndim > 2:
 
-            dist_min, dist_max = np.min(self.distance_metrics),\
-                                 np.max(self.distance_metrics)
+            if self.classif_alg == 'kNN_SAM':
+                # scale SAM values between 0 and 15 degrees spectral angle
+                dist_min, dist_max = 0, 15
+            else:
+                if in_nodataVal is not None:
+                    # exclude distances where cmap contains nodata (-9999) or unclassified (-1) values
+                    dists4stats = self.distance_metrics[self.classif_map[:, :, 0] > 0]
+                else:
+                    dists4stats = self.distance_metrics
+
+                dist_min, dist_max = np.min(dists4stats), np.percentile(dists4stats, 90)
+
             dist_norm = (self.distance_metrics - dist_min) /\
                         (dist_max - dist_min)
             weights = 1 - dist_norm
+            weights[weights < 0] = 1e-10  # FIXME 0 causes ZeroDivisionError later
 
         else:
             weights = None

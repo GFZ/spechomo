@@ -52,7 +52,7 @@ req = [
     'scikit-learn>=0.23.2',
     'scipy',
     'seaborn',
-    'specclassify>=0.2.0',
+    'specclassify>=0.2.8',
     'tabulate',
     'tqdm',
 ]

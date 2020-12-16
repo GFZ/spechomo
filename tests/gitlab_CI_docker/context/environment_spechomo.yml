@@ -12,7 +12,7 @@ dependencies:
   - pandas
   - pyrsr
   - scikit-learn=0.23.2  # Classifiers have been trained with this version. Different versions might cause breaking code.
-  - specclassify>=0.2.0
+  - specclassify>=0.2.8
 
   - pip:
     - dill
