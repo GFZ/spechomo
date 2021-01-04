@@ -4,7 +4,7 @@ Requirements to your input data
 Compatible image formats
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-SpecHomo uses the `geoarray <https://gitext.gfz-potsdam.de/danschef/geoarray>`__ library for reading and writing raster
+SpecHomo uses the `geoarray <https://git.gfz-potsdam.de/danschef/geoarray>`__ library for reading and writing raster
 data which is built on top of GDAL. So the input images can have any GDAL compatible image format.
 You can find a list here:
 http://www.gdal.org/formats_list.html

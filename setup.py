@@ -101,7 +101,7 @@ setup(
     setup_requires=req_setup,
     test_suite='tests',
     tests_require=req_test,
-    url='https://gitext.gfz-potsdam.de/geomultisens/spechomo',
+    url='https://git.gfz-potsdam.de/geomultisens/spechomo',
     version=version['__version__'],
     zip_safe=False,
 )

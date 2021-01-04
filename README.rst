@@ -3,15 +3,15 @@ SpecHomo - Spectral homogenization of multispectral satellite data
 ==================================================================
 
 * Free software: GNU General Public License v3 or later (GPLv3+)
-* **Documentation:** https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/
+* **Documentation:** https://geomultisens.git-pages.gfz-potsdam.de/spechomo/doc/
 * The **paper** corresponding to this software repository can be found here:
   `Scheffler et al. 2020 <https://doi.org/10.1016/j.rse.2020.111723>`__ (cite as:
   Scheffler D., Frantz D., Segl K. (2020). Spectral harmonization and red edge prediction of Landsat-8 to Sentinel-2
   using land cover optimized multivariate regressors. Remote Sens. Environ. 241, 111723.
   https://doi.org/10.1016/j.rse.2020.111723)
 * Information on how to **cite the SpecHomo Python package** can be found in the
-  `CITATION <https://gitext.gfz-potsdam.de/geomultisens/spechomo/-/blob/master/CITATION>`__ file.
-* Submit feedback by filing an issue `here <https://gitext.gfz-potsdam.de/geomultisens/spechomo/issues>`__
+  `CITATION <https://git.gfz-potsdam.de/geomultisens/spechomo/-/blob/master/CITATION>`__ file.
+* Submit feedback by filing an issue `here <https://git.gfz-potsdam.de/geomultisens/spechomo/issues>`__
   or join our chat here: |Gitter|
 
 .. |Gitter| image:: https://badges.gitter.im/Join%20Chat.svg
@@ -21,18 +21,18 @@ SpecHomo - Spectral homogenization of multispectral satellite data
 Status
 ------
 
-.. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/pipeline.svg
-        :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/commits/master
-.. image:: https://gitext.gfz-potsdam.de/geomultisens/spechomo/badges/master/coverage.svg
-        :target: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/coverage/
+.. image:: https://git.gfz-potsdam.de/geomultisens/spechomo/badges/master/pipeline.svg
+        :target: https://git.gfz-potsdam.de/geomultisens/spechomo/commits/master
+.. image:: https://git.gfz-potsdam.de/geomultisens/spechomo/badges/master/coverage.svg
+        :target: https://geomultisens.git-pages.gfz-potsdam.de/spechomo/coverage/
 .. image:: https://img.shields.io/static/v1?label=Documentation&message=GitLab%20Pages&color=orange
-        :target: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/
+        :target: https://geomultisens.git-pages.gfz-potsdam.de/spechomo/doc/
 .. image:: https://img.shields.io/pypi/v/spechomo.svg
         :target: https://pypi.python.org/pypi/spechomo
 .. image:: https://img.shields.io/conda/vn/conda-forge/spechomo.svg
         :target: https://anaconda.org/conda-forge/spechomo
 .. image:: https://img.shields.io/pypi/l/spechomo.svg
-        :target: https://gitext.gfz-potsdam.de/geomultisens/spechomo/blob/master/LICENSE
+        :target: https://git.gfz-potsdam.de/geomultisens/spechomo/blob/master/LICENSE
 .. image:: https://img.shields.io/pypi/pyversions/spechomo.svg
         :target: https://img.shields.io/pypi/pyversions/spechomo.svg
 .. image:: https://img.shields.io/pypi/dm/spechomo.svg
@@ -84,7 +84,7 @@ may also train your own homogenization classifiers specifically optimized to you
 the needed functionality for that.
 
 For further details on how to use SpecHomo check out the
-`documentation <https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/>`__!
+`documentation <https://geomultisens.git-pages.gfz-potsdam.de/spechomo/doc/>`__!
 
 Credits
 -------
@@ -96,5 +96,5 @@ This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypack
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-.. _coverage: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/coverage/
-.. _nosetests: https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/nosetests_reports/nosetests.html
+.. _coverage: https://geomultisens.git-pages.gfz-potsdam.de/spechomo/coverage/
+.. _nosetests: https://geomultisens.git-pages.gfz-potsdam.de/spechomo/nosetests_reports/nosetests.html

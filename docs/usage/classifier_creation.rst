@@ -80,7 +80,7 @@ Here is an example based on the above created reference cubes for Sentinel-2A an
 
 The classifiers are saved as *.dill files. You may explore them later using the
 :func:`list_available_transformations<spechomo.utils.list_available_transformations>` function as described
-`here <https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html>`__.
+`here <https://geomultisens.git-pages.gfz-potsdam.de/spechomo/doc/usage/available_transformations.html>`__.
 
 .. note::
 

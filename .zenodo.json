@@ -22,13 +22,13 @@
     "related_identifiers": [
         {
             "scheme": "url",
-            "identifier": "https://gitext.gfz-potsdam.de/geomultisens/spechomo",
+            "identifier": "https://git.gfz-potsdam.de/geomultisens/spechomo",
             "relation": "isSupplementTo",
             "resource_type": "software"
         },
         {
             "scheme": "url",
-            "identifier": "https://geomultisens.gitext-pages.gfz-potsdam.de/spechomo/doc",
+            "identifier": "https://geomultisens.git-pages.gfz-potsdam.de/spechomo/doc",
             "relation": "isDocumentedBy",
             "resource_type": "publication-softwaredocumentation"
         },
