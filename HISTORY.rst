@@ -2,6 +2,13 @@
 History
 =======
 
+0.9.4 (coming soon)
+-------------------
+
+* Solved matplotlib DeprecationWarning.
+* 'make lint' now directly prints the log output.
+
+
 0.9.3 (2020-12-15)
 ------------------
 

@@ -55,9 +55,12 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr nosetests.xml
 
 lint: ## check style with flake8
-	flake8 --max-line-length=120 spechomo tests > ./tests/linting/flake8.log
-	pycodestyle spechomo --exclude="*.ipynb,*.ipynb*" --max-line-length=120 > ./tests/linting/pycodestyle.log
-	-pydocstyle spechomo > ./tests/linting/pydocstyle.log
+	flake8 --max-line-length=120 spechomo tests > ./tests/linting/flake8.log || \
+		(cat ./tests/linting/flake8.log && exit 1)
+	pycodestyle spechomo --exclude="*.ipynb,*.ipynb*" --max-line-length=120 > ./tests/linting/pycodestyle.log || \
+		(cat ./tests/linting/pycodestyle.log && exit 1)
+	-pydocstyle spechomo > ./tests/linting/pydocstyle.log || \
+		(cat ./tests/linting/pydocstyle.log && exit 1)
 
 urlcheck: ## check for dead URLs
 	urlchecker check . --file-types .py,.rst,.md,.json
