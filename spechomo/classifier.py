@@ -373,9 +373,9 @@ class Cluster_Learner(object):
                 ax.grid(lw=0.2)
                 ax.set_ylim(0, 10000)
 
-                if ax.is_last_row():
+                if ax.get_subplotspec().is_last_row():
                     ax.set_xlabel('wavelength [nm]')
-                if ax.is_first_col():
+                if ax.get_subplotspec().is_first_col():
                     ax.set_ylabel('%s %s\nreflectance [0-10000]' % (self.src_satellite, self.src_sensor))
                 ax.set_title('Cluster #%s' % lbl)
 
