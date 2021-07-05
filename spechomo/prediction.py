@@ -573,22 +573,6 @@ class RSImage_ClusterPredictor(object):
             self.logger.warning("%.2f %% of the predicted pixels are saturated and set to no-data."
                                 % n_saturated_px / np.dot(*image_predicted.shape[:2]) * 100)
 
-        # TODO add multiprocessing here? ML classifiers seem to use multiprocessing already
-        # print(time.time() -t0)
-        # t0 = time.time()
-        # from multiprocessing import Pool
-        # from geoarray.baseclasses import get_array_tilebounds
-        # with Pool(self.CPUs, initializer=_mp_initializer, initargs=(image, self.classif_map, classifier)) as pool:
-        #     tiles_pred = pool.starmap(_predict_tile_mp,
-        #                               [(tilebounds, out_nodataVal, cmap_nodataVal)
-        #                                for tilebounds in get_array_tilebounds(array_shape=image.shape,
-        #                                                                       tile_shape=(1000, 1000))])
-        #
-        # for ((rS, rE), (cS, cE)), tile_pred in tiles_pred:
-        #     image_predicted[rS: rE + 1, cS: cE + 1, :] = tile_pred
-        #
-        # print(time.time() - t0)
-
         self.logger.info('Total prediction time: %s' % time.strftime("%H:%M:%S", time.gmtime(time.time()-t0)))
 
         ###############################
@@ -682,25 +666,3 @@ class RSImage_ClusterPredictor(object):
         # GeoArray(errors).save('/home/gfz-fe/scheffler/temp/SPECHOM_py/errors_LRclust1_MinDist_noB9_clusterpred.bsq')
 
         return errors
-
-#
-# _global_image, _global_classif_map, _global_classifier = None, None, None
-#
-#
-# def _mp_initializer(image, classif_map, classifier):
-#     global _global_image, _global_classif_map, _global_classifier
-#     _global_image, _global_classif_map, _global_classifier = image, classif_map, classifier
-#
-#
-# def _predict_tile_mp(tilebounds, out_nodataVal, cmap_nodataVal):
-#     (rS, rE), (cS, cE) = tilebounds
-#     im_tile = _global_image[rS: rE + 1, cS: cE + 1, :]
-#     classif_map_tile = _global_classif_map[rS: rE + 1, cS: cE + 1]  # integer array
-#     classifier = _global_classifier
-#
-#     # predict!
-#     im_tile_pred = \
-#         classifier.predict(im_tile, classif_map_tile,
-#                            nodataVal=out_nodataVal, cmap_nodataVal=cmap_nodataVal).astype(_global_image.dtype)
-#
-#     return tilebounds, im_tile_pred
