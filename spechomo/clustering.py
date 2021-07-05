@@ -439,6 +439,8 @@ class KMeansRSImage(object):
         :return:
         """
         # get DataFrame with columns [cluster_label, B1, B2, B3, ...]
+        # NOTE: spectra with nodata values are already excluded here in the self.spectra getter
+        #       which uses self.goodSpecMask (excludes spectra with nodata in ANY band)
         df = DataFrame(self.spectra, columns=['B%s' % band for band in range(1, self.im.bands + 1)], )
         df.insert(0, 'cluster_label', self.clusters.labels_)
 
