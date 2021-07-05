@@ -600,6 +600,9 @@ class RSImage_ClusterPredictor(object):
         # copy mask_nodata
         image_predicted.mask_nodata = image.mask_nodata
 
+        # append weights to predicted image
+        image_predicted.weights = weights
+
         # image_predicted.save(
         #     '/home/gfz-fe/scheffler/temp/SPECHOM_py/image_predicted_QRclust1_MinDist_noB9.bsq')
         # GeoArray(self.classif_map).save(
