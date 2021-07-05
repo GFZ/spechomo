@@ -157,7 +157,7 @@ class SpectralHomogenizer(object):
                                       - only usable for 'MinDist', 'SAM' and 'SID' as well as their kNN variants
                                       - may be given as float, integer or string to label a certain distance percentile
                                       - if given as string, it must match the format, e.g., '10%' for labelling the
-                                      worst 10 % of the distances as unclassified
+                                        worst 10 % of the distances as unclassified
         :param src_nodataVal:       no data value of source image (arrcube)
                                     - if no nodata value is set, it is tried to be auto-computed from arrcube
         :param out_nodataVal:       no data value of predicted image
@@ -532,7 +532,8 @@ class RSImage_ClusterPredictor(object):
             # predict!
             if self.classif_map.ndim == 2:
                 im_tile_pred = \
-                    classifier.predict(im_tile, classif_map_tile,
+                    classifier.predict(im_tile,
+                                       classif_map_tile,
                                        nodataVal=out_nodataVal,
                                        cmap_nodataVal=cmap_nodataVal,
                                        cmap_unclassifiedVal=unclassified_pixVal)
@@ -541,7 +542,9 @@ class RSImage_ClusterPredictor(object):
                 weights_tile = weights_datapos[rS: rE + 1, cS: cE + 1]  # float array
 
                 im_tile_pred = \
-                    classifier.predict_weighted_averages(im_tile, classif_map_tile, weights_tile,
+                    classifier.predict_weighted_averages(im_tile,
+                                                         classif_map_tile,
+                                                         weights_tile,
                                                          nodataVal=out_nodataVal,
                                                          cmap_nodataVal=cmap_nodataVal,
                                                          cmap_unclassifiedVal=unclassified_pixVal)
@@ -612,6 +615,18 @@ class RSImage_ClusterPredictor(object):
         cmap_vals, cmap_valcounts = np.unique(self.classif_map, return_counts=True)
         cmap_valfractions = cmap_valcounts / self.classif_map.size
         self.classif_map_fractions = dict(zip(list(cmap_vals), list(cmap_valfractions)))
+
+        # log the pixel fraction where material-specific regressors were applied
+        frac = self.classif_map_fractions
+        if -1 in frac:
+            glob_regr_perc = frac[-1] * 100
+            nodata_perc = frac[cmap_nodataVal] * 100 if cmap_nodataVal in frac else 0
+            data_perc = 100 - nodata_perc
+            opt_regr_perc = 100 - glob_regr_perc - nodata_perc
+            self.logger.info(f"No-data fraction:\t{nodata_perc:.1f}%")
+            self.logger.info(f"Regressor fractions:\t"
+                             f"{opt_regr_perc / data_perc * 100:.1f}% material optimized; "
+                             f"{glob_regr_perc / data_perc * 100:.1f}% global regressor")
 
         return image_predicted
 

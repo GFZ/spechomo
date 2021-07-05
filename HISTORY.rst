@@ -10,7 +10,7 @@ History
 * Revised RSImage_ClusterPredictor.predict() to improve speed
   (reduced processing time to 70-50% of the previous version).
 * Added weights attribute to prediction result.
-
+* RSImage_ClusterPredictor.predict now logs the fractions of nodata, global and optimized regressors.
 
 0.9.3 (2020-12-15)
 ------------------
