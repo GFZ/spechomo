@@ -53,15 +53,17 @@ _classifier_rootdir = options['classifiers']['rootdir']
 class SpectralHomogenizer(object):
     """Class for applying spectral homogenization by applying an interpolation or machine learning approach."""
 
-    def __init__(self, classifier_rootDir='', logger=None, CPUs=None):
+    def __init__(self, classifier_rootDir='', logger=None, CPUs=None, progress=True):
         """Get instance of SpectralHomogenizer.
 
         :param classifier_rootDir:  root directory where machine learning classifiers are stored.
         :param logger:              instance of logging.Logger
+        :param progress:            whether to show progress bars
         """
         self.classifier_rootDir = classifier_rootDir or _classifier_rootdir
         self.logger = logger or SpecHomo_Logger(__name__)
         self.CPUs = CPUs or cpu_count()
+        self.progress = progress
 
     def interpolate_cube(self, arrcube, source_CWLs, target_CWLs, kind='linear'):
         # type: (Union[np.ndarray, GeoArray], list, list, str) -> GeoArray
@@ -176,6 +178,7 @@ class SpectralHomogenizer(object):
                   n_clusters=n_clusters,
                   classif_alg=classif_alg,
                   CPUs=self.CPUs,
+                  progress=self.progress,
                   logger=self.logger)
 
         if classif_alg.startswith('kNN'):
@@ -259,8 +262,8 @@ class RSImage_ClusterPredictor(object):
     """Predictor class applying the predict() function of a machine learning classifier described by the given args."""
 
     def __init__(self, method='LR', n_clusters=50, classif_alg='MinDist', classifier_rootDir='',
-                 CPUs=1, logger=None, **kw_clf_init):
-        # type: (str, int, str, str, Union[None, int], logging.Logger, dict) -> None
+                 CPUs=1, logger=None, progress=True, **kw_clf_init):
+        # type: (str, int, str, str, Union[None, int], logging.Logger, bool, dict) -> None
         """Get an instance of RSImage_ClusterPredictor.
 
         :param method:              machine learning approach to be used for spectral bands prediction
@@ -286,6 +289,7 @@ class RSImage_ClusterPredictor(object):
                                     'kNN_FEDSA': k-nearest-neighbour fused euclidian distance / spectral angle
         :param classifier_rootDir:  root directory where machine learning classifiers are stored.
         :param CPUs:                number of CPUs to use (default: 1)
+        :param progress:            whether to show progress bars
         :param logger:              instance of logging.Logger()
         :param kw_clf_init          keyword arguments to be passed to classifier init functions if possible,
                                     e.g., 'n_neighbours' sets the number of neighbours to be considered in kNN
@@ -300,6 +304,7 @@ class RSImage_ClusterPredictor(object):
         self.CPUs = CPUs or cpu_count()
         self.classif_alg = classif_alg
         self.logger = logger or SpecHomo_Logger(__name__)  # must be pickable
+        self.progress = progress
         self.kw_clf_init = kw_clf_init
 
         # validate
@@ -451,6 +456,9 @@ class RSImage_ClusterPredictor(object):
         # apply prediction #
         ####################
 
+        self.logger.info(f'Starting prediction with {self.method} regressor, {self.n_clusters} clusters, '
+                         f'{self.classif_alg}.')
+
         # adjust classifier for multiprocessing
         if self.CPUs is None or self.CPUs > 1:
             # FIXME does not work -> parallelize with https://github.com/ajtulloch/sklearn-compiledtrees?
@@ -525,7 +533,9 @@ class RSImage_ClusterPredictor(object):
         spectra_predicted = np.empty((n_spectra, image_predicted.bands), image_predicted.dtype)
         n_saturated_px = 0
 
-        for ((rS, rE), (cS, cE)), im_tile in tqdm(spectra_as_im.tiles(tilesize=(50000, 1))):
+        for ((rS, rE), (cS, cE)), im_tile in tqdm(spectra_as_im.tiles(tilesize=(50000, 1)),
+                                                  desc='Predicting in chunks',
+                                                  disable=not self.progress):
 
             classif_map_tile = classif_map_datapos[rS: rE + 1, cS: cE + 1]  # integer array
 
