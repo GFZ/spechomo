@@ -103,3 +103,7 @@ ENV/
 
 # Jetbrains stuff
 .idea/
+
+# excluded Spinx documentation RST files'
+/docs/modules.rst
+/docs/spechomo.rst
