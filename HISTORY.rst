@@ -17,6 +17,7 @@ History
 * Fixed type error in case non-kNN regressors are used for prediction.
 * Fixed Exception in case a ClassifierCollection does not have the requested key (LBA).
 * Revised test_spechomo_install CI job (now uses mamba).
+* Added sphinx plugin requirements to environment_spechomo.yml.
 
 0.9.3 (2020-12-15)
 ------------------
