@@ -498,7 +498,7 @@ class RSImage_ClusterPredictor(object):
             dist_norm = (self.distance_metrics - dist_min) /\
                         (dist_max - dist_min)
             weights = 1 - dist_norm
-            weights[weights < 0] = 1e-10  # FIXME 0 causes ZeroDivisionError later
+            weights[weights < 0] = 1e-10  # set negative weights to 0 but avoid ZeroDivisionError
 
         else:
             weights = None
