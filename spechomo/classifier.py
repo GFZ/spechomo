@@ -214,6 +214,8 @@ class Cluster_Learner(object):
             # to predict target spectra
             for pixVal in cluster_labels:
                 if pixVal == cmap_nodataVal:
+                    # at nodata positions, the predicted pixel value will also be nodata
+                    # -> don't do anything because im_pred was already initialized as an array full of nodata values
                     continue
 
                 elif pixVal == cmap_unclassifiedVal:

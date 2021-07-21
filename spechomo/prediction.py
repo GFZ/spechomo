@@ -369,8 +369,6 @@ class RSImage_ClusterPredictor(object):
         # type: (Union[np.ndarray, GeoArray], Cluster_Learner, float, float, float, Union[str, int, float], int) -> GeoArray  # noqa
         """Apply the prediction function of the given specifier to the given remote sensing image.
 
-        # NOTE: The 'nodataVal' is written
-
         :param image:           3D array representing the input image
         :param classifier:      the classifier instance
         :param in_nodataVal:    no data value of the input image
