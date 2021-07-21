@@ -423,7 +423,7 @@ class RSImage_ClusterPredictor(object):
                     train_labels = classifier.cluster_pixVals
 
                 # run classification
-                # - uses 3 neighbors by default
+                # - uses 3 neighbors by default in case of kNN classifiers
                 self.classif_map, self.distance_metrics = classify_image(image, train_spectra, train_labels, **kw_clf)
 
                 # compute spectral distance
@@ -517,18 +517,25 @@ class RSImage_ClusterPredictor(object):
         # NOTE:
         # - prediction now only runs on the remaining pixels (that contain data)
         # - computation is running in chunks of 50,000 spectra to save memory
-        #   (classifier.predict returns float32) and speed up  processing
+        #   (classifier.predict returns float32) and speed up processing
         # ----------------------------------------------------------------------
 
-        # get all spectra at pixels that really contain data
+        # get all spectra at pixels that really contain data and
+        # reshape them to represent a single image column
+        # (classifier.predict expects a 3D image-like input array)
         spectra_at_datapos = image[image.mask_nodata[:]]
         n_spectra = spectra_at_datapos.shape[0]
-
-        # we need these spectra + weights + classification map as 3D image arrays
-        # (as expected by classifier.predict()
         spectra_as_im = GeoArray(spectra2im(spectra_at_datapos, n_spectra, 1))
-        weights_datapos = spectra2im(weights[image.mask_nodata[:]], n_spectra, 1)
-        classif_map_datapos = spectra2im(self.classif_map[image.mask_nodata[:]], n_spectra, 1)
+
+        # get the corresponding weights and classification maps (also as one image column)
+        if weights is not None:
+            # in case of kNN classifiers
+            weights_datapos = spectra2im(weights[image.mask_nodata[:]], n_spectra, 1)
+            classif_map_datapos = spectra2im(self.classif_map[image.mask_nodata[:]], n_spectra, 1)
+        else:
+            # in case no kNN classifier was used and we don't have to respect any weights
+            weights_datapos = None
+            classif_map_datapos = self.classif_map[image.mask_nodata[:]].reshape(-1, 1)
 
         # spectra_predicted will be filled while looping over chunks
         spectra_predicted = np.empty((n_spectra, image_predicted.bands), image_predicted.dtype)

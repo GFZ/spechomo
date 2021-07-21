@@ -14,6 +14,7 @@ History
 * Added 'progress' keyword to SpectralHomogenizer and RSImage_ClusterPredictor. Improved log output.
 * Fixed TypeError in case the input image for the prediction has no nodata pixels and no in- and output nodata
   value is given.
+* Fixed type error in case non-kNN regressors are used for prediction.
 
 0.9.3 (2020-12-15)
 ------------------
