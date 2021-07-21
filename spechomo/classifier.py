@@ -466,7 +466,7 @@ class ClassifierCollection(object):
             return self.content[item]
         except KeyError:
             raise(KeyError("The classifier has no key '%s'. Available keys are: %s"
-                           % (item, repr(self))))
+                           % (item, list(self.content.keys()))))
     # def save_to_json(self, filepath):
     #     a = 1
     #     pass
