@@ -12,6 +12,8 @@ History
 * Added weights attribute to prediction result.
 * RSImage_ClusterPredictor.predict now logs the fractions of nodata, global and optimized regressors.
 * Added 'progress' keyword to SpectralHomogenizer and RSImage_ClusterPredictor. Improved log output.
+* Fixed TypeError in case the input image for the prediction has no nodata pixels and no in- and output nodata
+  value is given.
 
 0.9.3 (2020-12-15)
 ------------------

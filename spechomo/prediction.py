@@ -424,6 +424,8 @@ class RSImage_ClusterPredictor(object):
                     train_spectra = classifier.cluster_centers
                     train_labels = classifier.cluster_pixVals
 
+                # run classification
+                # - uses 3 neighbors by default
                 self.classif_map, self.distance_metrics = classify_image(image, train_spectra, train_labels, **kw_clf)
 
                 # compute spectral distance
@@ -511,7 +513,8 @@ class RSImage_ClusterPredictor(object):
         #     print(weights[0, 0, :])
 
         # set image_predicted to nodata at nodata positions of the input image
-        image_predicted[~image.mask_nodata[:]] = out_nodataVal
+        if out_nodataVal is not None:
+            image_predicted[~image.mask_nodata[:]] = out_nodataVal
 
         # NOTE:
         # - prediction now only runs on the remaining pixels (that contain data)
