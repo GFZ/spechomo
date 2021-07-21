@@ -11,8 +11,6 @@ test_spechomo:
   stage: test
   script:
     - source /root/miniconda3/bin/activate ci_env
-    - conda install -y -c conda-forge "scikit-learn=0.23.2"  # FIXME remove as soon as docker container is rebuilt
-    - pip install 'geoarray>=0.10.4'  # FIXME remove as soon as docker container is rebuilt
 
     # run nosetests
     - make nosetests  # test are called here
@@ -58,28 +56,28 @@ test_spechomo_install:
   stage: test
   script:
     - source /root/miniconda3/bin/activate
-    - conda update conda
-#    - conda install conda-build
+
+    # update conda and python
+    - conda update -n base -c conda-forge conda
+    # - conda update -c conda-forge python
+
     - conda create -y -q -c conda-forge --name spechomo_test python=3
     - conda activate spechomo_test
 
-    # update conda and python
-#    - conda update -n base -c conda-forge conda
-#    - conda update -c conda-forge python
+    # create spechomo environment from environment_spechomo.yml
+    - mamba env create --name spechomo_testinstall -f tests/gitlab_CI_docker/context/environment_spechomo.yml
+    - conda activate spechomo_testinstall
 
-    # install some dependencies that cause trouble when installed via pip
-    - conda install -y -c conda-forge matplotlib numpy pandas "scikit-learn=0.23.2"
+    # run installer
+    - pip install .
 
-    # install not pip-installable deps of geoarray/py_tools_ds
-    - conda install -y -c conda-forge cartopy gdal geopandas pyproj scikit-image shapely
+    # check if all dependencies are correctly installed
+    - pip check
 
-    # install spechomo
-    - python setup.py install
+    # test importability
     - cd ..
     - pwd
     - ls
-
-    # test importability
     - python -c "import spechomo; print(spechomo)"
     - python -c "from spechomo import SpectralHomogenizer"
 
