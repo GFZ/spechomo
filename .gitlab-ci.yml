@@ -61,8 +61,8 @@ test_spechomo_install:
     - conda update -n base -c conda-forge conda
     # - conda update -c conda-forge python
 
-    - conda create -y -q -c conda-forge --name spechomo_test python=3
-    - conda activate spechomo_test
+    # install mamba
+    - conda install -n base -c conda-forge mamba
 
     # create spechomo environment from environment_spechomo.yml
     - mamba env create --name spechomo_testinstall -f tests/gitlab_CI_docker/context/environment_spechomo.yml
