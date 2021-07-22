@@ -282,6 +282,10 @@ class Cluster_Learner(object):
             raise ValueError("The input arrays 'cmap_3D' and 'weights_3D' need to have the same dimensions. "
                              "Received %s vs. %s." % (cmap_3D.shape, weights_3D.shape))
 
+        # save prediction time by skipping the prediction for all cmap positions where the weight is 0
+        if weights_3D is not None and cmap_nodataVal is not None:
+            cmap_3D[weights_3D == 0] = cmap_nodataVal
+
         # predict for each classification map band
         ims_pred_temp = []
 
