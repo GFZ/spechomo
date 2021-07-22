@@ -413,9 +413,10 @@ class RSImage_ClusterPredictor(object):
                               return_distance=True,
                               **self.kw_clf_init)
 
-                if self.classif_alg in ['MinDist', 'kNN_MinDist', 'SAM', 'kNN_SAM', 'SID', 'FEDSA', 'kNN_FEDSA']:
-                    kw_clf.update(dict(unclassified_threshold=global_clf_threshold,
-                                       unclassified_pixVal=unclassified_pixVal))
+                # TODO eventually remove later
+                # if self.classif_alg in ['MinDist', 'kNN_MinDist', 'SAM', 'kNN_SAM', 'SID', 'FEDSA', 'kNN_FEDSA']:
+                #     kw_clf.update(dict(unclassified_threshold=global_clf_threshold,
+                #                        unclassified_pixVal=unclassified_pixVal))
 
                 if self.classif_alg == 'RF':
                     train_spectra = np.vstack([classifier.MLdict[clust].cluster_sample_spectra
@@ -434,8 +435,8 @@ class RSImage_ClusterPredictor(object):
                 # as this will be needed later when replacing bad material-specific regressors with the global regressor
                 global_center = classifier.global_clf.cluster_center.reshape(1, -1)
                 kw_global = kw_clf.copy()
-                if 'unclassified_threshold' in kw_global:
-                    del kw_global['unclassified_threshold']
+                # if 'unclassified_threshold' in kw_global:  # TODO eventually remove later
+                #     del kw_global['unclassified_threshold']
 
                 distance_to_global = classify_image(image, global_center, [0], **kw_global)[1]
 
@@ -446,6 +447,18 @@ class RSImage_ClusterPredictor(object):
                 #     dist.reshape(-1, dist.shape[2])[np.arange(dist.shape[0] * dist.shape[1])[:, np.newaxis], idxs] \
                 #         .reshape(self.classif_map.shape)
                 # print('ED MAX MIN:', self.distance_metrics.max(), self.distance_metrics.min())
+
+                # assign global regressor to certain positions of the 3D classification map according to conditions:
+                # - distance larger than given global classfier threshold
+                # - distance larger than distance to global regressor or larger than 3x of the given threshold
+                #   (this avoids that global regressor is chosen although the distance to it is much larger)
+                # - cmap position must represent a data position
+                # FIXME: not yet compatible with global_clf_threshold given as string ('10%') or missing threshold
+                cond1 = self.distance_metrics[:] > global_clf_threshold
+                cond2 = self.distance_metrics[:] > np.tile(distance_to_global, (1, 1, self.distance_metrics.shape[2]))
+                cond3 = self.distance_metrics[:] > (3 * global_clf_threshold)
+                cond4 = self.classif_map[:] != cmap_nodataVal
+                self.classif_map[cond1 & (cond2 | cond3) & cond4] = unclassified_pixVal  # global regr. is applied there
 
                 self.logger.info('Total classification time: %s'
                                  % time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)))
