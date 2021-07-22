@@ -78,6 +78,7 @@ class Cluster_Learner(object):
         self.tgt_wavelengths = sample_MLinst.tgt_wavelengths
         self.n_clusters = sample_MLinst.n_clusters
         self.cluster_centers = np.array([cc.cluster_center for cc in self.MLdict.values()])
+        self.cluster_medians = np.array([cc.cluster_median for cc in self.MLdict.values()])
         self.spechomo_version = \
             sample_MLinst.spechomo_version if hasattr(sample_MLinst, 'spechomo_version') else 'NA'
         self.spechomo_versionalias = \
