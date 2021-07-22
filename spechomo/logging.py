@@ -155,7 +155,11 @@ class SpecHomo_Logger(logging.Logger):
                 if handler.get_name() == 'StringIO handler':
                     self.streamObj.flush()
                 self.removeHandler(handler)  # if not called with '[:]' the StreamHandlers are left open
-                handler.flush()
+                try:
+                    handler.flush()
+                except ValueError:
+                    # ValueError: I/O operation on closed file
+                    pass
                 handler.close()
             except PermissionError:
                 warnings.warn('Could not properly close logfile due to a PermissionError: %s' % sys.exc_info()[1])
