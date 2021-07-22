@@ -398,10 +398,12 @@ class RSImage_ClusterPredictor(object):
         # get classification map #
         ##########################
 
+        distance_to_global = None  # initial value
+
         # assign each input pixel to a cluster (compute classification with cluster centers as endmembers)
         if self.classif_map is None:
             if self.n_clusters > 1:
-                self.logger.info(f'Assigning material-specific regressors to each image pixel.')
+                self.logger.info('Assigning material-specific regressors to each image pixel.')
 
                 t0 = time.time()
                 kw_clf = dict(classif_alg=self.classif_alg,
@@ -427,6 +429,15 @@ class RSImage_ClusterPredictor(object):
                 # run classification
                 # - uses 3 neighbors by default in case of kNN classifiers
                 self.classif_map, self.distance_metrics = classify_image(image, train_spectra, train_labels, **kw_clf)
+
+                # additionally compute the distance to the global classifier
+                # as this will be needed later when replacing bad material-specific regressors with the global regressor
+                global_center = classifier.global_clf.cluster_center.reshape(1, -1)
+                kw_global = kw_clf.copy()
+                if 'unclassified_threshold' in kw_global:
+                    del kw_global['unclassified_threshold']
+
+                distance_to_global = classify_image(image, global_center, [0], **kw_global)[1]
 
                 # compute spectral distance
                 # dist = kNN_MinimumDistance_Classifier.compute_euclidian_distance_3D(image, train_spectra)
@@ -462,7 +473,7 @@ class RSImage_ClusterPredictor(object):
         if classifier.n_clusters > 1 and\
            self.classif_map.ndim > 2:
 
-            self.logger.info(f'Computing prediction weights per pixel for each regressor.')
+            self.logger.info('Computing prediction weights per pixel for each regressor.')
 
             if self.classif_alg == 'kNN_SAM':
                 # scale SAM values between 0 and 15 degrees spectral angle
@@ -470,16 +481,43 @@ class RSImage_ClusterPredictor(object):
             else:
                 if in_nodataVal is not None:
                     # exclude distances where cmap contains nodata (-9999) or unclassified (-1) values
-                    dists4stats = self.distance_metrics[self.classif_map[:, :, 0] > 0]
+                    dists4stats = self.distance_metrics[self.classif_map[:, :, 0] >= 0]
                 else:
                     dists4stats = self.distance_metrics
 
                 dist_min, dist_max = np.min(dists4stats), np.percentile(dists4stats, 90)
 
-            dist_norm = (self.distance_metrics - dist_min) /\
-                        (dist_max - dist_min)
-            weights = 1 - dist_norm
-            weights[weights < 0] = 1e-10  # set negative weights to 0 but avoid ZeroDivisionError
+            # overwrite the distances at those positions where the global regressor is applied
+            # with the distance to the global regressor
+            # (so far, we still had the distances to the material-specific regressors in here)
+            dist2d, clfmap2d, distGlob2d = [im2spectra(arr) for arr in [self.distance_metrics,
+                                                                        self.classif_map,
+                                                                        distance_to_global]]
+            mask = clfmap2d == unclassified_pixVal
+            dist2d[mask] = np.tile(distGlob2d, (1, self.classif_map.bands))[mask]
+
+            # compute the weights from the distances
+            distNorm2d = (dist2d - dist_min) /\
+                         (dist_max - dist_min)
+            weights2d = 1 - distNorm2d
+            weights2d[weights2d < 0] = 1e-10  # set negative weights to 0 but avoid ZeroDivisionError
+
+            # make sure that the global regressor is only counted once when predicting the output spectra
+            # - since there may be multiple regressors that exceed the global_clf_threshold,
+            #   the global regressor would otherwise be over-weighted
+            # - the approach is to create a mask ('mask2') that flags all global regressors
+            #   that occurr twice or more per pixel and to set their weights to 0
+            mask2 = np.zeros_like(dist2d, bool)
+            mask2[np.arange(dist2d.shape[0]).reshape(-1, 1),
+                  np.argmax(mask, axis=1).reshape(-1, 1)]\
+                = True
+            mask2 = np.all(np.dstack([mask, mask2]), axis=2)
+            mask2 = mask != mask2
+            weights2d[mask2] = 0
+
+            # convert 2D arrays back to 3D arrays in the shape of the input image
+            self.distance_metrics = spectra2im(dist2d, *self.distance_metrics.shape[:2])
+            weights = spectra2im(weights2d, *self.distance_metrics.shape[:2])
 
         else:
             weights = None
