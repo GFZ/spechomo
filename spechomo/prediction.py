@@ -413,11 +413,6 @@ class RSImage_ClusterPredictor(object):
                               return_distance=True,
                               **self.kw_clf_init)
 
-                # TODO eventually remove later
-                # if self.classif_alg in ['MinDist', 'kNN_MinDist', 'SAM', 'kNN_SAM', 'SID', 'FEDSA', 'kNN_FEDSA']:
-                #     kw_clf.update(dict(unclassified_threshold=global_clf_threshold,
-                #                        unclassified_pixVal=unclassified_pixVal))
-
                 if self.classif_alg == 'RF':
                     train_spectra = np.vstack([classifier.MLdict[clust].cluster_sample_spectra
                                                for clust in range(classifier.n_clusters)])
@@ -434,11 +429,12 @@ class RSImage_ClusterPredictor(object):
                 # additionally compute the distance to the global classifier
                 # as this will be needed later when replacing bad material-specific regressors with the global regressor
                 global_center = classifier.global_clf.cluster_center.reshape(1, -1)
-                kw_global = kw_clf.copy()
-                # if 'unclassified_threshold' in kw_global:  # TODO eventually remove later
-                #     del kw_global['unclassified_threshold']
+                distance_to_global = classify_image(image, global_center, [0], **kw_clf)[1]
 
-                distance_to_global = classify_image(image, global_center, [0], **kw_global)[1]
+                clf_band_glob = np.full(self.classif_map.shape[:2], cmap_nodataVal, self.classif_map.dtype)
+                clf_band_glob[image.mask_nodata[:]] = unclassified_pixVal
+                self.classif_map.arr = np.dstack([clf_band_glob, self.classif_map[:]])
+                self.distance_metrics = np.dstack([distance_to_global, self.distance_metrics])
 
                 # compute spectral distance
                 # dist = kNN_MinimumDistance_Classifier.compute_euclidian_distance_3D(image, train_spectra)
@@ -447,18 +443,6 @@ class RSImage_ClusterPredictor(object):
                 #     dist.reshape(-1, dist.shape[2])[np.arange(dist.shape[0] * dist.shape[1])[:, np.newaxis], idxs] \
                 #         .reshape(self.classif_map.shape)
                 # print('ED MAX MIN:', self.distance_metrics.max(), self.distance_metrics.min())
-
-                # assign global regressor to certain positions of the 3D classification map according to conditions:
-                # - distance larger than given global classfier threshold
-                # - distance larger than distance to global regressor or larger than 3x of the given threshold
-                #   (this avoids that global regressor is chosen although the distance to it is much larger)
-                # - cmap position must represent a data position
-                # FIXME: not yet compatible with global_clf_threshold given as string ('10%') or missing threshold
-                cond1 = self.distance_metrics[:] > global_clf_threshold
-                cond2 = self.distance_metrics[:] > np.tile(distance_to_global, (1, 1, self.distance_metrics.shape[2]))
-                cond3 = self.distance_metrics[:] > (3 * global_clf_threshold)
-                cond4 = self.classif_map[:] != cmap_nodataVal
-                self.classif_map[cond1 & (cond2 | cond3) & cond4] = unclassified_pixVal  # global regr. is applied there
 
                 self.logger.info('Total classification time: %s'
                                  % time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)))
@@ -500,33 +484,16 @@ class RSImage_ClusterPredictor(object):
 
                 dist_min, dist_max = np.min(dists4stats), np.percentile(dists4stats, 90)
 
-            # overwrite the distances at those positions where the global regressor is applied
-            # with the distance to the global regressor
-            # (so far, we still had the distances to the material-specific regressors in here)
-            dist2d, clfmap2d, distGlob2d = [arr[image.mask_nodata[:]] for arr in [self.distance_metrics,
-                                                                                  self.classif_map,
-                                                                                  distance_to_global]]
-            mask = clfmap2d == unclassified_pixVal
-            dist2d[mask] = np.tile(distGlob2d, (1, self.classif_map.bands))[mask]
+            # -- overwrite the distances at those positions where global_clf_threshold is exceeded with 0.01 --
+            dist2d = self.distance_metrics[image.mask_nodata[:]]
 
             # compute the weights from the distances
             distNorm2d = (dist2d - dist_min) /\
                          (dist_max - dist_min)
             weights2d = 1 - distNorm2d
-            weights2d[weights2d <= 0] = 1e-5  # set negative weights to 0 but avoid ZeroDivisionError
-
-            # make sure that the global regressor is only counted once when predicting the output spectra
-            # - since there may be multiple regressors that exceed the global_clf_threshold,
-            #   the global regressor would otherwise be over-weighted
-            # - the approach is to create a mask ('mask2') that flags all global regressors
-            #   that occurr twice or more per pixel and to set their weights to 0
-            mask2 = np.zeros_like(dist2d, bool)
-            mask2[np.arange(dist2d.shape[0]).reshape(-1, 1),
-                  np.argmax(mask, axis=1).reshape(-1, 1)]\
-                = True
-            mask2 = mask & mask2
-            mask2 = mask != mask2
-            weights2d[mask2] = 0
+            weights2d[weights2d <= 0] = 0.01  # set negative weights to 0 but avoid ZeroDivisionError
+            weights2d[:, 0][dist2d[:, 0] > global_clf_threshold] = 0.01
+            weights2d[:, 1:][dist2d[:, 1:] > global_clf_threshold] = 0
 
             # convert 2D arrays back to 3D arrays in the shape of the input image
             self.distance_metrics[image.mask_nodata[:]] = dist2d
