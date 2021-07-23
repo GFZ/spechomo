@@ -503,9 +503,9 @@ class RSImage_ClusterPredictor(object):
             # overwrite the distances at those positions where the global regressor is applied
             # with the distance to the global regressor
             # (so far, we still had the distances to the material-specific regressors in here)
-            dist2d, clfmap2d, distGlob2d = [im2spectra(arr) for arr in [self.distance_metrics,
-                                                                        self.classif_map,
-                                                                        distance_to_global]]
+            dist2d, clfmap2d, distGlob2d = [arr[image.mask_nodata[:]] for arr in [self.distance_metrics,
+                                                                                  self.classif_map,
+                                                                                  distance_to_global]]
             mask = clfmap2d == unclassified_pixVal
             dist2d[mask] = np.tile(distGlob2d, (1, self.classif_map.bands))[mask]
 
@@ -524,13 +524,14 @@ class RSImage_ClusterPredictor(object):
             mask2[np.arange(dist2d.shape[0]).reshape(-1, 1),
                   np.argmax(mask, axis=1).reshape(-1, 1)]\
                 = True
-            mask2 = np.all(np.dstack([mask, mask2]), axis=2)
+            mask2 = mask & mask2
             mask2 = mask != mask2
             weights2d[mask2] = 0
 
             # convert 2D arrays back to 3D arrays in the shape of the input image
-            self.distance_metrics = spectra2im(dist2d, *self.distance_metrics.shape[:2])
-            weights = spectra2im(weights2d, *self.distance_metrics.shape[:2])
+            self.distance_metrics[image.mask_nodata[:]] = dist2d
+            weights = np.zeros_like(self.classif_map[:], float)
+            weights[image.mask_nodata[:]] = weights2d
 
         else:
             weights = None
