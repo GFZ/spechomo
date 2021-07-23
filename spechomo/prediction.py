@@ -513,7 +513,7 @@ class RSImage_ClusterPredictor(object):
             distNorm2d = (dist2d - dist_min) /\
                          (dist_max - dist_min)
             weights2d = 1 - distNorm2d
-            weights2d[weights2d < 0] = 1e-10  # set negative weights to 0 but avoid ZeroDivisionError
+            weights2d[weights2d <= 0] = 1e-5  # set negative weights to 0 but avoid ZeroDivisionError
 
             # make sure that the global regressor is only counted once when predicting the output spectra
             # - since there may be multiple regressors that exceed the global_clf_threshold,
