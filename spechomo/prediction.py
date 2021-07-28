@@ -413,6 +413,10 @@ class RSImage_ClusterPredictor(object):
                               return_distance=True,
                               **self.kw_clf_init)
 
+                if self.classif_alg in ['MinDist', 'kNN_MinDist', 'SAM', 'kNN_SAM', 'SID', 'FEDSA', 'kNN_FEDSA']:
+                    kw_clf.update(dict(unclassified_threshold=global_clf_threshold,
+                                       unclassified_pixVal=unclassified_pixVal))
+
                 if self.classif_alg == 'RF':
                     train_spectra = np.vstack([classifier.MLdict[clust].cluster_sample_spectra
                                                for clust in range(classifier.n_clusters)])
@@ -429,7 +433,10 @@ class RSImage_ClusterPredictor(object):
                 # additionally compute the distance to the global classifier
                 # as this will be needed later when replacing bad material-specific regressors with the global regressor
                 global_center = classifier.global_clf.cluster_center.reshape(1, -1)
-                distance_to_global = classify_image(image, global_center, [0], **kw_clf)[1]
+                kw_global = kw_clf.copy()
+                if 'unclassified_threshold' in kw_global:
+                    del kw_global['unclassified_threshold']
+                distance_to_global = classify_image(image, global_center, [0], **kw_global)[1]
 
                 clf_band_glob = np.full(self.classif_map.shape[:2], cmap_nodataVal, self.classif_map.dtype)
                 clf_band_glob[image.mask_nodata[:]] = unclassified_pixVal
@@ -492,8 +499,11 @@ class RSImage_ClusterPredictor(object):
                          (dist_max - dist_min)
             weights2d = 1 - distNorm2d
             weights2d[weights2d <= 0] = 0.01  # set negative weights to 0 but avoid ZeroDivisionError
-            weights2d[:, 0][dist2d[:, 0] > global_clf_threshold] = 0.01
-            weights2d[:, 1:][dist2d[:, 1:] > global_clf_threshold] = 0
+            mask_th_exc = dist2d > global_clf_threshold
+            weights2d[:, 0][mask_th_exc[:, 0]] = 0.01
+            weights2d[:, 1:][mask_th_exc[:, 1:]] = 0
+
+            # update classification mapal
 
             # convert 2D arrays back to 3D arrays in the shape of the input image
             self.distance_metrics[image.mask_nodata[:]] = dist2d
