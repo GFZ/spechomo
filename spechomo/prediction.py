@@ -500,10 +500,9 @@ class RSImage_ClusterPredictor(object):
             weights2d = 1 - distNorm2d
             weights2d[weights2d <= 0] = 0.01  # set negative weights to 0 but avoid ZeroDivisionError
             mask_th_exc = dist2d > global_clf_threshold
-            weights2d[:, 0][mask_th_exc[:, 0]] = 0.01
-            weights2d[:, 1:][mask_th_exc[:, 1:]] = 0
+            weights2d[:, 1:][mask_th_exc[:, 1:]] = 0  # only the material-specific regressors are updated here
 
-            # update classification mapal
+            # update classification map
 
             # convert 2D arrays back to 3D arrays in the shape of the input image
             self.distance_metrics[image.mask_nodata[:]] = dist2d
