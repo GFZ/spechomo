@@ -41,18 +41,18 @@ with open("spechomo/version.py") as version_file:
 
 req = [
     'dill',
-    'geoarray>=0.10.4',
+    'geoarray>=0.15.0',
     'matplotlib',
     'natsort',
     'nested_dict',
     'numpy',
     'pandas',
-    'pyrsr',
+    'pyrsr>=0.5.0',
     'pyyaml',
     'scikit-learn>=0.23.2',
     'scipy',
     'seaborn',
-    'specclassify>=0.2.8',
+    'specclassify>=0.3.0',
     'tabulate',
     'tqdm',
 ]
