@@ -20,6 +20,7 @@ History
 * Added sphinx plugin requirements to environment_spechomo.yml.
 * Updated minimal versions of py_tools_ds and geoarray to 0.18.0 and 0.15.0. Added minimal version 0.5.0 of pyrsr.
 * Switched to Apache 2.0 license.
+* The CI runner now uses Mambaforge. Revised CI jobs accordingly.
 
 
 0.9.3 (2020-12-15)
