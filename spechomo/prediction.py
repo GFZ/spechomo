@@ -405,7 +405,7 @@ class RSImage_ClusterPredictor(object):
         # assign each input pixel to a cluster (compute classification with cluster centers as endmembers)
         if self.classif_map is None:
             if self.n_clusters > 1:
-                self.logger.info(f'Assigning material-specific regressors to each image pixel.')
+                self.logger.info('Assigning material-specific regressors to each image pixel.')
 
                 t0 = time.time()
                 kw_clf = dict(classif_alg=self.classif_alg,
@@ -466,7 +466,7 @@ class RSImage_ClusterPredictor(object):
         if classifier.n_clusters > 1 and\
            self.classif_map.ndim > 2:
 
-            self.logger.info(f'Computing prediction weights per pixel for each regressor.')
+            self.logger.info('Computing prediction weights per pixel for each regressor.')
 
             if self.classif_alg == 'kNN_SAM':
                 # scale SAM values between 0 and 15 degrees spectral angle
