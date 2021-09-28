@@ -2,7 +2,7 @@
 SpecHomo - Spectral homogenization of multispectral satellite data
 ==================================================================
 
-* Free software: GNU General Public License v3 or later (GPLv3+)
+* Free software: Apache-2.0
 * **Documentation:** https://geomultisens.git-pages.gfz-potsdam.de/spechomo/doc/
 * The **paper** corresponding to this software repository can be found here:
   `Scheffler et al. 2020 <https://doi.org/10.1016/j.rse.2020.111723>`__ (cite as:

@@ -2,7 +2,14 @@
 History
 =======
 
-0.9.4 (coming soon)
+0.10.1 (coming soon)
+--------------------
+
+* Global regressors now have the correct weights and those use those from the material-specific regressors anymore.
+  The global regressor is now counted only once in the prediction.
+
+
+0.10.0 (2021-09-27)
 -------------------
 
 * Solved matplotlib DeprecationWarning.
@@ -18,8 +25,9 @@ History
 * Fixed Exception in case a ClassifierCollection does not have the requested key (LBA).
 * Revised test_spechomo_install CI job (now uses mamba).
 * Added sphinx plugin requirements to environment_spechomo.yml.
-* Global regressors now have the correct weights and those use those from the material-specific regressors anymore.
-  The global regressor is now counted only once in the prediction.
+* Updated minimal versions of py_tools_ds and geoarray to 0.18.0 and 0.15.0. Added minimal version 0.5.0 of pyrsr.
+* Switched to Apache 2.0 license.
+
 
 0.9.3 (2020-12-15)
 ------------------
