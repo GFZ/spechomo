@@ -55,11 +55,8 @@ test_urls:
 test_spechomo_install:
   stage: test
   script:
-    - source /root/miniconda3/bin/activate
-
-    # update conda and python
-    - conda update -n base -c conda-forge conda
-    # - conda update -c conda-forge python
+    - source /root/mambaforge/bin/activate
+    - mamba update -n base -c conda-forge --all
 
     # install mamba
     - conda install -n base -c conda-forge mamba
