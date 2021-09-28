@@ -6,13 +6,13 @@ channels: &id1
 dependencies:
   - python>=3.7.*
   - pip
-  - geoarray>=0.10.4
+  - geoarray>=0.15.0
   - matplotlib
   - numpy
   - pandas
-  - pyrsr
+  - pyrsr>=0.5.0
   - scikit-learn=0.23.2  # Classifiers have been trained with this version. Different versions might cause breaking code.
-  - specclassify>=0.2.8
+  - specclassify>=0.3.0
 
   - pip:
     - dill
