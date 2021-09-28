@@ -10,14 +10,12 @@ stages:
 test_spechomo:
   stage: test
   script:
-    - source /root/miniconda3/bin/activate ci_env
+    - source /root/mambaforge/bin/activate ci_env
 
     # run nosetests
     - make nosetests  # test are called here
 
     # create the docs
-    - pip install sphinx_rtd_theme  # Read-the-docs theme for SPHINX documentation
-    - pip install sphinx-autodoc-typehints
     - make docs
   artifacts:
     paths:
@@ -32,7 +30,7 @@ test_spechomo:
 test_styles:
   stage: test
   script:
-    - source /root/miniconda3/bin/activate ci_env
+    - source /root/mambaforge/bin/activate ci_env
     - make lint
   artifacts:
     paths:
@@ -46,7 +44,7 @@ test_styles:
 test_urls:
   stage: test
   script:
-    - source /root/miniconda3/bin/activate ci_env
+    - source /root/mambaforge/bin/activate ci_env
     - pip install -U urlchecker
     - make urlcheck
   when: always
@@ -57,9 +55,6 @@ test_spechomo_install:
   script:
     - source /root/mambaforge/bin/activate
     - mamba update -n base -c conda-forge --all
-
-    # install mamba
-    - conda install -n base -c conda-forge mamba
 
     # create spechomo environment from environment_spechomo.yml
     - mamba env create --name spechomo_testinstall -f tests/gitlab_CI_docker/context/environment_spechomo.yml
@@ -119,7 +114,7 @@ deploy_pypi:
   dependencies:
     - test_spechomo
   script:
-    - source /root/miniconda3/bin/activate
+    - source /root/mambaforge/bin/activate
     - conda activate ci_env
     - pip install -U twine
     - python setup.py sdist
