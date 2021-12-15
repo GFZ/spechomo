@@ -115,3 +115,8 @@ class Test_SpectralResampler(unittest.TestCase):
                                                  nodataVal=-9999, alg_nodata='conservative')
         self.assertTrue(np.any(tile_rsp), msg='Output image is empty.')
         self.assertTrue(np.all(tile_rsp[0, 3, 0] == -9999))
+
+
+if __name__ == '__main__':
+    import pytest
+    pytest.main()

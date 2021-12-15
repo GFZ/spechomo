@@ -230,3 +230,8 @@ class Test_ClusterClassifier_Generator(unittest.TestCase):
             coll['1__2__3__4__5__6__7'][('Sentinel-2A', 'MSI')]['1__2__3__4__5__6__7__8__8A__11__12'],
             global_classifier=None)
         fig, axes = CL.plot_sample_spectra(dpi=60, ncols=6)
+
+
+if __name__ == '__main__':
+    import pytest
+    pytest.main()

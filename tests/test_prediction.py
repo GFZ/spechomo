@@ -306,3 +306,8 @@ class Test_RSImage_ClusterPredictor(unittest.TestCase):
             self.assertTrue(np.allclose(im_homo, np.vstack([self.clf_L8.MLdict[i].tgt_cluster_center
                                                             for i in range(self.n_clusters)]),
                                         atol=6 if clf_alg not in ['kNN_MinDist', 'kNN_SAM', 'kNN_FEDSA'] else 1000))
+
+
+if __name__ == '__main__':
+    import pytest
+    pytest.main()

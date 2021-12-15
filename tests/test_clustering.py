@@ -105,3 +105,8 @@ class Test_KMeansRSImage(unittest.TestCase):
 
     def test_plot_clustered_image(self):
         self.kmeans.plot_clustermap()
+
+
+if __name__ == '__main__':
+    import pytest
+    pytest.main()
