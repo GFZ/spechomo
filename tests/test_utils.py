@@ -77,3 +77,8 @@ class Test_Utils(unittest.TestCase):
         with TemporaryDirectory() as td:
             self.assertIsNotNone(download_pretrained_classifiers('LR', os.path.join(td, 'not_existing_subdir')))
             self.assertIsNotNone(download_pretrained_classifiers('QR', os.path.join(td, 'not_existing_subdir')))
+
+
+if __name__ == '__main__':
+    import pytest
+    pytest.main()

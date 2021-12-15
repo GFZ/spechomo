@@ -197,6 +197,8 @@ class SpectralResampler(object):
                 tiles_rsp = pool.starmap(_resample_tile_mp,
                                          [(bounds, nodataVal, alg_nodata)
                                           for bounds in get_array_tilebounds(image_cube.shape, tiledims)])
+                pool.close()  # needed to make coverage work in multiprocessing
+                pool.join()
 
         else:
             _initializer_mp(*initargs)
