@@ -40,12 +40,12 @@ import unittest
 import os
 import numpy as np
 
-from geoarray import GeoArray  # noqa E402 module level import not at top of file
+from geoarray import GeoArray
 
-from spechomo import __file__  # noqa E402 module level import not at top of file
-from spechomo.clustering import KMeansRSImage  # noqa E402 module level import not at top of file
+import spechomo
+from spechomo.clustering import KMeansRSImage
 
-testdata = os.path.join(os.path.dirname(__file__), '../tests/data/AV_mastercal_testdata.bsq')
+testdata = os.path.join(os.path.dirname(spechomo.__file__), '../tests/data/AV_mastercal_testdata.bsq')
 
 
 class Test_KMeansRSImage(unittest.TestCase):
