@@ -12,8 +12,6 @@ test_spechomo:
   script:
     - source /root/mambaforge/bin/activate ci_env
 
-    - pip install pytest pytest-cov pytest-reporter-html1  # TODO remove after recreating CI runner
-
     # run tests
     - make pytest  # test are called here
 
