@@ -2,11 +2,23 @@
 History
 =======
 
-0.10.1 (coming soon)
+0.10.3 (coming soon)
 --------------------
 
 * Global regressors now have the correct weights and those use those from the material-specific regressors anymore.
   The global regressor is now counted only once in the prediction.
+
+
+0.10.2 (2021-12-16)
+-------------------
+
+* Replaced deprecated numpy data types.
+
+
+0.10.1 (2021-12-15)
+-------------------
+
+* Migrated test calls from nosetests to pytest (!20).
 
 
 0.10.0 (2021-09-27)

@@ -40,7 +40,7 @@ Status
 .. image:: https://zenodo.org/badge/241405333.svg
    :target: https://zenodo.org/badge/latestdoi/241405333
 
-See also the latest coverage_ report and the nosetests_ HTML report.
+See also the latest coverage_ report and the pytest_ HTML report.
 
 
 Feature overview
@@ -97,4 +97,4 @@ This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypack
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
 .. _coverage: https://geomultisens.git-pages.gfz-potsdam.de/spechomo/coverage/
-.. _nosetests: https://geomultisens.git-pages.gfz-potsdam.de/spechomo/nosetests_reports/nosetests.html
+.. _pytest: https://geomultisens.git-pages.gfz-potsdam.de/spechomo/test_reports/report.html

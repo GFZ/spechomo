@@ -107,6 +107,9 @@ def list_available_transformations(classifier_rootDir=options['classifiers']['ro
                     paths_dillfiles = [(os.path.join(td, fN)) for fN in natsorted(zF.namelist())]
                     dfs = pool.map(explore_classifer_dillfile, paths_dillfiles)
 
+                    pool.close()  # needed to make coverage work in multiprocessing
+                    pool.join()
+
                 df = pd.concat([df] + dfs)
 
     else:
@@ -115,6 +118,8 @@ def list_available_transformations(classifier_rootDir=options['classifiers']['ro
         if paths_dillfiles:
             with Pool() as pool:
                 dfs = pool.map(explore_classifer_dillfile, paths_dillfiles)
+                pool.close()  # needed to make coverage work in multiprocessing
+                pool.join()
 
             df = pd.concat([df] + dfs)
 

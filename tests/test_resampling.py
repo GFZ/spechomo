@@ -65,7 +65,7 @@ class Test_SpectralResampler(unittest.TestCase):
 
     def test_resample_signature(self):
         # Get a hyperspectral spectrum.
-        spectrum_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=np.float).flatten()
+        spectrum_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=float).flatten()
         spectrum = self.geoArr[0, 0, :].flatten()
 
         sr = SR(spectrum_wvl, self.rsr_l8)
@@ -74,7 +74,7 @@ class Test_SpectralResampler(unittest.TestCase):
 
     def test_resample_signature_with_nodata(self):
         # Get a hyperspectral spectrum.
-        spectrum_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=np.float).flatten()
+        spectrum_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=float).flatten()
         spectrum = self.geoArr[0, 0, :].flatten()
         spectrum[130: 140] = -9999
 
@@ -84,7 +84,7 @@ class Test_SpectralResampler(unittest.TestCase):
 
     def test_resample_image(self):
         # Get a hyperspectral image.
-        image_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=np.float).flatten()
+        image_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=float).flatten()
         image = self.geoArr[:]
 
         sr = SR(image_wvl, self.rsr_l8)
@@ -94,7 +94,7 @@ class Test_SpectralResampler(unittest.TestCase):
     @unittest.SkipTest
     def test__resample_tile_with_nodata(self):
         # Get a hyperspectral image tile.
-        image_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=np.float).flatten()
+        image_wvl = np.array(self.geoArr.meta.band_meta['wavelength'], dtype=float).flatten()
         tile = self.geoArr[:10, :5, :]
         tile[0, 0, 1] = -9999  # pixel with one band nodata
         tile[0, 1, 2] = -9999  # pixel with one band nodata
@@ -115,3 +115,8 @@ class Test_SpectralResampler(unittest.TestCase):
                                                  nodataVal=-9999, alg_nodata='conservative')
         self.assertTrue(np.any(tile_rsp), msg='Output image is empty.')
         self.assertTrue(np.all(tile_rsp[0, 3, 0] == -9999))
+
+
+if __name__ == '__main__':
+    import pytest
+    pytest.main()

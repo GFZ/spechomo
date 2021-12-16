@@ -226,7 +226,7 @@ class ReferenceCube_Generator(object):
                 self.logger.info('Performing spectral resampling to match %s %s specifications...' % (tgt_sat, tgt_sen))
                 unif_random_spectra_rsp = self.resample_spectra(
                     unif_random_spectra,
-                    src_cwl=np.array(src_im.meta.band_meta['wavelength'], dtype=np.float).flatten(),
+                    src_cwl=np.array(src_im.meta.band_meta['wavelength'], dtype=float).flatten(),
                     tgt_rsr=self._get_tgt_RSR_object(tgt_sat, tgt_sen),
                     nodataVal=src_im.nodata,
                     alg_nodata=alg_nodata)
@@ -392,7 +392,7 @@ class ReferenceCube_Generator(object):
 
         # read input image
         self.logger.info('Reading the input image %s...' % im_name)
-        im_gA.cwl = np.array(im_gA.meta.band_meta['wavelength'], dtype=np.float).flatten()
+        im_gA.cwl = np.array(im_gA.meta.band_meta['wavelength'], dtype=float).flatten()
 
         # perform spectral resampling of input image to match spectral properties of target sensor
         self.logger.info('Performing spectral resampling to match spectral properties of %s %s...'
@@ -495,7 +495,7 @@ class ClusterClassifier_Generator(object):
 
             # avoid division by 0
             if 0 in y_true:
-                y_true = y_true.astype(np.float)
+                y_true = y_true.astype(float)
                 y_true[y_true == 0] = np.nan
 
             return np.nanmean(np.abs((y_true - y_pred) / y_true), axis=0) * 100

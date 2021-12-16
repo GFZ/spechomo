@@ -106,7 +106,7 @@ class KMeansRSImage(object):
 
                 self._goodSpecMask = goodSpecMask
             else:
-                self._goodSpecMask = np.ones((self.im.rows * self.im.cols), dtype=np.bool)
+                self._goodSpecMask = np.ones((self.im.rows * self.im.cols), dtype=bool)
 
         return self._goodSpecMask
 
@@ -256,7 +256,7 @@ class KMeansRSImage(object):
 
         # loop over all endmember spectra and compute spectral angle for each input spectrum
         for n_sample in range(n_samples):
-            train_spectrum = endmembers[n_sample, :].astype(np.float)
+            train_spectrum = endmembers[n_sample, :].astype(float)
             diff = spectra - train_spectrum
             dists[:, n_sample] = np.sqrt((diff ** 2).sum(axis=1))
 
@@ -272,7 +272,7 @@ class KMeansRSImage(object):
 
         # loop over all endmember spectra and compute spectral angle for each input spectrum
         for lbl in np.unique(labels):
-            train_spectrum = endmembers[lbl, :].astype(np.float)
+            train_spectrum = endmembers[lbl, :].astype(float)
             mask_curlbl = labels == lbl
             spectra_curlbl = spectra[mask_curlbl, :]
             diff_curlbl = spectra_curlbl - train_spectrum
@@ -321,7 +321,7 @@ class KMeansRSImage(object):
             if self.n_spectra == (self.im.rows * self.im.cols):
                 self._spectral_distances_with_nodata = self.spectral_distances
             else:
-                dists = np.full_like(self.goodSpecMask, np.nan, dtype=np.float)
+                dists = np.full_like(self.goodSpecMask, np.nan, dtype=float)
                 dists[self.goodSpecMask] = self.spectral_distances
                 self._spectral_distances_with_nodata = dists
 
@@ -341,7 +341,7 @@ class KMeansRSImage(object):
             if self.n_spectra == (self.im.rows * self.im.cols):
                 self._spectral_angles_with_nodata = self.spectral_angles
             else:
-                angles = np.full_like(self.goodSpecMask, np.nan, dtype=np.float)
+                angles = np.full_like(self.goodSpecMask, np.nan, dtype=float)
                 angles[self.goodSpecMask] = self.spectral_angles
                 self._spectral_angles_with_nodata = angles
 
