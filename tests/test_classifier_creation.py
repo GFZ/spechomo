@@ -101,7 +101,7 @@ class Test_ReferenceCube_Generator(unittest.TestCase):
         # tgt_rsr = RSR(satellite='Terra', sensor='MODIS', sort_by_cwl=True)
         unif_random_spectra_rsp = \
             self.SHC.resample_spectra(unif_random_spectra,
-                                      src_cwl=np.array(src_im.meta.band_meta['wavelength'], dtype=np.float).flatten(),
+                                      src_cwl=np.array(src_im.meta.band_meta['wavelength'], dtype=float).flatten(),
                                       tgt_rsr=tgt_rsr,
                                       nodataVal=src_im.nodata)
         self.assertIsInstance(unif_random_spectra_rsp, np.ndarray)

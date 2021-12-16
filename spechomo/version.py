@@ -28,5 +28,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = '0.10.1'
-__versionalias__ = '20211215.01'
+__version__ = '0.10.2'
+__versionalias__ = '20211216.01'

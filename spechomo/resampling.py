@@ -56,7 +56,7 @@ class SpectralResampler(object):
         self._wvl_1nm = None
         self._rsr_1nm = {}
 
-        wvl_src = np.array(wvl_src, dtype=np.float).flatten()
+        wvl_src = np.array(wvl_src, dtype=float).flatten()
         if rsr_tgt.wvl_unit != 'nanometers':
             rsr_tgt.convert_wvl_unit()
 
@@ -106,7 +106,7 @@ class SpectralResampler(object):
         if not spectrum.ndim == 1:
             raise ValueError("The array of the given spectral signature must be 1-dimensional. "
                              "Received a %s-dimensional array." % spectrum.ndim)
-        spectrum = np.array(spectrum, dtype=np.float).flatten()
+        spectrum = np.array(spectrum, dtype=float).flatten()
         assert spectrum.size == self.wvl_src_nm.size
 
         # convert spectrum to one multispectral image pixel and resample it
@@ -253,7 +253,7 @@ def _resample_tile_mp(tilebounds, nodataVal=None, alg_nodata='radical'):
         else:
             raise NotImplementedError(nodataVal)
 
-        tiledata = tiledata.astype(np.float)
+        tiledata = tiledata.astype(float)
         tiledata[_mask_bool3d] = np.nan
 
         # fill pixels with all bands nodata
