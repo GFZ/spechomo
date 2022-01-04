@@ -312,7 +312,7 @@ class Cluster_Learner(object):
         # mask_unclassif = np.tile(cmap_3D.reshape(nsamp, 1, nbandscmap), (1, nbandpred, 1)) == cmap_unclassifiedVal
         # mask_unclassif[:, :, :1] = False  # if all other clusters are invalid, at least the first one is used for prediction # noqa
         # weights[mask_unclassif] = 0
-
+        # FIXME this computes the prediction for all k-neighbors, no matter if the weights are 0
         spectra_pred = np.average(np.dstack([im2spectra(im) for im in ims_pred_temp]),
                                   weights=weights,
                                   axis=2)
