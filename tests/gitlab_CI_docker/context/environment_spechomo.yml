@@ -25,15 +25,13 @@ dependencies:
     - tqdm
 
     # test and doc dependencies
-    - coverage
     - flake8
-    - nose
-    - nose2
-    - nose-htmloutput
     - pycodestyle
     - pylint
     - pydocstyle
-    - rednose
+    - pytest
+    - pytest-cov
+    - pytest-reporter-html1
     - sphinx-argparse
     - sphinx-autodoc-typehints
     - sphinx_rtd_theme

@@ -89,3 +89,8 @@ class Test_ClusterClassifier(TestCase):
 #     def test_save_to_json(self):
 #         with TemporaryDirectory() as tmpDir:
 #             self.CC.save_to_json(os.path.join(tmpDir, 'CC.json'))
+
+
+if __name__ == '__main__':
+    import pytest
+    pytest.main()
