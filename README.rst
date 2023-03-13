@@ -10,7 +10,7 @@ SpecHomo - Spectral homogenization of multispectral satellite data
   using land cover optimized multivariate regressors. Remote Sens. Environ. 241, 111723.
   https://doi.org/10.1016/j.rse.2020.111723)
 * Information on how to **cite the SpecHomo Python package** can be found in the
-  `CITATION <https://git.gfz-potsdam.de/geomultisens/spechomo/-/blob/master/CITATION>`__ file.
+  `CITATION <https://git.gfz-potsdam.de/geomultisens/spechomo/-/blob/main/CITATION>`__ file.
 * Submit feedback by filing an issue `here <https://git.gfz-potsdam.de/geomultisens/spechomo/issues>`__
   or join our chat here: |Gitter|
 
@@ -21,9 +21,9 @@ SpecHomo - Spectral homogenization of multispectral satellite data
 Status
 ------
 
-.. image:: https://git.gfz-potsdam.de/geomultisens/spechomo/badges/master/pipeline.svg
-        :target: https://git.gfz-potsdam.de/geomultisens/spechomo/commits/master
-.. image:: https://git.gfz-potsdam.de/geomultisens/spechomo/badges/master/coverage.svg
+.. image:: https://git.gfz-potsdam.de/geomultisens/spechomo/badges/main/pipeline.svg
+        :target: https://git.gfz-potsdam.de/geomultisens/spechomo/commits/main
+.. image:: https://git.gfz-potsdam.de/geomultisens/spechomo/badges/main/coverage.svg
         :target: https://geomultisens.git-pages.gfz-potsdam.de/spechomo/coverage/
 .. image:: https://img.shields.io/static/v1?label=Documentation&message=GitLab%20Pages&color=orange
         :target: https://geomultisens.git-pages.gfz-potsdam.de/spechomo/doc/
@@ -32,7 +32,7 @@ Status
 .. image:: https://img.shields.io/conda/vn/conda-forge/spechomo.svg
         :target: https://anaconda.org/conda-forge/spechomo
 .. image:: https://img.shields.io/pypi/l/spechomo.svg
-        :target: https://git.gfz-potsdam.de/geomultisens/spechomo/blob/master/LICENSE
+        :target: https://git.gfz-potsdam.de/geomultisens/spechomo/blob/main/LICENSE
 .. image:: https://img.shields.io/pypi/pyversions/spechomo.svg
         :target: https://img.shields.io/pypi/pyversions/spechomo.svg
 .. image:: https://img.shields.io/pypi/dm/spechomo.svg
