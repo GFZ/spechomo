@@ -34,7 +34,7 @@
         },
         {
             "scheme": "url",
-            "identifier": "https://www.sciencedirect.com/science/article/abs/pii/S0034425720300924?via%3Dihub",
+            "identifier": "https://doi.org/10.1016/j.rse.2020.111723",
             "relation": "isCitedBy",
             "resource_type": "publication-article"
         }
