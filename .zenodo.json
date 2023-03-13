@@ -34,7 +34,7 @@
         },
         {
             "scheme": "url",
-            "identifier": "https://www.sciencedirect.com/science/article/pii/S0034425720300924?via%3Dihub",
+            "identifier": "https://www.sciencedirect.com/science/article/abs/pii/S0034425720300924?via%3Dihub",
             "relation": "isCitedBy",
             "resource_type": "publication-article"
         }
