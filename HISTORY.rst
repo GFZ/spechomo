@@ -2,6 +2,12 @@
 History
 =======
 
+0.10.3 (2023-08-11)
+-------------------
+
+* !21: Fixed some warnings during package build process and 'make docs'.
+
+
 0.10.2 (2021-12-16)
 -------------------
 
