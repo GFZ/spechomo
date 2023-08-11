@@ -95,6 +95,7 @@ setup(
     install_requires=req,
     license="Apache-2.0",
     long_description=readme + '\n\n' + history,
+    long_description_content_type='text/x-rst',
     include_package_data=True,
     package_data={'spechomo': ['options_default.yaml',
                                # 'resources/**/**/*'
