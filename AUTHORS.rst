@@ -1,7 +1,7 @@
 Development Lead
 ----------------
 
-* Daniel Scheffler <daniel.scheffler@gfz-potsdam.de>
+* Daniel Scheffler <daniel.scheffler@gfz.de>
 
 Contributors
 ------------

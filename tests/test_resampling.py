@@ -4,9 +4,8 @@
 # spechomo, Spectral homogenization of multispectral satellite data
 #
 # Copyright (C) 2019-2021
-# - Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz-potsdam.de)
-# - GFZ Helmholtz Centre for Geosciences Potsdam,
-#   Germany (https://www.gfz.de/)
+# - Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz.de)
+# - GFZ Helmholtz Centre for Geosciences, Potsdam, Germany (https://www.gfz.de)
 #
 # This software was developed within the context of the GeoMultiSens project funded
 # by the German Federal Ministry of Education and Research
@@ -16,7 +15,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+#   https://www.apache.org/licenses/LICENSE-2.0
 #
 # Please note the following exception: `spechomo` depends on tqdm, which is
 # distributed under the Mozilla Public Licence (MPL) v2.0 except for the files
