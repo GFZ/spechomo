@@ -4,7 +4,7 @@
 # spechomo, Spectral homogenization of multispectral satellite data
 #
 # Copyright (C) 2019-2021
-# - Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz-potsdam.de)
+# - Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz.de)
 # - Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences Potsdam,
 #   Germany (https://www.gfz-potsdam.de/)
 #
@@ -73,7 +73,7 @@ req_dev = req_setup + req_test + req_doc + req_lint
 
 setup(
     author="Daniel Scheffler",
-    author_email='daniel.scheffler@gfz-potsdam.de',
+    author_email='daniel.scheffler@gfz.de',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

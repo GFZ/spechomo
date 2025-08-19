@@ -3,7 +3,7 @@
 # spechomo, Spectral homogenization of multispectral satellite data
 #
 # Copyright (C) 2019-2021
-# - Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz-potsdam.de)
+# - Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz.de)
 # - Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences Potsdam,
 #   Germany (https://www.gfz-potsdam.de/)
 #
@@ -33,4 +33,4 @@ from .prediction import SpectralHomogenizer  # noqa (E402 + F401)
 
 
 __author__ = """Daniel Scheffler"""
-__email__ = 'daniel.scheffler@gfz-potsdam.de'
+__email__ = 'daniel.scheffler@gfz.de'
