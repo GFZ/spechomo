@@ -67,7 +67,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'spechomo'
-copyright = u"2019, Daniel Scheffler"
+copyright = u"2019–2025, Daniel Scheffler"
 author = u"Daniel Scheffler"
 
 # The version info for the project you're documenting, acts as replacement
