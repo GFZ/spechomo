@@ -75,7 +75,7 @@ class KMeansRSImage(object):
         # type: (str, GeoArray) -> KMeansRSImage
         """Get an instance of KMeansRSImage from a previously saved classifier.
 
-        :param path_clf:    path of serialzed classifier (dill file)
+        :param path_clf:    path of serialized classifier (dill file)
         :param im:          path of the image cube belonging to that classifier
         :return: KMeansRSImage
         """
@@ -84,7 +84,7 @@ class KMeansRSImage(object):
 
         KM = KMeansRSImage(im,
                            undilled['clusters'].n_clusters,
-                           undilled['clusters'].n_jobs,
+                           cpu_count(),
                            undilled['clusters'].verbose)
         KM._clusters = undilled['clusters']
         KM._goodSpecMask = undilled['_goodSpecMask']
