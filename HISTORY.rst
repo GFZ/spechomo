@@ -8,6 +8,9 @@ History
 * Replaced deprecated http links.
 * Adapted docker build script to recent GitLab changes.
 * Added maximum version pinnings for numpy, scikit-learn, and scipy to avoid breaking code.
+* Replaced deprecated GFZ URLs and institute name (!22/!23).
+* Added gitleaks check (!25).
+* Updated copyright (!26)
 
 
 0.10.3 (2023-08-11)
