@@ -7,6 +7,7 @@ History
 
 * Replaced deprecated http links.
 * Adapted docker build script to recent GitLab changes.
+* Added maximum version pinnings for numpy, scikit-learn, and scipy to avoid breaking code.
 
 
 0.10.3 (2023-08-11)
