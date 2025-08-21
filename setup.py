@@ -48,12 +48,12 @@ req = [
     'matplotlib',
     'natsort',
     'nested_dict',
-    'numpy',
+    'numpy<2',
     'pandas',
     'pyrsr>=0.5.0',
     'pyyaml',
-    'scikit-learn>=0.23.2',
-    'scipy',
+    'scikit-learn>=0.23.2,<1',  # Classifiers trained with 0.23.2; >1 breaks list_available_transformations; >1.1 breaks QR  # noqa
+    'scipy<1.11',  # >=1.11 breaks create_classifiers_RR
     'seaborn',
     'specclassify>=0.3.0',
     'tabulate',

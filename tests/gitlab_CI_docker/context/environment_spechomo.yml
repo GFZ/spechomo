@@ -6,37 +6,37 @@ channels: &id1
 dependencies:
   - python>=3.7.*
   - pip
-  - geoarray>=0.15.0
-  - matplotlib
-  - numpy
+
+  - dill
+  - geoarray >=0.15.0
+  - matplotlib-base
+  - natsort
+  - nested_dict
+  - numpy<2
   - pandas
-  - pyrsr>=0.5.0
-  - scikit-learn=0.23.2  # Classifiers have been trained with this version. Different versions might cause breaking code.
-  - specclassify>=0.3.0
+  - pyrsr >=0.5.0
+  - pyyaml
+  - scikit-learn >=0.23.2,<1  # Classifiers trained with 0.23.2; >1 breaks list_available_transformations; >1.1 breaks QR
+  - scipy <1.11  # >=1.11 breaks create_classifiers_RR
+  - seaborn
+  - specclassify >=0.3.0
+  - tabulate
+  - tqdm
+
+  # test and doc dependencies
+  - flake8
+  - pycodestyle
+  - pylint
+  - pydocstyle
+  - pytest
+  - pytest-cov
+  - sphinx-argparse
+  - sphinx-autodoc-typehints
+  - sphinx_rtd_theme
+  - urlchecker
+
+  # setup requirements
+  - setuptools-git
 
   - pip:
-    - dill
-    - natsort
-    - nested_dict
-    - pyyaml
-    - scipy
-    - seaborn
-    - tabulate
-    - tqdm
-
-    # test and doc dependencies
-    - flake8
-    - pycodestyle
-    - pylint
-    - pydocstyle
-    - pytest
-    - pytest-cov
     - pytest-reporter-html1
-    - sphinx-argparse
-    - sphinx-autodoc-typehints
-    - sphinx_rtd_theme
-    - urlchecker
-
-    # setup requirements
-    - setuptools-git
-
