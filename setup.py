@@ -3,7 +3,7 @@
 
 # spechomo, Spectral homogenization of multispectral satellite data
 #
-# Copyright (C) 2019-2021
+# Copyright (C) 2019–2025
 # - Daniel Scheffler (GFZ Potsdam, daniel.scheffler@gfz.de)
 # - GFZ Helmholtz Centre for Geosciences, Potsdam, Germany (https://www.gfz.de)
 #
