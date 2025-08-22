@@ -133,6 +133,11 @@ def list_available_transformations(classifier_rootDir=options['classifiers']['ro
             if locals()[filterparam]:
                 df = df[df[filterparam].isin(_force_list(locals()[filterparam]))]
 
+    else:
+        warnings.warn('No classifiers found in %s. You can download pre-defined classifiers '
+                      'by using spechomo.utils.download_pretrained_classifiers().'
+                      % os.path.abspath(classifier_rootDir), UserWarning)
+
     return df
 
 
