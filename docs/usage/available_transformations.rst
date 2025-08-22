@@ -4,8 +4,9 @@ Available sensor transformations
 The classifiers included in the SpecHomo package
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The SpecHomo package provides a set of classifiers that can be used for spectral homogenization of various sensor
-combinations (see :ref:`here <usage/available_transformations:Which sensor transformations are available?>`). These
+The SpecHomo package provides a set of classifiers (downloaded at the first run)
+that can be used for spectral homogenization of various sensor combinations
+(see :ref:`here <usage/available_transformations:Which sensor transformations are available?>`). These
 classifiers have been trained based on simulated multispectral remote sensing images created by spectral convolution
 from hyperspectral airborne datasets. These hyperspectral datasets were chosen with the intention to include as many
 different land-cover types as possible in order to maximize spectral variability. This makes these classifiers suitable
@@ -49,6 +50,10 @@ The output may also be directly filtered using the input parameters of the funct
 
 
 .. note::
+
+    The pre-trained classifiers that come along with SpecHomo are downloaded at the first run of the homogenization.
+    To explicitly download the classifiers, use the function
+    :func:`spechomo.utils.download_pretrained_classifiers()<spechomo.utils.download_pretrained_classifiers>`.
 
     If you have trained your own classifiers for homogenization, you may also pass a different classifier root
     directory to :func:`list_available_transformations<spechomo.utils.list_available_transformations>`. Use the

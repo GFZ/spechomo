@@ -11,6 +11,7 @@ History
 * Replaced deprecated GFZ URLs and institute name (!22/!23).
 * Added gitleaks check (!25).
 * Updated copyright (!26)
+* Update classifier downloads (!27).
 
 
 0.10.3 (2023-08-11)

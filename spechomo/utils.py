@@ -133,6 +133,11 @@ def list_available_transformations(classifier_rootDir=options['classifiers']['ro
             if locals()[filterparam]:
                 df = df[df[filterparam].isin(_force_list(locals()[filterparam]))]
 
+    else:
+        warnings.warn('No classifiers found in %s. You can download pre-defined classifiers '
+                      'by using spechomo.utils.download_pretrained_classifiers().'
+                      % os.path.abspath(classifier_rootDir), UserWarning)
+
     return df
 
 
@@ -226,12 +231,14 @@ def export_classifiers_as_JSON(export_rootDir,
 
 
 def download_pretrained_classifiers(method, tgt_dir=options['classifiers']['rootdir']):
+    print('Downloading %s classifiers...' % method)
+
     remote_filespecs = {
         '100k_conservrsp_SCA_SD100percSA90perc_without_aviris__SCADist90pSAM40p': {
-            # 'LR': 'https://nextcloud.gfz-potsdam.de/s/Rzb75kckBreFfNE/download',  # 20201008
-            'LR': 'https://nextcloud.gfz-potsdam.de/s/mZEnS5g7AGWyRHB/download',
-            # 'QR': 'https://nextcloud.gfz-potsdam.de/s/Kk4zoCXxAEkAFZL/download',  # 20201008
-            'QR': 'https://nextcloud.gfz-potsdam.de/s/JcQDbZBtTiw9NYi/download',
+            # 'LR': 'https://nextcloud.gfz.de/s/Rzb75kckBreFfNE/download',  # 20201008
+            'LR': 'https://nextcloud.gfz.de/s/mZEnS5g7AGWyRHB/download',  # 20201030
+            # 'QR': 'https://nextcloud.gfz.de/s/Kk4zoCXxAEkAFZL/download',  # 20201008
+            'QR': 'https://nextcloud.gfz.de/s/JcQDbZBtTiw9NYi/download',  # 20201031
         }
     }
     clf_name = options['classifiers']['name']
@@ -253,4 +260,5 @@ def download_pretrained_classifiers(method, tgt_dir=options['classifiers']['root
         outP, msg = urlretrieve(url, os.path.join(tgt_dir, fn))
 
         if os.path.getsize(outP) == int(msg.get('content-length')):
+            print('Download successful.')
             return outP
