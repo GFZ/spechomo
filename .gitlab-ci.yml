@@ -79,6 +79,8 @@ test_spechomo_install:
     - ls
     - python -c "import spechomo; print(spechomo)"
     - python -c "from spechomo import SpectralHomogenizer"
+  only:
+    - main
 
 
 pages:
