@@ -2,8 +2,8 @@
 History
 =======
 
-0.10.4 (coming soon)
---------------------
+0.10.4 (2025-08-22)
+-------------------
 
 * Replaced deprecated http links.
 * Adapted docker build script to recent GitLab changes.
