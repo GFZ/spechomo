@@ -231,6 +231,8 @@ def export_classifiers_as_JSON(export_rootDir,
 
 
 def download_pretrained_classifiers(method, tgt_dir=options['classifiers']['rootdir']):
+    print('Downloading %s classifiers...' % method)
+
     remote_filespecs = {
         '100k_conservrsp_SCA_SD100percSA90perc_without_aviris__SCADist90pSAM40p': {
             # 'LR': 'https://nextcloud.gfz.de/s/Rzb75kckBreFfNE/download',  # 20201008
@@ -258,4 +260,5 @@ def download_pretrained_classifiers(method, tgt_dir=options['classifiers']['root
         outP, msg = urlretrieve(url, os.path.join(tgt_dir, fn))
 
         if os.path.getsize(outP) == int(msg.get('content-length')):
+            print('Download successful.')
             return outP
