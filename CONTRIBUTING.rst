@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://git.gfz-potsdam.de/geomultisens/spechomo/issues
+Report bugs at https://git.gfz.de/geomultisens/spechomo/issues
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://git.gfz-potsdam.de/geomultisens/spechomo/issues.
+The best way to send feedback is to file an issue at https://git.gfz.de/geomultisens/spechomo/issues.
 
 If you are proposing a feature:
 
@@ -119,7 +119,7 @@ Before you submit a merge request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
 3. The merge request should work for Python 2.7, 3.4+, and for PyPy. Check
-   https://git.gfz-potsdam.de/geomultisens/spechomo/-/merge_requests
+   https://git.gfz.de/geomultisens/spechomo/-/merge_requests
    and make sure that the tests pass for all supported Python versions.
 
 Tips

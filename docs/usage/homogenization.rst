@@ -74,4 +74,4 @@ follows:
       evaluation of the different homogenization algorithms available in the SpecHomo library.
 
 
-.. _`geoarray`: https://git.gfz-potsdam.de/danschef/geoarray
+.. _`geoarray`: https://git.gfz.de/danschef/geoarray
