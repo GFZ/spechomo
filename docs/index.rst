@@ -6,7 +6,7 @@ spechomo documentation
    :caption: Contents:
 
    about
-   Source code repository <https://git.gfz-potsdam.de/geomultisens/spechomo>
+   Source code repository <https://git.gfz.de/geomultisens/spechomo>
    installation
    usage
    api_cli_reference

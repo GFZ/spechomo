@@ -22,7 +22,7 @@
     "related_identifiers": [
         {
             "scheme": "url",
-            "identifier": "https://git.gfz-potsdam.de/geomultisens/spechomo",
+            "identifier": "https://git.gfz.de/geomultisens/spechomo",
             "relation": "isSupplementTo",
             "resource_type": "software"
         },
